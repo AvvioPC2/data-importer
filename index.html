@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Seriale Aziendale PRO</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; margin: 0; padding: 20px; }
+        #video-container { position: relative; width: 100%; max-width: 500px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #000; }
+        video { width: 100%; display: block; }
+        /* Il mirino per l'utente */
+        #overlay {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; height: 60px;
+            border: 3px solid #00ff00; border-radius: 8px;
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        #status { margin-top: 20px; font-weight: bold; color: #333; text-align: center; min-height: 24px; }
+        .controls { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        button {
+            padding: 15px 25px;
+            font-size: 16px; font-weight: bold;
+            border: none; border-radius: 50px; cursor: pointer; transition: background 0.2s;
+        }
+        #capture-btn { background: #007bff; color: white; }
+        #torch-btn { background: #ffc107; color: #333; display: none; /* Nascosto di default se non supportato */ }
+        button:disabled { background: #ccc !important; color: #666 !important; cursor: not-allowed; }
+        
+        /* Canvas visibile in fase di test per farti capire cosa "vede" Tesseract */
+        #debug-container { margin-top: 20px; text-align: center; width: 100%; max-width: 500px; display: none; }
+        canvas { border: 1px solid #ccc; max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+
+    <h2>Scanner Seriale</h2>
+
+    <div id="video-container">
+        <video id="video" autoplay playsinline></video>
+        <div id="overlay"></div>
+    </div>
+
+    <div id="status">In attesa della fotocamera...</div>
+    
+    <div class="controls">
+        <button id="torch-btn">🔦 Accendi Luce</button>
+        <button id="capture-btn" disabled>SCANSIONA E INVIA</button>
+    </div>
+
+    <div id="debug-container">
+        <small>Cosa legge l'OCR (Immagine ottimizzata):</small><br>
+        <canvas id="canvas"></canvas>
+    </div>
+
+<script>
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const canvas = document.getElementById('canvas');
+    const status = document.getElementById('status');
+    const btnCapture = document.getElementById('capture-btn');
+    const btnTorch = document.getElementById('torch-btn');
+    const debugContainer = document.getElementById('debug-container');
+
+    const GOOGLE_SCRIPT_URL = 'IL_TUO_URL_QUI';
+    const SERIAL_REGEX = /[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}/;
+
+    let imageCapture;
+    let streamTrack;
+
+    // 1. OTTIMIZZAZIONE FOTOCAMERA: Richiesta alta risoluzione
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { 
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            });
+            video.srcObject = stream;
+            streamTrack = stream.getVideoTracks()[0];
+            
+            // Verifica supporto Torcia
+            const capabilities = streamTrack.getCapabilities();
+            if (capabilities.torch) {
+                btnTorch.style.display = 'inline-block';
+            }
+
+            // Attendiamo che il video sia pronto per calcolare le dimensioni
+            video.onloadedmetadata = () => {
+                btnCapture.disabled = false;
+                status.innerText = "Inquadra il seriale nel rettangolo verde.";
+            };
+        } catch (err) {
+            status.innerText = "Errore fotocamera: " + err.message;
+        }
+    }
+
+    // Gestione Torcia
+    let torchOn = false;
+    btnTorch.addEventListener('click', async () => {
+        if (!streamTrack) return;
+        torchOn = !torchOn;
+        try {
+            await streamTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
+            btnTorch.innerText = torchOn ? "🔦 Spegni Luce" : "🔦 Accendi Luce";
+        } catch (err) {
+            console.error("Errore torcia", err);
+        }
+    });
+
+    btnCapture.addEventListener('click', async () => {
+        btnCapture.disabled = true;
+        status.innerText = "Elaborazione immagine in corso...";
+        debugContainer.style.display = 'block';
+
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // 2. RITAGLIO (CROPPING): Calcoliamo le proporzioni esatte
+        const scaleX = video.videoWidth / video.clientWidth;
+        const scaleY = video.videoHeight / video.clientHeight;
+        const overlayRect = overlay.getBoundingClientRect();
+        const videoRect = video.getBoundingClientRect();
+        
+        const cropX = (overlayRect.left - videoRect.left) * scaleX;
+        const cropY = (overlayRect.top - videoRect.top) * scaleY;
+        const cropW = overlayRect.width * scaleX;
+        const cropH = overlayRect.height * scaleY;
+
+        // Imposta il canvas ESATTAMENTE sulla dimensione del ritaglio
+        canvas.width = cropW;
+        canvas.height = cropH;
+
+        // Disegna solo la porzione interessata
+        context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+        // 3. BINARIZZAZIONE: Trasforma in scala di grigi e alza il contrasto al massimo
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const threshold = 120; // Regola questo valore (0-255) se i testi sono troppo chiari o scuri
+
+        for (let i = 0; i < data.length; i += 4) {
+            // Calcolo luminosità (Grayscale)
+            const luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
+            // Applica la soglia (Binarization)
+            const color = luma > threshold ? 255 : 0;
+            data[i] = data[i+1] = data[i+2] = color; // Assegna il nuovo colore a RGB
+        }
+        context.putImageData(imageData, 0, 0);
+
+        status.innerText = "Analisi OCR in corso...";
+
+        try {
+            // 4. CONFIGURAZIONE TESSERACT: Worker API per parametri precisi
+            const worker = await Tesseract.createWorker('eng');
+            
+            await worker.setParameters({
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-', // Solo questi caratteri ammessi
+                tessedit_pageseg_mode: '7', // Tratta l'immagine come una singola riga di testo
+            });
+
+            const result = await worker.recognize(canvas);
+            await worker.terminate();
+
+            const text = result.data.text.toUpperCase().replace(/\s/g, '');
+            const match = text.match(SERIAL_REGEX);
+
+            if (match) {
+                const serialeTrovato = match[0];
+                status.innerText = "Trovato: " + serialeTrovato + "\nInvio a Google Sheets...";
+
+                // Invia a Google Sheets
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    body: JSON.stringify({ seriale: serialeTrovato }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                status.innerText = "✅ Seriale inviato: " + serialeTrovato;
+            } else {
+                status.innerText = "❌ Formato non riconosciuto. Letto: " + (text.substring(0,25) || "Niente");
+            }
+        } catch (err) {
+            status.innerText = "Errore OCR: " + err.message;
+        } finally {
+            btnCapture.disabled = false;
+        }
+    });
+
+    startCamera();
+</script>
+</body>
+</html>
