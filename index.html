@@ -3,294 +3,380 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Dual Scanner</title>
+    <title>AvvioPC 2 - Dashboard</title>
     
-    <!-- Tesseract.js for OCR (Serial Code) -->
+    <!-- Tesseract.js for OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <!-- ZXing for Barcode decoding fallback -->
+    <!-- ZXing for Barcode -->
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     
     <style>
-        /* Base Styling */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
-        
-        /* Operator Selection Section */
-        .header-container { width: 100%; max-width: 500px; text-align: center; margin-bottom: 20px; }
-        .operator-select { padding: 12px; border-radius: 8px; width: 100%; max-width: 300px; font-size: 16px; border: 1px solid #ccc; background: #fff; }
-        .operator-status { font-size: 13px; color: #666; margin-top: 8px; }
-
-        /* Video and Overlay Section - HEIGHT OPTIMIZED FOR MOBILE */
-        #video-container { 
-            position: relative; 
-            width: 100%; 
-            max-width: 500px; 
-            height: 350px; /* Fixed height to prevent vertical scrolling */
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15); 
-            background: #000; 
-        }
-        
-        video { 
-            width: 100%; 
-            height: 100%; 
-            display: block; 
-            object-fit: cover; /* Ensures video fills the container without aspect ratio distortion */
-        }
-        
-        /* Dynamic Scanning Overlay */
-        #overlay {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%; height: 120px; /* Default larger size for Barcode */
-            border: 3px solid #007bff; border-radius: 8px;
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.55);
-            pointer-events: none;
-            transition: all 0.3s ease-in-out;
-        }
-        /* Modifier for Serial Mode (smaller height, green border) */
-        #overlay.serial-mode {
-            height: 60px;
-            border-color: #28a745;
+        /* CSS Variables for consistent theming */
+        :root {
+            --primary-bg: #f4f7f6;
+            --header-bg: #003366; /* Dark Blue */
+            --header-text: #ffffff;
+            --accent-color: #007bff;
+            --success-color: #28a745;
+            --border-color: #ced4da;
+            --text-main: #333333;
+            --text-muted: #6c757d;
+            --disabled-bg: #e9ecef;
+            --border-radius: 8px;
         }
 
-        /* Information Panel */
-        .info-panel { margin-top: 20px; width: 100%; max-width: 500px; text-align: center; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); box-sizing: border-box; }
-        .step-indicator { font-weight: bold; font-size: 20px; color: #222; margin-bottom: 10px; }
-        .scanned-data { margin-bottom: 15px; font-size: 15px; color: #0056b3; min-height: 22px; font-family: monospace; background: #e9ecef; padding: 5px; border-radius: 5px; word-break: break-all; }
-        #status-text { font-weight: bold; color: #444; min-height: 24px; margin-bottom: 15px; }
-        
-        /* Controls Section */
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
-        button {
-            padding: 15px 25px; font-size: 16px; font-weight: bold;
-            border: none; border-radius: 50px; cursor: pointer; transition: background 0.2s, transform 0.1s;
-        }
-        button:active { transform: scale(0.98); }
-        button:disabled { background: #d6d6d6 !important; color: #888 !important; cursor: not-allowed; transform: none; }
-        
-        /* Dynamic Main Button */
-        #action-btn { background: #007bff; color: white; width: 100%; max-width: 300px; }
-        #action-btn.serial-mode { background: #28a745; }
-        #torch-btn { background: #ffc107; color: #333; display: none; }
+        /* Base Reset & Typography */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
-        /* Debug Canvas (Hidden by default in production) */
-        #debug-container { margin-top: 20px; text-align: center; width: 100%; max-width: 500px; display: none; }
-        canvas { border: 1px solid #ccc; max-width: 100%; height: auto; border-radius: 8px; }
+        /* Header Bar */
+        .app-header {
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-brand { display: flex; align-items: center; gap: 15px; }
+        .logo-placeholder {
+            width: 40px; height: 40px; background: rgba(255,255,255,0.2);
+            border: 1px dashed rgba(255,255,255,0.6); border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; font-size: 10px;
+        }
+        .app-title { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
+        .account-link { font-size: 14px; text-decoration: underline; color: var(--header-text); cursor: pointer; opacity: 0.9; }
+
+        /* Main Form Container */
+        .form-container { max-width: 600px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Form Groups & Labels */
+        .form-group { background: #fff; padding: 15px; border-radius: var(--border-radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .form-label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 8px; color: var(--text-main); }
+        .section-title { font-size: 16px; font-weight: bold; border-bottom: 2px solid var(--primary-bg); padding-bottom: 8px; margin-bottom: 15px; margin-top: 10px; color: var(--header-bg); }
+
+        /* Input Layouts */
+        .input-with-icon { display: flex; align-items: stretch; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background: #fff; transition: border-color 0.2s; }
+        .input-with-icon:focus-within { border-color: var(--accent-color); }
+        .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 15px; outline: none; font-family: monospace; }
+        .camera-btn { 
+            background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); 
+            padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s; 
+        }
+        .camera-btn:hover { background: #e2e6ea; }
+        .camera-btn svg { width: 24px; height: 24px; fill: var(--header-bg); }
+
+        /* Segmented Controls (Radio Buttons Replacement) */
+        .segmented-control { display: flex; gap: 5px; background: var(--disabled-bg); padding: 4px; border-radius: var(--border-radius); margin-bottom: 10px; }
+        .segmented-control label {
+            flex: 1; text-align: center; padding: 10px 5px; font-size: 14px; font-weight: 500;
+            color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: all 0.2s;
+        }
+        .segmented-control input[type="radio"] { display: none; }
+        .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+
+        /* Conditional Fields */
+        .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
+        .conditional-field.visible { max-height: 100px; opacity: 1; margin-top: 10px; }
+
+        /* Email Group */
+        .email-group { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; padding-right: 10px; background: #fff; }
+        .email-group input { flex: 2; border: none; padding: 12px 15px; font-size: 15px; outline: none; }
+        .email-group span { font-weight: bold; color: var(--text-muted); }
+        .email-group select { flex: 1; border: none; outline: none; font-size: 15px; background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; }
+
+        /* Password Group */
+        .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 15px; border-radius: var(--border-radius); outline: none; }
+        .standard-input:focus { border-color: var(--accent-color); }
+
+        /* Checkbox */
+        .checkbox-group { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 0; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .checkbox-group label { font-size: 15px; cursor: pointer; user-select: none; }
+
+        /* Submit Button */
+        .submit-container { padding: 20px 0; position: sticky; bottom: 0; background: linear-gradient(transparent, var(--primary-bg) 20%); text-align: center; margin-top: 10px; }
+        #submit-btn {
+            width: 100%; max-width: 400px; padding: 16px; font-size: 18px; font-weight: bold;
+            border: none; border-radius: 50px; color: white; background: var(--success-color);
+            cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s;
+        }
+        #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
+        #submit-btn:active:not(:disabled) { transform: scale(0.98); }
+
+        /* --- Camera Modal (Overlay) --- */
+        #scanner-modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 1000; display: flex; flex-direction: column;
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #scanner-modal.active { transform: translateY(0); }
+        
+        .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: rgba(0,0,0,0.8); z-index: 10; }
+        .modal-title { font-size: 16px; font-weight: bold; }
+        .close-modal-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px; }
+        
+        .video-wrapper { position: relative; flex-grow: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        #scanner-video { width: 100%; height: 100%; object-fit: cover; }
+        #scanner-overlay {
+            position: absolute; width: 80%; height: 60px;
+            border: 3px solid #00ff00; border-radius: 8px;
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none;
+        }
+        .modal-footer { padding: 20px; text-align: center; background: rgba(0,0,0,0.8); z-index: 10; }
+        #capture-btn { background: var(--accent-color); color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; }
+        #modal-status { color: white; font-size: 14px; margin-top: 10px; min-height: 20px; }
+        
+        #hidden-canvas { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Operator Selection -->
-    <div class="header-container">
-        <label for="operator-select" style="display: block; margin-bottom: 8px; font-weight: bold;">Operator ID:</label>
-        <select id="operator-select" class="operator-select">
-            <option value="">-- Select Operator --</option>
-            <option value="USR-001">USR-001 (John Doe)</option>
-            <option value="USR-002">USR-002 (Jane Smith)</option>
-            <option value="USR-003">USR-003 (Alan Turing)</option>
-        </select>
-        <div id="operator-status" class="operator-status"></div>
-    </div>
+    <!-- Top Bar -->
+    <header class="app-header">
+        <div class="header-brand">
+            <div class="logo-placeholder">LOGO</div>
+            <div class="app-title">AvvioPC 2</div>
+        </div>
+        <div class="account-link" onclick="alert('Account selection screen will open here.')">Account</div>
+    </header>
 
-    <!-- Camera Viewport -->
-    <div id="video-container">
-        <video id="video" autoplay playsinline></video>
-        <div id="overlay"></div>
-    </div>
-
-    <!-- UI State Panel -->
-    <div class="info-panel">
-        <div id="step-indicator" class="step-indicator">STEP 1: Scan Barcode</div>
-        <div id="scanned-data" class="scanned-data">Barcode: [Pending]</div>
-        <div id="status-text">Waiting for camera initialization...</div>
+    <!-- Main Data Form -->
+    <main class="form-container">
         
-        <div class="controls">
-            <button id="torch-btn">🔦 Toggle Light</button>
-            <button id="action-btn" disabled>SCAN BARCODE</button>
+        <!-- Hardware Data -->
+        <div class="form-group">
+            <label class="form-label">Product Serial Code</label>
+            <div class="input-with-icon">
+                <input type="text" id="pc-serial" placeholder="Scan or type serial...">
+                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Product Serial Code')">
+                    <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Office Suite -->
+        <div class="form-group">
+            <label class="form-label">Office Suite Installation</label>
+            <div class="segmented-control">
+                <input type="radio" id="office-ms" name="office_type" value="ms-office" onchange="toggleFields(); validateForm();">
+                <label for="office-ms">MS-Office</label>
+                
+                <input type="radio" id="office-libre" name="office_type" value="libre-office" onchange="toggleFields(); validateForm();" checked>
+                <label for="office-libre">Libre Office</label>
+            </div>
+            
+            <div id="ms-office-field" class="conditional-field">
+                <label class="form-label" style="font-size: 12px;">Product Key Microsoft Office</label>
+                <div class="input-with-icon">
+                    <input type="text" id="office-key" placeholder="XXXXX-XXXXX-XXXXX...">
+                    <button type="button" class="camera-btn" onclick="openScanner('office-key', 'Office Product Key')">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Antivirus -->
+        <div class="form-group">
+            <label class="form-label">Antivirus Protection</label>
+            <div class="segmented-control">
+                <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
+                <label for="av-norton">Norton</label>
+                
+                <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
+                <label for="av-mcafee">McAfee</label>
+
+                <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
+                <label for="av-none">Nessuno</label>
+            </div>
+
+            <div id="av-field" class="conditional-field">
+                <label class="form-label" id="av-key-label" style="font-size: 12px;">Product Key Antivirus</label>
+                <div class="input-with-icon">
+                    <input type="text" id="av-key" placeholder="XXXXX-XXXXX-XXXXX...">
+                    <button type="button" class="camera-btn" onclick="openScanner('av-key', 'Antivirus Product Key')">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Microsoft Account -->
+        <div class="form-group">
+            <div class="section-title">Microsoft Account</div>
+            
+            <label class="form-label">Username</label>
+            <div class="email-group" style="margin-bottom: 15px;">
+                <input type="text" id="ms-username" placeholder="name.surname" oninput="validateForm()">
+                <span>@</span>
+                <select id="ms-domain">
+                    <option value="outlook.it">outlook.it</option>
+                    <option value="outlook.com">outlook.com</option>
+                    <option value="hotmail.com">hotmail.com</option>
+                </select>
+            </div>
+
+            <label class="form-label">Password</label>
+            <input type="text" id="ms-password" class="standard-input" placeholder="Enter temporary password" oninput="validateForm()">
+        </div>
+
+        <!-- System Updates -->
+        <div class="form-group">
+            <div class="section-title">Windows Update</div>
+            <label class="checkbox-group">
+                <input type="checkbox" id="run-updates" checked>
+                <span>Esegui Windows Update al primo avvio</span>
+            </label>
+        </div>
+
+        <!-- Submit -->
+        <div class="submit-container">
+            <button id="submit-btn" disabled>Upload Data</button>
+        </div>
+
+    </main>
+
+    <!-- Camera Scanner Overlay Modal -->
+    <div id="scanner-modal">
+        <div class="modal-header">
+            <div class="modal-title" id="scanner-title">Scanning Context</div>
+            <button class="close-modal-btn" onclick="closeScanner()">&times;</button>
+        </div>
+        <div class="video-wrapper">
+            <video id="scanner-video" autoplay playsinline></video>
+            <div id="scanner-overlay"></div>
+        </div>
+        <div class="modal-footer">
+            <button id="capture-btn">SCAN IMAGE</button>
+            <div id="modal-status">Align the code inside the green box.</div>
         </div>
     </div>
-
-    <!-- Processing Canvas -->
-    <div id="debug-container">
-        <small>OCR Debug View (Processed Canvas):</small><br>
-        <canvas id="canvas"></canvas>
-    </div>
+    
+    <canvas id="hidden-canvas"></canvas>
 
 <script>
-    // --- Application Constants ---
-    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
-    const SERIAL_REGEX = /[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}/;
-
-    // --- DOM Elements ---
-    const video = document.getElementById('video');
-    const overlay = document.getElementById('overlay');
-    const canvas = document.getElementById('canvas');
-    const statusText = document.getElementById('status-text');
-    const stepIndicator = document.getElementById('step-indicator');
-    const scannedDataDisplay = document.getElementById('scanned-data');
-    const actionBtn = document.getElementById('action-btn');
-    const torchBtn = document.getElementById('torch-btn');
-    const debugContainer = document.getElementById('debug-container');
-    const operatorSelect = document.getElementById('operator-select');
-    const operatorStatus = document.getElementById('operator-status');
-
-    // --- Application State ---
-    let streamTrack = null;
-    let torchOn = false;
-    let currentStep = 1; // 1 = Barcode Scan, 2 = Serial OCR Scan
-    let capturedBarcode = null;
-
-    // --- Initialization ---
-    window.addEventListener('load', () => {
-        initializeStorage();
-        startCamera();
-    });
-
-    // --- LocalStorage Logic ---
-    function initializeStorage() {
-        const savedOperator = localStorage.getItem('selectedOperator');
-        if (savedOperator) {
-            operatorSelect.value = savedOperator;
-            operatorStatus.innerText = "Welcome back. Operator restored.";
-        }
+    // --- UI Logic & Form Validation ---
+    
+    const elements = {
+        pcSerial: document.getElementById('pc-serial'),
+        officeMs: document.getElementById('office-ms'),
+        officeKey: document.getElementById('office-key'),
+        msOfficeField: document.getElementById('ms-office-field'),
         
-        operatorSelect.addEventListener('change', () => {
-            const selectedValue = operatorSelect.value;
-            if (selectedValue) {
-                localStorage.setItem('selectedOperator', selectedValue);
-                operatorStatus.innerText = "Operator saved locally.";
-            } else {
-                localStorage.removeItem('selectedOperator');
-                operatorStatus.innerText = "No operator selected.";
-            }
-        });
+        avNorton: document.getElementById('av-norton'),
+        avMcafee: document.getElementById('av-mcafee'),
+        avKey: document.getElementById('av-key'),
+        avField: document.getElementById('av-field'),
+        avKeyLabel: document.getElementById('av-key-label'),
+        
+        msUsername: document.getElementById('ms-username'),
+        msPassword: document.getElementById('ms-password'),
+        submitBtn: document.getElementById('submit-btn')
+    };
+
+    // Listen to manual typing to trigger validation
+    elements.pcSerial.addEventListener('input', validateForm);
+    elements.officeKey.addEventListener('input', validateForm);
+    elements.avKey.addEventListener('input', validateForm);
+
+    function toggleFields() {
+        // Handle Office Logic
+        if (elements.officeMs.checked) {
+            elements.msOfficeField.classList.add('visible');
+        } else {
+            elements.msOfficeField.classList.remove('visible');
+            elements.officeKey.value = ''; // Clear if hidden
+        }
+
+        // Handle Antivirus Logic
+        if (elements.avNorton.checked || elements.avMcafee.checked) {
+            elements.avField.classList.add('visible');
+            elements.avKeyLabel.innerText = elements.avNorton.checked ? "Product key Norton Antivirus" : "Product key McAfee";
+        } else {
+            elements.avField.classList.remove('visible');
+            elements.avKey.value = ''; // Clear if hidden
+        }
     }
 
-    // --- Camera & Torch Logic ---
-    async function startCamera() {
+    function validateForm() {
+        let isValid = true;
+
+        // Rule 1: PC Serial cannot be empty
+        if (elements.pcSerial.value.trim() === '') isValid = false;
+
+        // Rule 2: If MS Office selected, key cannot be empty
+        if (elements.officeMs.checked && elements.officeKey.value.trim() === '') isValid = false;
+
+        // Rule 3: If AV selected, key cannot be empty
+        if ((elements.avNorton.checked || elements.avMcafee.checked) && elements.avKey.value.trim() === '') isValid = false;
+
+        // Rule 4: Username and Password cannot be empty
+        if (elements.msUsername.value.trim() === '') isValid = false;
+        if (elements.msPassword.value.trim() === '') isValid = false;
+
+        // Apply state
+        elements.submitBtn.disabled = !isValid;
+    }
+
+    // --- Scanner Overlay Logic ---
+    
+    let currentTargetInputId = null;
+    let streamTrack = null;
+    const scannerModal = document.getElementById('scanner-modal');
+    const video = document.getElementById('scanner-video');
+    const canvas = document.getElementById('hidden-canvas');
+    const overlay = document.getElementById('scanner-overlay');
+    const modalStatus = document.getElementById('modal-status');
+    const scannerTitle = document.getElementById('scanner-title');
+    const captureBtn = document.getElementById('capture-btn');
+
+    async function openScanner(targetInputId, contextTitle) {
+        currentTargetInputId = targetInputId;
+        scannerTitle.innerText = "Scanning: " + contextTitle;
+        modalStatus.innerText = "Initializing camera...";
+        scannerModal.classList.add('active');
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: "environment",
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
-                }
+                video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
             });
             video.srcObject = stream;
             streamTrack = stream.getVideoTracks()[0];
             
-            // Check torch compatibility
-            const capabilities = streamTrack.getCapabilities();
-            if (capabilities.torch) {
-                torchBtn.style.display = 'inline-block';
-            }
-
             video.onloadedmetadata = () => {
-                actionBtn.disabled = false;
-                statusText.innerText = "Ready. Align the Barcode and press scan.";
+                modalStatus.innerText = "Align code in green box and press Scan.";
             };
         } catch (err) {
-            statusText.innerText = "Camera Error: " + err.message;
+            modalStatus.innerText = "Camera Error: " + err.message;
         }
     }
 
-    torchBtn.addEventListener('click', async () => {
-        if (!streamTrack) return;
-        torchOn = !torchOn;
-        try {
-            await streamTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
-        } catch (err) {
-            console.error("Torch constraint failed", err);
+    function closeScanner() {
+        scannerModal.classList.remove('active');
+        if (streamTrack) {
+            streamTrack.stop();
+            video.srcObject = null;
         }
-    });
+        currentTargetInputId = null;
+    }
 
-    // --- Main Action Controller ---
-    actionBtn.addEventListener('click', async () => {
-        const operator = operatorSelect.value;
-        if (!operator) {
-            alert("SECURITY HALT: Please select an Operator ID before scanning.");
-            return;
-        }
-
-        actionBtn.disabled = true;
-
-        if (currentStep === 1) {
-            await executeBarcodeScan();
-        } else if (currentStep === 2) {
-            await executeSerialScan(operator);
-        }
-    });
-
-    // --- Step 1: Barcode Execution ---
-    async function executeBarcodeScan() {
-        statusText.innerText = "Analyzing Barcode Frame...";
+    captureBtn.addEventListener('click', async () => {
+        if (!currentTargetInputId) return;
+        
+        captureBtn.disabled = true;
+        modalStatus.innerText = "Processing image via OCR...";
         
         const context = canvas.getContext('2d', { willReadFrequently: true });
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        // Draw the full native frame for barcode detection
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        try {
-            capturedBarcode = await decodeBarcodeFromCanvas(canvas);
-            
-            // Success Feedback
-            if ("vibrate" in navigator) navigator.vibrate([150]);
-            scannedDataDisplay.innerText = "Barcode: " + capturedBarcode;
-            statusText.innerText = "Barcode Acquired! Switching to Serial Mode.";
-            
-            // Transition to Step 2
-            currentStep = 2;
-            updateSlideUI();
-
-        } catch (err) {
-            statusText.innerText = "❌ Barcode not detected. Please try again.";
-        } finally {
-            actionBtn.disabled = false;
-        }
-    }
-
-    // Hybrid Barcode Decoder (Native + ZXing Fallback)
-    async function decodeBarcodeFromCanvas(canvasElement) {
-        // 1. Try Native BarcodeDetector (Chrome Android, Safari 17+)
-        if ('BarcodeDetector' in window) {
-            try {
-                const detector = new BarcodeDetector();
-                const barcodes = await detector.detect(canvasElement);
-                if (barcodes.length > 0) return barcodes[0].rawValue;
-            } catch (e) {
-                console.warn("Native API failed, triggering ZXing fallback.");
-            }
-        }
         
-        // 2. Fallback to ZXing
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = canvasElement.toDataURL("image/jpeg", 0.8);
-            img.onload = async () => {
-                try {
-                    const codeReader = new ZXing.BrowserMultiFormatReader();
-                    const result = await codeReader.decodeFromImageElement(img);
-                    resolve(result.text);
-                } catch(e) {
-                    reject(new Error("Barcode decoding failed in fallback."));
-                }
-            };
-        });
-    }
-
-    // --- Step 2: Serial OCR Execution ---
-    async function executeSerialScan(operatorId) {
-        statusText.innerText = "Capturing and Enhancing Image...";
-        debugContainer.style.display = 'block';
-
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        
-        // --- ADVANCED CROPPING MATH FOR object-fit: cover ---
-        const containerRect = video.getBoundingClientRect();
+        // Exact cropping logic
+        const containerRect = video.parentElement.getBoundingClientRect();
         const overlayRect = overlay.getBoundingClientRect();
-        
         const videoRatio = video.videoWidth / video.videoHeight;
         const domRatio = containerRect.width / containerRect.height;
         
@@ -298,12 +384,10 @@
         let renderedOffsetX = 0, renderedOffsetY = 0;
 
         if (domRatio > videoRatio) {
-            // Container is wider than the video's aspect ratio. Top and bottom are cropped.
             actualRenderedWidth = containerRect.width;
             actualRenderedHeight = containerRect.width / videoRatio;
             renderedOffsetY = (actualRenderedHeight - containerRect.height) / 2;
         } else {
-            // Container is taller than video's aspect ratio. Left and right are cropped.
             actualRenderedHeight = containerRect.height;
             actualRenderedWidth = containerRect.height * videoRatio;
             renderedOffsetX = (actualRenderedWidth - containerRect.width) / 2;
@@ -316,28 +400,21 @@
         const cropY = ((overlayRect.top - containerRect.top) + renderedOffsetY) * scaleY;
         const cropW = overlayRect.width * scaleX;
         const cropH = overlayRect.height * scaleY;
-        // -----------------------------------------------------
 
-        // Set canvas exactly to the target crop size
         canvas.width = cropW;
         canvas.height = cropH;
 
-        // Extract and draw only the precise region of interest
         context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-        // Image Binarization (High Contrast Filter)
+        // Binarization
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
-        const threshold = 120;
-
         for (let i = 0; i < data.length; i += 4) {
             const luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
-            const color = luma > threshold ? 255 : 0;
+            const color = luma > 120 ? 255 : 0;
             data[i] = data[i+1] = data[i+2] = color;
         }
         context.putImageData(imageData, 0, 0);
-
-        statusText.innerText = "Tesseract OCR Engine Running...";
 
         try {
             const worker = await Tesseract.createWorker('eng');
@@ -350,69 +427,25 @@
             await worker.terminate();
 
             const text = result.data.text.toUpperCase().replace(/\s/g, '');
-            const match = text.match(SERIAL_REGEX);
-
-            if (match) {
-                const serialValue = match[0];
-                statusText.innerText = "Valid Serial Found! Transmitting payload...";
-
-                // Construct and send payload
-                const payload = {
-                    operator: operatorId,
-                    barcode: capturedBarcode,
-                    serial: serialValue,
-                    timestamp: new Date().toISOString()
-                };
-
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', 
-                    body: JSON.stringify(payload),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                statusText.innerText = "✅ Transmission Complete!";
-                if ("vibrate" in navigator) navigator.vibrate([500, 200, 500]);
-                
-                // Auto-reset workflow after 3 seconds
-                setTimeout(() => {
-                    resetWorkflow();
-                }, 3000);
-
+            
+            if (text.length > 5) { // Basic validation
+                document.getElementById(currentTargetInputId).value = text;
+                if ("vibrate" in navigator) navigator.vibrate([150]);
+                validateForm(); // Re-trigger form check
+                closeScanner();
             } else {
-                statusText.innerText = "❌ Invalid format. OCR Read: " + (text.substring(0,25) || "[Empty]");
+                modalStatus.innerText = "❌ Could not read clearly. Try again.";
             }
         } catch (err) {
-            statusText.innerText = "OCR Engine Error: " + err.message;
+            modalStatus.innerText = "OCR Error: " + err.message;
         } finally {
-            actionBtn.disabled = false;
+            captureBtn.disabled = false;
         }
-    }
+    });
 
-    // --- UI State Management ---
-    function updateSlideUI() {
-        if (currentStep === 1) {
-            stepIndicator.innerText = "STEP 1: Scan Barcode";
-            actionBtn.innerText = "SCAN BARCODE";
-            actionBtn.classList.remove("serial-mode");
-            overlay.classList.remove("serial-mode");
-        } else if (currentStep === 2) {
-            stepIndicator.innerText = "STEP 2: Scan Serial Code";
-            actionBtn.innerText = "SCAN SERIAL";
-            actionBtn.classList.add("serial-mode");
-            overlay.classList.add("serial-mode");
-        }
-    }
-
-    function resetWorkflow() {
-        currentStep = 1;
-        capturedBarcode = null;
-        scannedDataDisplay.innerText = "Barcode: [Pending]";
-        updateSlideUI();
-        statusText.innerText = "Ready. Align the Barcode and press scan.";
-        debugContainer.style.display = 'none';
-    }
-
+    // Run initial setup
+    toggleFields();
+    validateForm();
 </script>
 </body>
 </html>
