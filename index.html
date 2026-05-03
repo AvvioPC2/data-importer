@@ -1,76 +1,158 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Seriale Aziendale PRO</title>
+    <title>Enterprise Dual Scanner</title>
+    
+    <!-- Tesseract.js for OCR (Serial Code) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- ZXing for Barcode decoding fallback -->
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; margin: 0; padding: 20px; }
-        #video-container { position: relative; width: 100%; max-width: 500px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #000; }
-        video { width: 100%; display: block; }
-        /* Il mirino per l'utente */
+        /* Base Styling */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        
+        /* Operator Selection Section */
+        .header-container { width: 100%; max-width: 500px; text-align: center; margin-bottom: 20px; }
+        .operator-select { padding: 12px; border-radius: 8px; width: 100%; max-width: 300px; font-size: 16px; border: 1px solid #ccc; background: #fff; }
+        .operator-status { font-size: 13px; color: #666; margin-top: 8px; }
+
+        /* Video and Overlay Section */
+        #video-container { position: relative; width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.15); background: #000; }
+        video { width: 100%; display: block; object-fit: cover; }
+        
+        /* Dynamic Scanning Overlay */
         #overlay {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%; height: 60px;
-            border: 3px solid #00ff00; border-radius: 8px;
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5);
+            width: 80%; height: 120px; /* Default larger size for Barcode */
+            border: 3px solid #007bff; border-radius: 8px;
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.55);
             pointer-events: none;
+            transition: all 0.3s ease-in-out;
         }
-        #status { margin-top: 20px; font-weight: bold; color: #333; text-align: center; min-height: 24px; }
-        .controls { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
-        button {
-            padding: 15px 25px;
-            font-size: 16px; font-weight: bold;
-            border: none; border-radius: 50px; cursor: pointer; transition: background 0.2s;
+        /* Modifier for Serial Mode (smaller, green) */
+        #overlay.serial-mode {
+            height: 60px;
+            border-color: #28a745;
         }
-        #capture-btn { background: #007bff; color: white; }
-        #torch-btn { background: #ffc107; color: #333; display: none; /* Nascosto di default se non supportato */ }
-        button:disabled { background: #ccc !important; color: #666 !important; cursor: not-allowed; }
+
+        /* Information Panel */
+        .info-panel { margin-top: 20px; width: 100%; max-width: 500px; text-align: center; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); box-sizing: border-box; }
+        .step-indicator { font-weight: bold; font-size: 20px; color: #222; margin-bottom: 10px; }
+        .scanned-data { margin-bottom: 15px; font-size: 15px; color: #0056b3; min-height: 22px; font-family: monospace; background: #e9ecef; padding: 5px; border-radius: 5px; }
+        #status-text { font-weight: bold; color: #444; min-height: 24px; margin-bottom: 15px; }
         
-        /* Canvas visibile in fase di test per farti capire cosa "vede" Tesseract */
+        /* Controls Section */
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
+        button {
+            padding: 15px 25px; font-size: 16px; font-weight: bold;
+            border: none; border-radius: 50px; cursor: pointer; transition: background 0.2s, transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #d6d6d6 !important; color: #888 !important; cursor: not-allowed; transform: none; }
+        
+        /* Dynamic Main Button */
+        #action-btn { background: #007bff; color: white; width: 100%; max-width: 300px; }
+        #action-btn.serial-mode { background: #28a745; }
+        #torch-btn { background: #ffc107; color: #333; display: none; }
+
+        /* Debug Canvas (Hidden by default in production) */
         #debug-container { margin-top: 20px; text-align: center; width: 100%; max-width: 500px; display: none; }
-        canvas { border: 1px solid #ccc; max-width: 100%; height: auto; }
+        canvas { border: 1px solid #ccc; max-width: 100%; height: auto; border-radius: 8px; }
     </style>
 </head>
 <body>
 
-    <h2>Scanner Seriale</h2>
+    <!-- Operator Selection -->
+    <div class="header-container">
+        <label for="operator-select" style="display: block; margin-bottom: 8px; font-weight: bold;">Operator ID:</label>
+        <select id="operator-select" class="operator-select">
+            <option value="">-- Select Operator --</option>
+            <option value="USR-001">USR-001 (John Doe)</option>
+            <option value="USR-002">USR-002 (Jane Smith)</option>
+            <option value="USR-003">USR-003 (Alan Turing)</option>
+        </select>
+        <div id="operator-status" class="operator-status"></div>
+    </div>
 
+    <!-- Camera Viewport -->
     <div id="video-container">
         <video id="video" autoplay playsinline></video>
         <div id="overlay"></div>
     </div>
 
-    <div id="status">In attesa della fotocamera...</div>
-    
-    <div class="controls">
-        <button id="torch-btn">🔦 Accendi Luce</button>
-        <button id="capture-btn" disabled>SCANSIONA E INVIA</button>
+    <!-- UI State Panel -->
+    <div class="info-panel">
+        <div id="step-indicator" class="step-indicator">STEP 1: Scan Barcode</div>
+        <div id="scanned-data" class="scanned-data">Barcode: [Pending]</div>
+        <div id="status-text">Waiting for camera initialization...</div>
+        
+        <div class="controls">
+            <button id="torch-btn">🔦 Toggle Light</button>
+            <button id="action-btn" disabled>SCAN BARCODE</button>
+        </div>
     </div>
 
+    <!-- Processing Canvas -->
     <div id="debug-container">
-        <small>Cosa legge l'OCR (Immagine ottimizzata):</small><br>
+        <small>OCR Debug View (Processed Canvas):</small><br>
         <canvas id="canvas"></canvas>
     </div>
 
 <script>
+    // --- Application Constants ---
+    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+    const SERIAL_REGEX = /[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}/;
+
+    // --- DOM Elements ---
     const video = document.getElementById('video');
     const overlay = document.getElementById('overlay');
     const canvas = document.getElementById('canvas');
-    const status = document.getElementById('status');
-    const btnCapture = document.getElementById('capture-btn');
-    const btnTorch = document.getElementById('torch-btn');
+    const statusText = document.getElementById('status-text');
+    const stepIndicator = document.getElementById('step-indicator');
+    const scannedDataDisplay = document.getElementById('scanned-data');
+    const actionBtn = document.getElementById('action-btn');
+    const torchBtn = document.getElementById('torch-btn');
     const debugContainer = document.getElementById('debug-container');
+    const operatorSelect = document.getElementById('operator-select');
+    const operatorStatus = document.getElementById('operator-status');
 
-    const GOOGLE_SCRIPT_URL = 'IL_TUO_URL_QUI';
-    const SERIAL_REGEX = /[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}/;
+    // --- Application State ---
+    let streamTrack = null;
+    let torchOn = false;
+    let currentStep = 1; // 1 = Barcode Scan, 2 = Serial OCR Scan
+    let capturedBarcode = null;
 
-    let imageCapture;
-    let streamTrack;
+    // --- Initialization ---
+    window.addEventListener('load', () => {
+        initializeStorage();
+        startCamera();
+    });
 
-    // 1. OTTIMIZZAZIONE FOTOCAMERA: Richiesta alta risoluzione
+    // --- LocalStorage Logic ---
+    function initializeStorage() {
+        const savedOperator = localStorage.getItem('selectedOperator');
+        if (savedOperator) {
+            operatorSelect.value = savedOperator;
+            operatorStatus.innerText = "Welcome back, Operator restored.";
+        }
+        
+        operatorSelect.addEventListener('change', () => {
+            const selectedValue = operatorSelect.value;
+            if (selectedValue) {
+                localStorage.setItem('selectedOperator', selectedValue);
+                operatorStatus.innerText = "Operator saved locally.";
+            } else {
+                localStorage.removeItem('selectedOperator');
+                operatorStatus.innerText = "No operator selected.";
+            }
+        });
+    }
+
+    // --- Camera & Torch Logic ---
     async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -83,43 +165,114 @@
             video.srcObject = stream;
             streamTrack = stream.getVideoTracks()[0];
             
-            // Verifica supporto Torcia
+            // Check torch compatibility
             const capabilities = streamTrack.getCapabilities();
             if (capabilities.torch) {
-                btnTorch.style.display = 'inline-block';
+                torchBtn.style.display = 'inline-block';
             }
 
-            // Attendiamo che il video sia pronto per calcolare le dimensioni
             video.onloadedmetadata = () => {
-                btnCapture.disabled = false;
-                status.innerText = "Inquadra il seriale nel rettangolo verde.";
+                actionBtn.disabled = false;
+                statusText.innerText = "Ready. Align the Barcode and press scan.";
             };
         } catch (err) {
-            status.innerText = "Errore fotocamera: " + err.message;
+            statusText.innerText = "Camera Error: " + err.message;
         }
     }
 
-    // Gestione Torcia
-    let torchOn = false;
-    btnTorch.addEventListener('click', async () => {
+    torchBtn.addEventListener('click', async () => {
         if (!streamTrack) return;
         torchOn = !torchOn;
         try {
             await streamTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
-            btnTorch.innerText = torchOn ? "🔦 Spegni Luce" : "🔦 Accendi Luce";
         } catch (err) {
-            console.error("Errore torcia", err);
+            console.error("Torch constraint failed", err);
         }
     });
 
-    btnCapture.addEventListener('click', async () => {
-        btnCapture.disabled = true;
-        status.innerText = "Elaborazione immagine in corso...";
+    // --- Main Action Controller ---
+    actionBtn.addEventListener('click', async () => {
+        const operator = operatorSelect.value;
+        if (!operator) {
+            alert("SECURITY HALT: Please select an Operator ID before scanning.");
+            return;
+        }
+
+        actionBtn.disabled = true;
+
+        if (currentStep === 1) {
+            await executeBarcodeScan();
+        } else if (currentStep === 2) {
+            await executeSerialScan(operator);
+        }
+    });
+
+    // --- Step 1: Barcode Execution ---
+    async function executeBarcodeScan() {
+        statusText.innerText = "Analyzing Barcode Frame...";
+        
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        // Draw the full frame for barcode detection
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        try {
+            capturedBarcode = await decodeBarcodeFromCanvas(canvas);
+            
+            // Success Feedback
+            if ("vibrate" in navigator) navigator.vibrate([150]);
+            scannedDataDisplay.innerText = "Barcode: " + capturedBarcode;
+            statusText.innerText = "Barcode Acquired! Switching to Serial Mode.";
+            
+            // Transition to Step 2
+            currentStep = 2;
+            updateSlideUI();
+
+        } catch (err) {
+            statusText.innerText = "❌ Barcode not detected. Please try again.";
+        } finally {
+            actionBtn.disabled = false;
+        }
+    }
+
+    // Hybrid Barcode Decoder (Native + ZXing Fallback)
+    async function decodeBarcodeFromCanvas(canvasElement) {
+        // 1. Try Native BarcodeDetector (Chrome Android, Safari 17+)
+        if ('BarcodeDetector' in window) {
+            try {
+                const detector = new BarcodeDetector();
+                const barcodes = await detector.detect(canvasElement);
+                if (barcodes.length > 0) return barcodes[0].rawValue;
+            } catch (e) {
+                console.warn("Native API failed, triggering ZXing fallback.");
+            }
+        }
+        
+        // 2. Fallback to ZXing
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = canvasElement.toDataURL("image/jpeg", 0.8);
+            img.onload = async () => {
+                try {
+                    const codeReader = new ZXing.BrowserMultiFormatReader();
+                    const result = await codeReader.decodeFromImageElement(img);
+                    resolve(result.text);
+                } catch(e) {
+                    reject(new Error("Barcode decoding failed in fallback."));
+                }
+            };
+        });
+    }
+
+    // --- Step 2: Serial OCR Execution ---
+    async function executeSerialScan(operatorId) {
+        statusText.innerText = "Capturing and Enhancing Image...";
         debugContainer.style.display = 'block';
 
         const context = canvas.getContext('2d', { willReadFrequently: true });
         
-        // 2. RITAGLIO (CROPPING): Calcoliamo le proporzioni esatte
+        // Calculate exact bounding box for cropping based on overlay size
         const scaleX = video.videoWidth / video.clientWidth;
         const scaleY = video.videoHeight / video.clientHeight;
         const overlayRect = overlay.getBoundingClientRect();
@@ -130,36 +283,31 @@
         const cropW = overlayRect.width * scaleX;
         const cropH = overlayRect.height * scaleY;
 
-        // Imposta il canvas ESATTAMENTE sulla dimensione del ritaglio
         canvas.width = cropW;
         canvas.height = cropH;
 
-        // Disegna solo la porzione interessata
+        // Extract and draw only the region of interest
         context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-        // 3. BINARIZZAZIONE: Trasforma in scala di grigi e alza il contrasto al massimo
+        // Image Binarization (High Contrast Filter)
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
-        const threshold = 120; // Regola questo valore (0-255) se i testi sono troppo chiari o scuri
+        const threshold = 120;
 
         for (let i = 0; i < data.length; i += 4) {
-            // Calcolo luminosità (Grayscale)
             const luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
-            // Applica la soglia (Binarization)
             const color = luma > threshold ? 255 : 0;
-            data[i] = data[i+1] = data[i+2] = color; // Assegna il nuovo colore a RGB
+            data[i] = data[i+1] = data[i+2] = color;
         }
         context.putImageData(imageData, 0, 0);
 
-        status.innerText = "Analisi OCR in corso...";
+        statusText.innerText = "Tesseract OCR Engine Running...";
 
         try {
-            // 4. CONFIGURAZIONE TESSERACT: Worker API per parametri precisi
             const worker = await Tesseract.createWorker('eng');
-            
             await worker.setParameters({
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-', // Solo questi caratteri ammessi
-                tessedit_pageseg_mode: '7', // Tratta l'immagine come una singola riga di testo
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-',
+                tessedit_pageseg_mode: '7',
             });
 
             const result = await worker.recognize(canvas);
@@ -169,29 +317,66 @@
             const match = text.match(SERIAL_REGEX);
 
             if (match) {
-                const serialeTrovato = match[0];
-                status.innerText = "Trovato: " + serialeTrovato + "\nInvio a Google Sheets...";
+                const serialValue = match[0];
+                statusText.innerText = "Valid Serial Found! Transmitting payload...";
 
-                // Invia a Google Sheets
+                // Construct and send payload
+                const payload = {
+                    operator: operatorId,
+                    barcode: capturedBarcode,
+                    serial: serialValue,
+                    timestamp: new Date().toISOString()
+                };
+
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors', 
-                    body: JSON.stringify({ seriale: serialeTrovato }),
+                    body: JSON.stringify(payload),
                     headers: { 'Content-Type': 'application/json' }
                 });
 
-                status.innerText = "✅ Seriale inviato: " + serialeTrovato;
+                statusText.innerText = "✅ Transmission Complete!";
+                if ("vibrate" in navigator) navigator.vibrate([500, 200, 500]);
+                
+                // Auto-reset workflow after 3 seconds
+                setTimeout(() => {
+                    resetWorkflow();
+                }, 3000);
+
             } else {
-                status.innerText = "❌ Formato non riconosciuto. Letto: " + (text.substring(0,25) || "Niente");
+                statusText.innerText = "❌ Invalid format. OCR Read: " + (text.substring(0,25) || "[Empty]");
             }
         } catch (err) {
-            status.innerText = "Errore OCR: " + err.message;
+            statusText.innerText = "OCR Engine Error: " + err.message;
         } finally {
-            btnCapture.disabled = false;
+            actionBtn.disabled = false;
         }
-    });
+    }
 
-    startCamera();
+    // --- UI State Management ---
+    function updateSlideUI() {
+        if (currentStep === 1) {
+            stepIndicator.innerText = "STEP 1: Scan Barcode";
+            actionBtn.innerText = "SCAN BARCODE";
+            actionBtn.classList.remove("serial-mode");
+            overlay.classList.remove("serial-mode");
+        } else if (currentStep === 2) {
+            stepIndicator.innerText = "STEP 2: Scan Serial Code";
+            actionBtn.innerText = "SCAN SERIAL";
+            actionBtn.classList.add("serial-mode");
+            overlay.classList.add("serial-mode");
+        }
+    }
+
+    function resetWorkflow() {
+        currentStep = 1;
+        capturedBarcode = null;
+        scannedDataDisplay.innerText = "Barcode: [Pending]";
+        updateSlideUI();
+        statusText.innerText = "Ready. Align the Barcode and press scan.";
+        debugContainer.style.display = 'none';
+    }
+
 </script>
 </body>
 </html>
