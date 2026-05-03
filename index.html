@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AvvioPC 2 - Dashboard</title>
     
-    <!-- Tesseract.js for OCR -->
+    <!-- Tesseract.js for OCR (Product Keys) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <!-- ZXing for Barcode -->
+    <!-- ZXing for Barcode (Serial Number) -->
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     
     <style>
@@ -179,23 +179,13 @@
     <!-- Main Data Entry Form -->
     <main class="form-container">
         
-        <!-- Barcode Section (Hardware Box) -->
-        <div class="form-group">
-            <label class="form-label">Codice a barre</label>
-            <div class="input-with-icon">
-                <input type="text" id="pc-barcode" placeholder="...">
-                <button type="button" class="camera-btn" onclick="openScanner('pc-barcode', 'Codice a barre', 'barcode')">
-                    <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Serial Data Section (OCR) -->
+        <!-- Serial Data Section (BARCODE AUTO-SCAN) -->
         <div class="form-group">
             <label class="form-label">Serial number del prodotto</label>
             <div class="input-with-icon">
                 <input type="text" id="pc-serial" placeholder="...">
-                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Serial number del prodotto', 'ocr')">
+                <!-- Switched to 'barcode' mode for continuous auto-scan -->
+                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Serial number del prodotto', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
             </div>
@@ -216,6 +206,7 @@
                 <label class="form-label" style="font-size: 12px;">Product Key Microsoft Office</label>
                 <div class="input-with-icon">
                     <input type="text" id="office-key" placeholder="...">
+                    <!-- Retained 'ocr' mode for text reading -->
                     <button type="button" class="camera-btn" onclick="openScanner('office-key', 'Product Key Microsoft Office', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
@@ -241,6 +232,7 @@
                 <label class="form-label" id="av-key-label" style="font-size: 12px;">Product Key Antivirus</label>
                 <div class="input-with-icon">
                     <input type="text" id="av-key" placeholder="...">
+                    <!-- Retained 'ocr' mode for text reading -->
                     <button type="button" class="camera-btn" onclick="openScanner('av-key', 'Product Key Antivirus', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
@@ -312,7 +304,6 @@
 
     // --- UI Logic & Form Validation ---
     const elements = {
-        pcBarcode: document.getElementById('pc-barcode'),
         pcSerial: document.getElementById('pc-serial'),
         officeMs: document.getElementById('office-ms'),
         officeKey: document.getElementById('office-key'),
@@ -330,7 +321,6 @@
     };
 
     // Attach listeners
-    elements.pcBarcode.addEventListener('input', validateForm);
     elements.pcSerial.addEventListener('input', validateForm);
     elements.officeKey.addEventListener('input', validateForm);
     elements.avKey.addEventListener('input', validateForm);
@@ -354,7 +344,6 @@
 
     function validateForm() {
         let isValid = true;
-        if (elements.pcBarcode.value.trim() === '') isValid = false;
         if (elements.pcSerial.value.trim() === '') isValid = false;
         if (elements.officeMs.checked && elements.officeKey.value.trim() === '') isValid = false;
         if ((elements.avNorton.checked || elements.avMcafee.checked) && elements.avKey.value.trim() === '') isValid = false;
@@ -406,7 +395,6 @@
                     facingMode: "environment", 
                     width: { ideal: 1920 }, 
                     height: { ideal: 1080 },
-                    // These tell the OS to not constantly refocus or change brightness
                     advanced: [{ focusMode: "continuous" }, { exposureMode: "continuous" }]
                 }
             });
@@ -440,7 +428,7 @@
     function startBarcodeAutoScan() {
         const context = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Run analysis 3 times per second (prevents UI freeze while scanning fast)
+        // Run analysis 3 times per second
         autoScanInterval = setInterval(async () => {
             if (!video.videoWidth) return;
 
