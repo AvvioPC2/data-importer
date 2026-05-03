@@ -19,9 +19,24 @@
         .operator-select { padding: 12px; border-radius: 8px; width: 100%; max-width: 300px; font-size: 16px; border: 1px solid #ccc; background: #fff; }
         .operator-status { font-size: 13px; color: #666; margin-top: 8px; }
 
-        /* Video and Overlay Section */
-        #video-container { position: relative; width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.15); background: #000; }
-        video { width: 100%; display: block; object-fit: cover; }
+        /* Video and Overlay Section - HEIGHT OPTIMIZED FOR MOBILE */
+        #video-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 500px; 
+            height: 350px; /* Fixed height to prevent vertical scrolling */
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15); 
+            background: #000; 
+        }
+        
+        video { 
+            width: 100%; 
+            height: 100%; 
+            display: block; 
+            object-fit: cover; /* Ensures video fills the container without aspect ratio distortion */
+        }
         
         /* Dynamic Scanning Overlay */
         #overlay {
@@ -33,7 +48,7 @@
             pointer-events: none;
             transition: all 0.3s ease-in-out;
         }
-        /* Modifier for Serial Mode (smaller, green) */
+        /* Modifier for Serial Mode (smaller height, green border) */
         #overlay.serial-mode {
             height: 60px;
             border-color: #28a745;
@@ -42,7 +57,7 @@
         /* Information Panel */
         .info-panel { margin-top: 20px; width: 100%; max-width: 500px; text-align: center; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); box-sizing: border-box; }
         .step-indicator { font-weight: bold; font-size: 20px; color: #222; margin-bottom: 10px; }
-        .scanned-data { margin-bottom: 15px; font-size: 15px; color: #0056b3; min-height: 22px; font-family: monospace; background: #e9ecef; padding: 5px; border-radius: 5px; }
+        .scanned-data { margin-bottom: 15px; font-size: 15px; color: #0056b3; min-height: 22px; font-family: monospace; background: #e9ecef; padding: 5px; border-radius: 5px; word-break: break-all; }
         #status-text { font-weight: bold; color: #444; min-height: 24px; margin-bottom: 15px; }
         
         /* Controls Section */
@@ -137,7 +152,7 @@
         const savedOperator = localStorage.getItem('selectedOperator');
         if (savedOperator) {
             operatorSelect.value = savedOperator;
-            operatorStatus.innerText = "Welcome back, Operator restored.";
+            operatorStatus.innerText = "Welcome back. Operator restored.";
         }
         
         operatorSelect.addEventListener('change', () => {
@@ -214,7 +229,7 @@
         const context = canvas.getContext('2d', { willReadFrequently: true });
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        // Draw the full frame for barcode detection
+        // Draw the full native frame for barcode detection
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         try {
@@ -272,21 +287,42 @@
 
         const context = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Calculate exact bounding box for cropping based on overlay size
-        const scaleX = video.videoWidth / video.clientWidth;
-        const scaleY = video.videoHeight / video.clientHeight;
+        // --- ADVANCED CROPPING MATH FOR object-fit: cover ---
+        const containerRect = video.getBoundingClientRect();
         const overlayRect = overlay.getBoundingClientRect();
-        const videoRect = video.getBoundingClientRect();
         
-        const cropX = (overlayRect.left - videoRect.left) * scaleX;
-        const cropY = (overlayRect.top - videoRect.top) * scaleY;
+        const videoRatio = video.videoWidth / video.videoHeight;
+        const domRatio = containerRect.width / containerRect.height;
+        
+        let actualRenderedWidth, actualRenderedHeight;
+        let renderedOffsetX = 0, renderedOffsetY = 0;
+
+        if (domRatio > videoRatio) {
+            // Container is wider than the video's aspect ratio. Top and bottom are cropped.
+            actualRenderedWidth = containerRect.width;
+            actualRenderedHeight = containerRect.width / videoRatio;
+            renderedOffsetY = (actualRenderedHeight - containerRect.height) / 2;
+        } else {
+            // Container is taller than video's aspect ratio. Left and right are cropped.
+            actualRenderedHeight = containerRect.height;
+            actualRenderedWidth = containerRect.height * videoRatio;
+            renderedOffsetX = (actualRenderedWidth - containerRect.width) / 2;
+        }
+
+        const scaleX = video.videoWidth / actualRenderedWidth;
+        const scaleY = video.videoHeight / actualRenderedHeight;
+
+        const cropX = ((overlayRect.left - containerRect.left) + renderedOffsetX) * scaleX;
+        const cropY = ((overlayRect.top - containerRect.top) + renderedOffsetY) * scaleY;
         const cropW = overlayRect.width * scaleX;
         const cropH = overlayRect.height * scaleY;
+        // -----------------------------------------------------
 
+        // Set canvas exactly to the target crop size
         canvas.width = cropW;
         canvas.height = cropH;
 
-        // Extract and draw only the region of interest
+        // Extract and draw only the precise region of interest
         context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
         // Image Binarization (High Contrast Filter)
