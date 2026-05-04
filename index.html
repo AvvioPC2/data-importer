@@ -97,6 +97,12 @@
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
 
+		/* Regola specifica per far stare 29 caratteri nei Product Key */
+		#office-key, #av-key {
+			font-size: 13px; /* Prova a variare tra 12px e 14px per trovare il bilanciamento perfetto */
+			letter-spacing: -0.5px; /* Piccolo trucco da web designer: avvicina leggermente i caratteri per recuperare spazio prezioso */
+		}
+
         /* Conditional Fields */
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
