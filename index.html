@@ -79,7 +79,7 @@
         /* Input Layouts */
         .input-with-icon { display: flex; align-items: stretch; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background: #fff; transition: border-color 0.2s; }
         .input-with-icon:focus-within { border-color: var(--accent-color); }
-        .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; }
+        .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
         .camera-btn { 
             background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); 
             padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -101,16 +101,18 @@
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
-        /* Email Group - Mobile Optimized Layout */
+        /* Email Group - Mobile Optimized Layout (MODIFICATO PER SPAZIO @) */
         .email-group { 
-            display: flex; align-items: center; gap: 5px; 
+            display: flex; align-items: center; gap: 0; /* Nessun divario forzato */
             border: 1px solid var(--border-color); border-radius: var(--border-radius); 
             background: #fff; margin-bottom: 15px; padding-right: 8px; 
+            transition: border-color 0.2s;
         }
+        .email-group:focus-within { border-color: var(--accent-color); }
         .email-group input { 
             flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; 
         }
-        .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; }
+        .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
         .email-group select { 
             flex: 0 0 auto; border: none; outline: none; font-size: 16px; 
             background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; 
@@ -210,14 +212,15 @@
         <div class="form-group">
             <label class="form-label">Serial number del prodotto</label>
             <div class="input-with-icon">
-                <input type="text" id="pc-serial" placeholder="...">
+                <!-- Disabilitiamo il text-transform per il seriale nel caso contenga minuscole rilevanti -->
+                <input type="text" id="pc-serial" placeholder="..." style="text-transform: none;">
                 <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Serial number del prodotto', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
             </div>
         </div>
-		
-		<!-- Local Account Section -->
+
+        <!-- Local Account Section -->
         <div class="form-group">
             <label class="form-label">Nome account locale (Windows)</label>
             <input type="text" id="local-account" class="standard-input" placeholder="Es. Mario Rossi" oninput="validateForm()">
@@ -237,7 +240,7 @@
             <div id="ms-office-field" class="conditional-field">
                 <label class="form-label" style="font-size: 14px;">Product Key Microsoft Office</label>
                 <div class="input-with-icon">
-                    <input type="text" id="office-key" placeholder="...">
+                    <input type="text" id="office-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" oninput="formatProductKey(this, '-')">
                     <button type="button" class="camera-btn" onclick="openScanner('office-key', 'Product Key Microsoft Office', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
@@ -262,7 +265,7 @@
             <div id="av-field" class="conditional-field">
                 <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key Antivirus</label>
                 <div class="input-with-icon">
-                    <input type="text" id="av-key" placeholder="...">
+                    <input type="text" id="av-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" oninput="formatAvKey(this)">
                     <button type="button" class="camera-btn" onclick="openScanner('av-key', 'Product Key Antivirus', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
@@ -276,7 +279,7 @@
             
             <label class="form-label">Nome utente</label>
             <div class="email-group">
-                <input type="text" id="ms-username" placeholder="..." oninput="validateForm()">
+                <input type="text" id="ms-username" placeholder="Inserisci username" oninput="validateForm()">
                 <span>@</span>
                 <select id="ms-domain">
                     <option value="outlook.it">outlook.it</option>
@@ -358,7 +361,7 @@
         nativeBarcodeDetector = new BarcodeDetector();
     }
     
-    // Persistent Tesseract Worker (Massive Speed Optimization)
+    // Persistent Tesseract Worker
     let tesseractWorker = null;
     let isOcrReady = false;
 
@@ -379,7 +382,7 @@
     // --- DOM Elements ---
     const elements = {
         pcSerial: document.getElementById('pc-serial'),
-		localAccount: document.getElementById('local-account'),
+        localAccount: document.getElementById('local-account'),
         officeMs: document.getElementById('office-ms'),
         officeKey: document.getElementById('office-key'),
         msOfficeField: document.getElementById('ms-office-field'),
@@ -404,8 +407,40 @@
     // --- Boot Sequence ---
     window.addEventListener('load', () => {
         initializeOperatorSystem();
-        initializeOCRWorker(); // Pre-load OCR engine in background
+        initializeOCRWorker(); 
     });
+
+    // --- Input Masking Logic ---
+    function formatProductKey(inputElement, separator) {
+        let cursorPosition = inputElement.selectionStart;
+        let originalValue = inputElement.value;
+        
+        // Rimuovi tutto tranne alfanumerici e forza maiuscolo
+        let rawValue = originalValue.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
+        let formattedValue = '';
+        
+        // Costruisci stringa con separatore ogni 5 caratteri
+        for (let i = 0; i < rawValue.length; i++) {
+            if (i > 0 && i % 5 === 0) formattedValue += separator;
+            formattedValue += rawValue[i];
+        }
+        
+        inputElement.value = formattedValue;
+        
+        // Mantieni la posizione del cursore calcolando la differenza di lunghezza
+        let addedChars = formattedValue.length - originalValue.length;
+        let newCursorPos = cursorPosition + addedChars;
+        if (newCursorPos < 0) newCursorPos = 0;
+        
+        inputElement.setSelectionRange(newCursorPos, newCursorPos);
+        validateForm();
+    }
+
+    function formatAvKey(inputElement) {
+        const isNorton = elements.avNorton.checked;
+        const separator = isNorton ? ' ' : '-';
+        formatProductKey(inputElement, separator);
+    }
 
     // --- Operator Logic ---
     function initializeOperatorSystem() {
@@ -436,13 +471,11 @@
     function saveOperatorSelection() {
         const selectedId = elements.operatorDropdown.value;
         currentOperatorId = selectedId;
-        
         if (selectedId === "00000") {
             localStorage.removeItem('operator_id');
         } else {
             localStorage.setItem('operator_id', selectedId);
         }
-        
         updateOperatorUI();
         closeOperatorModal();
     }
@@ -461,9 +494,7 @@
 
     // --- Form Logic & Validation ---
     elements.pcSerial.addEventListener('input', validateForm);
-    elements.officeKey.addEventListener('input', validateForm);
-    elements.avKey.addEventListener('input', validateForm);
-
+    
     function toggleFields() {
         if (elements.officeMs.checked) {
             elements.msOfficeField.classList.add('visible');
@@ -475,6 +506,13 @@
         if (elements.avNorton.checked || elements.avMcafee.checked) {
             elements.avField.classList.add('visible');
             elements.avKeyLabel.innerText = elements.avNorton.checked ? "Product key Norton Antivirus" : "Product key McAfee";
+            // Aggiorna dinamicamente il placeholder e forza la formattazione se c'è già del testo
+            if (elements.avNorton.checked) {
+                elements.avKey.placeholder = "XXXXX XXXXX XXXXX XXXXX XXXXX";
+            } else {
+                elements.avKey.placeholder = "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX";
+            }
+            if (elements.avKey.value !== '') formatAvKey(elements.avKey);
         } else {
             elements.avField.classList.remove('visible');
             elements.avKey.value = ''; 
@@ -486,9 +524,12 @@
         
         if (currentOperatorId === "00000") isValid = false;
         if (elements.pcSerial.value.trim() === '') isValid = false;
-		if (elements.localAccount.value.trim() === '') isValid = false;
-        if (elements.officeMs.checked && elements.officeKey.value.trim() === '') isValid = false;
-        if ((elements.avNorton.checked || elements.avMcafee.checked) && elements.avKey.value.trim() === '') isValid = false;
+        if (elements.localAccount.value.trim() === '') isValid = false;
+        
+        // Verifica che le chiavi inserite (se richieste) siano lunghe almeno 29 caratteri (25 alfanumerici + 4 separatori)
+        if (elements.officeMs.checked && elements.officeKey.value.length < 29) isValid = false;
+        if ((elements.avNorton.checked || elements.avMcafee.checked) && elements.avKey.value.length < 29) isValid = false;
+        
         if (elements.msUsername.value.trim() === '') isValid = false;
         if (elements.msPassword.value.trim() === '') isValid = false;
 
@@ -497,7 +538,7 @@
 
     function resetForm() {
         elements.pcSerial.value = '';
-		elements.localAccount.value = '';
+        elements.localAccount.value = '';
         elements.officeKey.value = '';
         elements.avKey.value = '';
         elements.msUsername.value = '';
@@ -524,7 +565,7 @@
         const payload = {
             operator: operatorName,
             pc_serial: elements.pcSerial.value.trim(),
-			local_account: elements.localAccount.value.trim(),
+            local_account: elements.localAccount.value.trim(),
             office_suite: document.querySelector('input[name="office_type"]:checked').value,
             office_key: elements.officeKey.value.trim(),
             antivirus: document.querySelector('input[name="av_type"]:checked').value,
@@ -681,7 +722,6 @@
     captureBtn.addEventListener('click', async () => {
         if (!currentTargetInputId || currentScanMode !== 'ocr') return;
         
-        // Failsafe: Ensure OCR is initialized before processing
         if (!isOcrReady) {
             modalStatus.innerText = "Inizializzazione motore OCR in corso, attendere...";
             await initializeOCRWorker();
@@ -744,12 +784,17 @@
 
         try {
             const result = await tesseractWorker.recognize(canvas);
-            const text = result.data.text.toUpperCase().replace(/\s/g, '');
+            const text = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, ''); // Puliamo a monte da OCR
             
             if (text.length > 5) {
-                document.getElementById(currentTargetInputId).value = text;
+                const targetInput = document.getElementById(currentTargetInputId);
+                targetInput.value = text;
+                
+                // Forziamo il trigger dell'evento "input" così le nostre nuove maschere di formattazione 
+                // scattano automaticamente non appena la fotocamera immette il testo OCR
+                targetInput.dispatchEvent(new Event('input'));
+
                 if ("vibrate" in navigator) navigator.vibrate([150]);
-                validateForm();
                 closeScanner();
             } else {
                 modalStatus.innerText = "❌ Scansione fallita. Riprova.";
