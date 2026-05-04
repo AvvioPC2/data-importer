@@ -197,7 +197,6 @@
             <img src="logo.png" alt="Company Logo" class="header-logo" onerror="this.style.display='none'">
             <div class="app-title">AvvioPC 2</div>
         </div>
-        <!-- Updated Operator Badge -->
         <div class="operator-badge" onclick="openOperatorModal()">
             <div class="operator-label">Operatore</div>
             <div class="operator-id-display" id="header-operator-id">00000</div>
@@ -338,22 +337,37 @@
     // --- Configuration ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIbF5CTeFzENAOT_8kfb01AlRCIagclrTczeizuadgyDZgQP0G6NAXtu7gxH57kk8/exec';
 
-    // --- Mock Database (Operators) ---
-    // Update this array to add/remove authorized operators
+    // --- Local Database (Operators) ---
     const OPERATOR_DB = [
-        { id: "35259", lastName: "Chin",    firstName: "Paolo" },
-        { id: "22598", lastName: "Girardi", firstName: "Sofia" },
-        { id: "98765", lastName: "Verdi",   firstName: "Anna" },
-        { id: "11223", lastName: "Neri",    firstName: "Paolo" }
+        { id: "35259", lastName: "Chin", firstName: "Paolo" },
+        { id: "22598", lastName: "Girardi", firstName: "Sofia" }
     ];
 
     let currentOperatorId = "00000";
 
-    // --- Global Instances for Camera Performance ---
+    // --- Global Instances for Performance (OCR & Barcode) ---
     const zxingReader = new ZXing.BrowserMultiFormatReader();
     let nativeBarcodeDetector = null;
     if ('BarcodeDetector' in window) {
         nativeBarcodeDetector = new BarcodeDetector();
+    }
+    
+    // Persistent Tesseract Worker (Massive Speed Optimization)
+    let tesseractWorker = null;
+    let isOcrReady = false;
+
+    async function initializeOCRWorker() {
+        try {
+            tesseractWorker = await Tesseract.createWorker('eng');
+            await tesseractWorker.setParameters({
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-',
+                tessedit_pageseg_mode: '7',
+            });
+            isOcrReady = true;
+            console.log("OCR Engine initialized and ready.");
+        } catch (e) {
+            console.error("Failed to initialize OCR Engine:", e);
+        }
     }
 
     // --- DOM Elements ---
@@ -383,11 +397,11 @@
     // --- Boot Sequence ---
     window.addEventListener('load', () => {
         initializeOperatorSystem();
+        initializeOCRWorker(); // Pre-load OCR engine in background
     });
 
     // --- Operator Logic ---
     function initializeOperatorSystem() {
-        // Populate dropdown from DB
         OPERATOR_DB.forEach(op => {
             const option = document.createElement('option');
             option.value = op.id;
@@ -395,7 +409,6 @@
             elements.operatorDropdown.appendChild(option);
         });
 
-        // Restore saved session
         const savedId = localStorage.getItem('operator_id');
         if (savedId && OPERATOR_DB.find(op => op.id === savedId)) {
             currentOperatorId = savedId;
@@ -405,7 +418,7 @@
     }
 
     function openOperatorModal() {
-        elements.operatorDropdown.value = currentOperatorId; // Reset select to current state
+        elements.operatorDropdown.value = currentOperatorId;
         elements.operatorModal.classList.add('active');
     }
 
@@ -430,13 +443,13 @@
     function updateOperatorUI() {
         elements.operatorBadge.innerText = currentOperatorId;
         if (currentOperatorId === "00000") {
-            elements.operatorBadge.style.color = "#ffcccc"; // Visual warning state
+            elements.operatorBadge.style.color = "#ffcccc";
             elements.operatorBadge.style.borderColor = "#ffcccc";
         } else {
-            elements.operatorBadge.style.color = "white"; // Valid state
+            elements.operatorBadge.style.color = "white";
             elements.operatorBadge.style.borderColor = "rgba(255, 255, 255, 0.3)";
         }
-        validateForm(); // Re-trigger validation based on new operator state
+        validateForm();
     }
 
     // --- Form Logic & Validation ---
@@ -464,9 +477,7 @@
     function validateForm() {
         let isValid = true;
         
-        // Block submit if no operator is authenticated
         if (currentOperatorId === "00000") isValid = false;
-        
         if (elements.pcSerial.value.trim() === '') isValid = false;
         if (elements.officeMs.checked && elements.officeKey.value.trim() === '') isValid = false;
         if ((elements.avNorton.checked || elements.avMcafee.checked) && elements.avKey.value.trim() === '') isValid = false;
@@ -498,8 +509,11 @@
         const originalBtnText = elements.submitBtn.innerText;
         elements.submitBtn.innerText = "Invio in corso...";
 
+        const activeOperator = OPERATOR_DB.find(op => op.id === currentOperatorId);
+        const operatorName = activeOperator ? `${activeOperator.lastName} ${activeOperator.firstName}` : currentOperatorId;
+
         const payload = {
-            operator: currentOperatorId,
+            operator: operatorName,
             pc_serial: elements.pcSerial.value.trim(),
             office_suite: document.querySelector('input[name="office_type"]:checked').value,
             office_key: elements.officeKey.value.trim(),
@@ -657,6 +671,12 @@
     captureBtn.addEventListener('click', async () => {
         if (!currentTargetInputId || currentScanMode !== 'ocr') return;
         
+        // Failsafe: Ensure OCR is initialized before processing
+        if (!isOcrReady) {
+            modalStatus.innerText = "Inizializzazione motore OCR in corso, attendere...";
+            await initializeOCRWorker();
+        }
+        
         captureBtn.disabled = true;
         modalStatus.innerText = "Elaborazione immagine in corso...";
         
@@ -693,24 +713,31 @@
 
         context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
+        // Adaptive Binarization Logic
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
+        let totalLuma = 0;
+        
+        // Pass 1: Calculate average luminance of the crop
+        for (let i = 0; i < data.length; i += 4) {
+            totalLuma += 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
+        }
+        const avgLuma = totalLuma / (canvas.width * canvas.height);
+        
+        // Calculate dynamic threshold based on ambient light
+        const dynamicThreshold = avgLuma * 0.85;
+
+        // Pass 2: Apply adaptive threshold
         for (let i = 0; i < data.length; i += 4) {
             const luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
-            const color = luma > 120 ? 255 : 0;
+            const color = luma > dynamicThreshold ? 255 : 0;
             data[i] = data[i+1] = data[i+2] = color;
         }
         context.putImageData(imageData, 0, 0);
 
         try {
-            const worker = await Tesseract.createWorker('eng');
-            await worker.setParameters({
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-',
-                tessedit_pageseg_mode: '7',
-            });
-
-            const result = await worker.recognize(canvas);
-            await worker.terminate();
+            // Using the persistent, pre-loaded worker
+            const result = await tesseractWorker.recognize(canvas);
 
             const text = result.data.text.toUpperCase().replace(/\s/g, '');
             
