@@ -18,6 +18,7 @@
             --header-text: #ffffff;
             --accent-color: #007bff;
             --success-color: #28a745;
+            --error-color: #dc3545;
             --border-color: #ced4da;
             --text-main: #333333;
             --text-muted: #6c757d;
@@ -53,7 +54,19 @@
         }
 
         .app-title { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
-        .account-link { font-size: 14px; text-decoration: underline; color: var(--header-text); cursor: pointer; opacity: 0.9; }
+        
+        /* Operator Badge in Header */
+        .operator-badge {
+            display: flex; flex-direction: column; align-items: flex-end;
+            cursor: pointer; transition: opacity 0.2s;
+        }
+        .operator-badge:hover { opacity: 0.8; }
+        .operator-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 4px; }
+        .operator-id-display {
+            font-size: 16px; font-weight: bold; font-family: monospace; letter-spacing: 1px;
+            background: rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
 
         /* Main Form Container */
         .form-container { max-width: 600px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
@@ -122,45 +135,56 @@
         #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
         #submit-btn:active:not(:disabled) { transform: scale(0.98); }
 
-        /* --- Camera Modal (Overlay) --- */
-        #scanner-modal {
+        /* --- Modals (Camera & Operator) --- */
+        .fullscreen-modal {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #000; z-index: 1000; display: flex; flex-direction: column;
-            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
-        #scanner-modal.active { transform: translateY(0); }
+        .fullscreen-modal.active { opacity: 1; pointer-events: auto; }
         
-        .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: rgba(0,0,0,0.8); z-index: 10; }
+        /* Camera Layout Details */
+        #scanner-modal { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
+        #scanner-modal.active { transform: translateY(0); }
+        .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: #000; z-index: 10; }
         .modal-title { font-size: 16px; font-weight: bold; }
         .close-modal-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 5px; }
         
         .video-wrapper { position: relative; flex-grow: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         #scanner-video { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Dynamic Overlay based on scan type */
         #scanner-overlay {
             position: absolute; width: 80%; height: 60px;
             border: 3px solid #00ff00; border-radius: 8px;
-            box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none;
-            transition: all 0.3s;
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s;
         }
         #scanner-overlay.barcode-mode { height: 120px; border-color: #007bff; }
 
-        .modal-footer { padding: 20px; text-align: center; background: rgba(0,0,0,0.8); z-index: 10; min-height: 90px; display: flex; flex-direction: column; justify-content: center; }
+        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 90px; display: flex; flex-direction: column; justify-content: center; }
         #capture-btn { background: var(--accent-color); color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
         #modal-status { color: white; font-size: 14px; min-height: 20px; font-weight: 500; }
         
-        /* Loading Animation for Auto-Scan */
-        .scan-animation {
-            display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-top: 10px;
+        .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-top: 10px; }
+        .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
+        @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
+
+        /* Operator Modal Dialog Details */
+        #operator-modal { justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .operator-dialog {
+            background: #fff; width: 90%; max-width: 350px; padding: 25px;
+            border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translateY(20px); transition: transform 0.3s;
+            display: flex; flex-direction: column; gap: 15px;
         }
-        .scan-animation::after {
-            content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff;
-            animation: scan-slide 1s infinite ease-in-out;
-        }
-        @keyframes scan-slide {
-            0% { left: -30%; } 100% { left: 100%; }
-        }
+        #operator-modal.active .operator-dialog { transform: translateY(0); }
+        .operator-dialog h3 { color: var(--header-bg); margin: 0; font-size: 18px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
+        .operator-select { padding: 12px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; }
+        .dialog-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .dialog-btn { flex: 1; padding: 12px; border: none; border-radius: var(--border-radius); font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
+        .btn-cancel { background: var(--disabled-bg); color: var(--text-main); }
+        .btn-cancel:hover { background: #d1d4d7; }
+        .btn-save { background: var(--header-bg); color: white; }
+        .btn-save:hover { background: #002244; }
 
         #hidden-canvas { display: none; }
     </style>
@@ -173,7 +197,11 @@
             <img src="logo.png" alt="Company Logo" class="header-logo" onerror="this.style.display='none'">
             <div class="app-title">AvvioPC 2</div>
         </div>
-        <div class="account-link" onclick="alert('Selezione operatore non ancora implementata.')">Operatore</div>
+        <!-- Updated Operator Badge -->
+        <div class="operator-badge" onclick="openOperatorModal()">
+            <div class="operator-label">Operatore</div>
+            <div class="operator-id-display" id="header-operator-id">00000</div>
+        </div>
     </header>
 
     <!-- Main Data Entry Form -->
@@ -184,7 +212,6 @@
             <label class="form-label">Serial number del prodotto</label>
             <div class="input-with-icon">
                 <input type="text" id="pc-serial" placeholder="...">
-                <!-- Switched to 'barcode' mode for continuous auto-scan -->
                 <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Serial number del prodotto', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
@@ -206,7 +233,6 @@
                 <label class="form-label" style="font-size: 12px;">Product Key Microsoft Office</label>
                 <div class="input-with-icon">
                     <input type="text" id="office-key" placeholder="...">
-                    <!-- Retained 'ocr' mode for text reading -->
                     <button type="button" class="camera-btn" onclick="openScanner('office-key', 'Product Key Microsoft Office', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
@@ -232,7 +258,6 @@
                 <label class="form-label" id="av-key-label" style="font-size: 12px;">Product Key Antivirus</label>
                 <div class="input-with-icon">
                     <input type="text" id="av-key" placeholder="...">
-                    <!-- Retained 'ocr' mode for text reading -->
                     <button type="button" class="camera-btn" onclick="openScanner('av-key', 'Product Key Antivirus', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
@@ -275,8 +300,23 @@
 
     </main>
 
-    <!-- Camera Scanner Overlay Modal -->
-    <div id="scanner-modal">
+    <!-- Modal: Operator Selection -->
+    <div id="operator-modal" class="fullscreen-modal">
+        <div class="operator-dialog">
+            <h3>Seleziona Operatore</h3>
+            <select id="operator-dropdown" class="operator-select">
+                <option value="00000">-- Nessun operatore --</option>
+                <!-- Populated via Javascript Database -->
+            </select>
+            <div class="dialog-actions">
+                <button class="dialog-btn btn-cancel" onclick="closeOperatorModal()">Annulla</button>
+                <button class="dialog-btn btn-save" onclick="saveOperatorSelection()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Camera Scanner Overlay -->
+    <div id="scanner-modal" class="fullscreen-modal">
         <div class="modal-header">
             <div class="modal-title" id="scanner-title">Scansione in corso</div>
             <button class="close-modal-btn" onclick="closeScanner()">&times;</button>
@@ -295,14 +335,28 @@
     <canvas id="hidden-canvas"></canvas>
 
 <script>
-    // --- Global Instances for Performance (Crucial for Auto-Scan) ---
+    // --- Configuration ---
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIbF5CTeFzENAOT_8kfb01AlRCIagclrTczeizuadgyDZgQP0G6NAXtu7gxH57kk8/exec';
+
+    // --- Mock Database (Operators) ---
+    // Update this array to add/remove authorized operators
+    const OPERATOR_DB = [
+        { id: "35259", lastName: "Chin",    firstName: "Paolo" },
+        { id: "22598", lastName: "Girardi", firstName: "Sofia" },
+        { id: "98765", lastName: "Verdi",   firstName: "Anna" },
+        { id: "11223", lastName: "Neri",    firstName: "Paolo" }
+    ];
+
+    let currentOperatorId = "00000";
+
+    // --- Global Instances for Camera Performance ---
     const zxingReader = new ZXing.BrowserMultiFormatReader();
     let nativeBarcodeDetector = null;
     if ('BarcodeDetector' in window) {
         nativeBarcodeDetector = new BarcodeDetector();
     }
 
-    // --- UI Logic & Form Validation ---
+    // --- DOM Elements ---
     const elements = {
         pcSerial: document.getElementById('pc-serial'),
         officeMs: document.getElementById('office-ms'),
@@ -316,11 +370,76 @@
         avKeyLabel: document.getElementById('av-key-label'),
         
         msUsername: document.getElementById('ms-username'),
+        msDomain: document.getElementById('ms-domain'),
         msPassword: document.getElementById('ms-password'),
-        submitBtn: document.getElementById('submit-btn')
+        runUpdates: document.getElementById('run-updates'),
+        submitBtn: document.getElementById('submit-btn'),
+        
+        operatorBadge: document.getElementById('header-operator-id'),
+        operatorModal: document.getElementById('operator-modal'),
+        operatorDropdown: document.getElementById('operator-dropdown')
     };
 
-    // Attach listeners
+    // --- Boot Sequence ---
+    window.addEventListener('load', () => {
+        initializeOperatorSystem();
+    });
+
+    // --- Operator Logic ---
+    function initializeOperatorSystem() {
+        // Populate dropdown from DB
+        OPERATOR_DB.forEach(op => {
+            const option = document.createElement('option');
+            option.value = op.id;
+            option.textContent = `${op.id} - ${op.lastName} ${op.firstName}`;
+            elements.operatorDropdown.appendChild(option);
+        });
+
+        // Restore saved session
+        const savedId = localStorage.getItem('operator_id');
+        if (savedId && OPERATOR_DB.find(op => op.id === savedId)) {
+            currentOperatorId = savedId;
+            elements.operatorDropdown.value = savedId;
+        }
+        updateOperatorUI();
+    }
+
+    function openOperatorModal() {
+        elements.operatorDropdown.value = currentOperatorId; // Reset select to current state
+        elements.operatorModal.classList.add('active');
+    }
+
+    function closeOperatorModal() {
+        elements.operatorModal.classList.remove('active');
+    }
+
+    function saveOperatorSelection() {
+        const selectedId = elements.operatorDropdown.value;
+        currentOperatorId = selectedId;
+        
+        if (selectedId === "00000") {
+            localStorage.removeItem('operator_id');
+        } else {
+            localStorage.setItem('operator_id', selectedId);
+        }
+        
+        updateOperatorUI();
+        closeOperatorModal();
+    }
+
+    function updateOperatorUI() {
+        elements.operatorBadge.innerText = currentOperatorId;
+        if (currentOperatorId === "00000") {
+            elements.operatorBadge.style.color = "#ffcccc"; // Visual warning state
+            elements.operatorBadge.style.borderColor = "#ffcccc";
+        } else {
+            elements.operatorBadge.style.color = "white"; // Valid state
+            elements.operatorBadge.style.borderColor = "rgba(255, 255, 255, 0.3)";
+        }
+        validateForm(); // Re-trigger validation based on new operator state
+    }
+
+    // --- Form Logic & Validation ---
     elements.pcSerial.addEventListener('input', validateForm);
     elements.officeKey.addEventListener('input', validateForm);
     elements.avKey.addEventListener('input', validateForm);
@@ -344,6 +463,10 @@
 
     function validateForm() {
         let isValid = true;
+        
+        // Block submit if no operator is authenticated
+        if (currentOperatorId === "00000") isValid = false;
+        
         if (elements.pcSerial.value.trim() === '') isValid = false;
         if (elements.officeMs.checked && elements.officeKey.value.trim() === '') isValid = false;
         if ((elements.avNorton.checked || elements.avMcafee.checked) && elements.avKey.value.trim() === '') isValid = false;
@@ -352,6 +475,71 @@
 
         elements.submitBtn.disabled = !isValid;
     }
+
+    function resetForm() {
+        elements.pcSerial.value = '';
+        elements.officeKey.value = '';
+        elements.avKey.value = '';
+        elements.msUsername.value = '';
+        elements.msPassword.value = '';
+        
+        document.getElementById('office-libre').checked = true;
+        document.getElementById('av-none').checked = true;
+        elements.runUpdates.checked = true;
+        
+        toggleFields();
+        validateForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- Google Sheets Transmission ---
+    elements.submitBtn.addEventListener('click', async () => {
+        elements.submitBtn.disabled = true;
+        const originalBtnText = elements.submitBtn.innerText;
+        elements.submitBtn.innerText = "Invio in corso...";
+
+        const payload = {
+            operator: currentOperatorId,
+            pc_serial: elements.pcSerial.value.trim(),
+            office_suite: document.querySelector('input[name="office_type"]:checked').value,
+            office_key: elements.officeKey.value.trim(),
+            antivirus: document.querySelector('input[name="av_type"]:checked').value,
+            antivirus_key: elements.avKey.value.trim(),
+            microsoft_account: `${elements.msUsername.value.trim()}@${elements.msDomain.value}`,
+            microsoft_password: elements.msPassword.value.trim(),
+            windows_update: elements.runUpdates.checked ? "Yes" : "No",
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            elements.submitBtn.innerText = "✅ Dati caricati con successo!";
+            elements.submitBtn.style.backgroundColor = "var(--success-color)";
+            if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+
+            setTimeout(() => {
+                resetForm();
+                elements.submitBtn.innerText = originalBtnText;
+            }, 3000);
+
+        } catch (err) {
+            elements.submitBtn.innerText = "❌ Errore di connessione";
+            elements.submitBtn.style.backgroundColor = "var(--error-color)";
+            console.error("Data transmission failed:", err);
+            
+            setTimeout(() => {
+                elements.submitBtn.innerText = originalBtnText;
+                elements.submitBtn.style.backgroundColor = "var(--success-color)";
+                elements.submitBtn.disabled = false;
+            }, 3000);
+        }
+    });
 
     // --- Scanner Overlay Logic ---
     let currentTargetInputId = null;
@@ -370,12 +558,11 @@
 
     async function openScanner(targetInputId, contextTitle, mode) {
         currentTargetInputId = targetInputId;
-        currentScanMode = mode; // 'barcode' or 'ocr'
+        currentScanMode = mode;
         
         scannerTitle.innerText = contextTitle;
         scannerModal.classList.add('active');
         
-        // Configure UI based on mode
         if (mode === 'barcode') {
             overlay.classList.add('barcode-mode');
             captureBtn.style.display = 'none';
@@ -389,7 +576,6 @@
         }
 
         try {
-            // Request advanced constraints for sharper, stable image
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { 
                     facingMode: "environment", 
@@ -402,9 +588,7 @@
             streamTrack = stream.getVideoTracks()[0];
             
             video.onloadedmetadata = () => {
-                if (mode === 'barcode') {
-                    startBarcodeAutoScan();
-                }
+                if (mode === 'barcode') startBarcodeAutoScan();
             };
         } catch (err) {
             modalStatus.innerText = "Errore fotocamera: " + err.message;
@@ -424,15 +608,12 @@
         currentTargetInputId = null;
     }
 
-    // --- Continuous Auto-Scan Logic (BARCODE ONLY) ---
     function startBarcodeAutoScan() {
         const context = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Run analysis 3 times per second
         autoScanInterval = setInterval(async () => {
             if (!video.videoWidth) return;
 
-            // Use a scaled-down canvas for barcode detection for extreme speed
             canvas.width = video.videoWidth / 2;
             canvas.height = video.videoHeight / 2;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -440,13 +621,11 @@
             try {
                 let detectedValue = null;
 
-                // 1. Try Native API (Hardware Accelerated)
                 if (nativeBarcodeDetector) {
                     const barcodes = await nativeBarcodeDetector.detect(canvas);
                     if (barcodes.length > 0) detectedValue = barcodes[0].rawValue;
                 }
                 
-                // 2. Try ZXing Fallback (Software)
                 if (!detectedValue) {
                     const imgUrl = canvas.toDataURL("image/jpeg", 0.6);
                     const img = new Image();
@@ -462,24 +641,19 @@
                     });
                 }
 
-                // If found, handle success and terminate loop immediately
                 if (detectedValue) {
                     clearInterval(autoScanInterval);
                     autoScanInterval = null;
-                    
-                    if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]); // Native feel double vibration
+                    if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
                     
                     document.getElementById(currentTargetInputId).value = detectedValue;
                     validateForm();
                     closeScanner();
                 }
-            } catch (err) {
-                // Silently ignore single frame errors during continuous scan
-            }
+            } catch (err) {}
         }, 333); 
     }
 
-    // --- Manual Snapshot Logic (OCR ONLY) ---
     captureBtn.addEventListener('click', async () => {
         if (!currentTargetInputId || currentScanMode !== 'ocr') return;
         
