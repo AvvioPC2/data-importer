@@ -216,6 +216,12 @@
                 </button>
             </div>
         </div>
+		
+		<!-- Local Account Section -->
+        <div class="form-group">
+            <label class="form-label">Nome account locale (Windows)</label>
+            <input type="text" id="local-account" class="standard-input" placeholder="Es. Mario Rossi" oninput="validateForm()">
+        </div>
 
         <!-- Office Suite Section -->
         <div class="form-group">
@@ -373,6 +379,7 @@
     // --- DOM Elements ---
     const elements = {
         pcSerial: document.getElementById('pc-serial'),
+		localAccount: document.getElementById('local-account'),
         officeMs: document.getElementById('office-ms'),
         officeKey: document.getElementById('office-key'),
         msOfficeField: document.getElementById('ms-office-field'),
@@ -479,6 +486,7 @@
         
         if (currentOperatorId === "00000") isValid = false;
         if (elements.pcSerial.value.trim() === '') isValid = false;
+		if (elements.localAccount.value.trim() === '') isValid = false;
         if (elements.officeMs.checked && elements.officeKey.value.trim() === '') isValid = false;
         if ((elements.avNorton.checked || elements.avMcafee.checked) && elements.avKey.value.trim() === '') isValid = false;
         if (elements.msUsername.value.trim() === '') isValid = false;
@@ -489,6 +497,7 @@
 
     function resetForm() {
         elements.pcSerial.value = '';
+		elements.localAccount.value = '';
         elements.officeKey.value = '';
         elements.avKey.value = '';
         elements.msUsername.value = '';
@@ -515,6 +524,7 @@
         const payload = {
             operator: operatorName,
             pc_serial: elements.pcSerial.value.trim(),
+			local_account: elements.localAccount.value.trim(),
             office_suite: document.querySelector('input[name="office_type"]:checked').value,
             office_key: elements.officeKey.value.trim(),
             antivirus: document.querySelector('input[name="av_type"]:checked').value,
