@@ -347,11 +347,13 @@
 <script>
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIbF5CTeFzENAOT_8kfb01AlRCIagclrTczeizuadgyDZgQP0G6NAXtu7gxH57kk8/exec';
 
+// --- Mock Database (Operators) ---
+// --- Per aggiungere un nuovo operatore, andare su un sito gratuito come sha256online.com, digitare il PIN scelto e copiare la stringa generata
     const OPERATOR_DB = [
-        { id: "35259", lastName: "Chin",    firstName: "Paolo" },
-        { id: "22598", lastName: "Girardi", firstName: "Sofia" },
-        { id: "98765", lastName: "Verdi",   firstName: "Anna" },
-        { id: "11223", lastName: "Neri",    firstName: "Paolo" }
+        { id: "35259", lastName: "Chin",    firstName: "Paolo", pinHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4" },
+        { id: "22598", lastName: "Girardi", firstName: "Sofia", pinHash: "e5566f19f18730bb03cbdf2b1ff905342d039f37cff0937a496b823e4e945c71" },
+        { id: "98765", lastName: "Verdi",   firstName: "Anna",  pinHash: "0ffe1abd1a08215353c233d6e009613e95eec4253832a761af28ff37ac5a150c" },
+        { id: "11223", lastName: "Neri",    firstName: "Paolo", pinHash: "edee29f882543b956620b26d0ee0e7e950399b1c4222f5de05e06425b4c995e9" }
     ];
 
     let currentOperatorId = "00000";
@@ -465,15 +467,33 @@
         elements.operatorModal.classList.remove('active');
     }
 
-    function saveOperatorSelection() {
+	async function saveOperatorSelection() {
         const selectedId = elements.operatorDropdown.value;
         const enteredPin = elements.operatorPin.value;
         
         if (selectedId !== "00000") {
+            // 1. Controllo formale
             if (!/^\d{4}$/.test(enteredPin)) {
                 alert("Inserisci un PIN numerico valido di 4 cifre.");
                 return;
             }
+
+            // 2. Controllo Crittografico
+            const activeOp = OPERATOR_DB.find(op => op.id === selectedId);
+            if (activeOp && activeOp.pinHash) {
+                // Trasforma il PIN digitato nel suo Hash SHA-256
+                const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(enteredPin));
+                const hash = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                // Se l'hash non combacia, ferma tutto!
+                if (hash !== activeOp.pinHash) {
+                    alert("❌ Accesso Negato: PIN errato.");
+                    elements.operatorPin.value = ''; // Svuota il campo
+                    return; 
+                }
+            }
+
+            // 3. Login confermato
             currentOperatorId = selectedId;
             localStorage.setItem('operator_id', selectedId);
             localStorage.setItem('operator_pin', enteredPin);
@@ -585,13 +605,21 @@
             timestamp: new Date().toISOString()
         };
 
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
+		try {
+            // Modificato Content-Type in text/plain per permettere al browser di leggere 
+            // la risposta di Google senza generare errori di CORS
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors',
                 body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
+
+            // Ora possiamo finalmente leggere cosa risponde il server!
+            const result = await response.json();
+
+            if (result.status === "error") {
+                throw new Error(result.message); // Lancia l'errore se il PIN sul server è cambiato/sbagliato
+            }
 
             elements.submitBtn.innerText = "✅ Dati caricati con successo!";
             elements.submitBtn.style.backgroundColor = "var(--success-color)";
@@ -603,7 +631,7 @@
             }, 3000);
 
         } catch (err) {
-            elements.submitBtn.innerText = "❌ Errore di connessione";
+            elements.submitBtn.innerText = "❌ Errore: " + err.message;
             elements.submitBtn.style.backgroundColor = "var(--error-color)";
             console.error("Data transmission failed:", err);
             
@@ -611,7 +639,7 @@
                 elements.submitBtn.innerText = originalBtnText;
                 elements.submitBtn.style.backgroundColor = "var(--success-color)";
                 elements.submitBtn.disabled = false;
-            }, 3000);
+            }, 4000);
         }
     });
 
