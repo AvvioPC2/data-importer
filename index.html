@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AvvioPC 2 - Dashboard</title>
     
+    <!-- Google Fonts: Barlow (DIN-Pro equivalent) -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
     
+    <!-- Tesseract.js v4 for OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- ZXing for Barcode scanning -->
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     
     <style>
@@ -177,7 +180,6 @@
             display: flex; flex-direction: column; justify-content: center; 
             padding-bottom: calc(30px + env(safe-area-inset-bottom));
         }
-        #capture-btn { background: var(--accent-color); color: white; border: none; padding: 16px 30px; font-size: 18px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
         #modal-status { color: white; font-size: 16px; min-height: 20px; font-weight: 500; }
         
         .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-top: 10px; }
@@ -205,6 +207,7 @@
 </head>
 <body>
 
+    <!-- Top Navigation Bar -->
     <header class="app-header">
         <div class="header-brand">
             <img src="logo.png" alt="Company Logo" class="header-logo" onerror="this.style.display='none'">
@@ -216,7 +219,9 @@
         </div>
     </header>
 
+    <!-- Main Data Entry Form -->
     <main class="form-container">
+        <!-- Device Serial Section -->
         <div class="form-group">
             <label class="form-label">Device Serial Number</label>
             <div class="input-with-icon">
@@ -227,11 +232,13 @@
             </div>
         </div>
 
+        <!-- Local Account Section -->
         <div class="form-group">
             <label class="form-label">Local Account Name (Windows)</label>
             <input type="text" id="local-account" class="standard-input" placeholder="E.g., John Doe" style="text-transform: none;" oninput="validateForm()">
         </div>
 
+        <!-- Office Suite Section -->
         <div class="form-group">
             <label class="form-label">Office Suite</label>
             <div class="segmented-control">
@@ -252,6 +259,7 @@
             </div>
         </div>
 
+        <!-- Antivirus Section -->
         <div class="form-group">
             <label class="form-label">Antivirus Protection</label>
             <div class="segmented-control">
@@ -273,6 +281,7 @@
             </div>
         </div>
 
+        <!-- MS Account Section -->
         <div class="form-group">
             <div class="section-title">Microsoft Account</div>
             <label class="form-label">Username</label>
@@ -289,11 +298,13 @@
             <input type="text" id="ms-password" class="standard-input" placeholder="Password" style="text-transform: none;" oninput="validateForm()">
         </div>
 
+        <!-- Submission -->
         <div class="submit-container">
             <button id="submit-btn" disabled>Submit Data</button>
         </div>
     </main>
 
+    <!-- Modals -->
     <div id="operator-modal" class="fullscreen-modal">
         <div class="operator-dialog">
             <h3>Select Operator</h3>
@@ -373,7 +384,7 @@
             await tesseractWorker.loadLanguage('eng');
             await tesseractWorker.initialize('eng');
             await tesseractWorker.setParameters({
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-',
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                 tessedit_pageseg_mode: '7',
             });
             isOcrReady = true;
@@ -516,20 +527,23 @@
         }, 300);
     }
 
+    // Advanced OCR with Consecutive Frame Verification
     async function startOcrAutoScan() {
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Debouncing variables
+        let previousValidText = "";
+        let consecutiveMatches = 0;
+        const requiredMatches = 2; // Needs 2 consecutive identical 25-char strings
         
         async function loop() {
             if (currentMode !== 'ocr' || !streamTrack) return;
             
-            // Wait for engine and video
             if (!isOcrReady || elements.video.videoWidth === 0) {
                 elements.modalStatus.innerText = "OCR Engine: Loading Assets...";
                 setTimeout(loop, 500);
                 return;
             }
-
-            elements.modalStatus.innerText = "OCR Engine: Ready. Scanning...";
 
             // Precise cropping logic
             const v = elements.video;
@@ -545,34 +559,49 @@
 
             elements.canvas.width = cw;
             elements.canvas.height = ch;
+            
+            // Soft contrast boost instead of harsh binarization to preserve LSTM legibility
+            ctx.filter = "contrast(1.5) grayscale(1)";
             ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
-
-            // Binarization
-            const imgData = ctx.getImageData(0, 0, cw, ch);
-            const d = imgData.data;
-            for (let i = 0; i < d.length; i += 4) {
-                const lum = 0.21 * d[i] + 0.72 * d[i+1] + 0.07 * d[i+2];
-                const col = lum > 128 ? 255 : 0;
-                d[i] = d[i+1] = d[i+2] = col;
-            }
-            ctx.putImageData(imgData, 0, 0);
+            ctx.filter = "none";
 
             try {
                 const res = await tesseractWorker.recognize(elements.canvas);
                 const text = res.data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 
-                if (text.length > 5) elements.modalStatus.innerText = `Read (${text.length}/25): ${text}`;
+                if (text.length > 5 && text.length !== 25) {
+                    elements.modalStatus.innerText = `Searching... read ${text.length}/25 chars`;
+                    previousValidText = "";
+                    consecutiveMatches = 0;
+                }
 
+                // Debouncing Logic: Accept only if exact string is read sequentially
                 if (text.length === 25) {
-                    const target = document.getElementById(currentInputId);
-                    target.value = text;
-                    target.dispatchEvent(new Event('input'));
-                    if ("vibrate" in navigator) navigator.vibrate(200);
-                    setTimeout(closeScanner, 500);
-                    return;
+                    if (text === previousValidText) {
+                        consecutiveMatches++;
+                        
+                        if (consecutiveMatches >= requiredMatches) {
+                            // Verified Match!
+                            const target = document.getElementById(currentInputId);
+                            target.value = text;
+                            target.dispatchEvent(new Event('input'));
+                            if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+                            elements.modalStatus.innerText = "✅ Verified and Captured!";
+                            setTimeout(closeScanner, 500);
+                            return; 
+                        } else {
+                            elements.modalStatus.innerText = "Target locked. Verifying... hold still!";
+                        }
+                    } else {
+                        // First time seeing this 25-char string
+                        previousValidText = text;
+                        consecutiveMatches = 1;
+                        elements.modalStatus.innerText = "Potential match found. Verifying...";
+                    }
                 }
             } catch(e) {}
-            setTimeout(loop, 200);
+            
+            setTimeout(loop, 150);
         }
         loop();
     }
