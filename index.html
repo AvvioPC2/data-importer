@@ -658,7 +658,7 @@
     const captureBtn = document.getElementById('capture-btn');
     const scanAnimation = document.getElementById('scan-animation');
 
-    async function openScanner(targetInputId, contextTitle, mode) {
+	async function openScanner(targetInputId, contextTitle, mode) {
         currentTargetInputId = targetInputId;
         currentScanMode = mode;
         
@@ -674,23 +674,49 @@
             overlay.classList.remove('barcode-mode');
             captureBtn.style.display = 'block';
             scanAnimation.style.display = 'none';
-            modalStatus.innerText = "Allinea il testo nel riquadro e premi il pulsante.";
+            modalStatus.innerText = "Tocca lo schermo per mettere a fuoco. Allinea e premi il pulsante.";
         }
 
         try {
+            // 1. Richiediamo la massima risoluzione possibile (4K)
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { 
                     facingMode: "environment", 
-                    width: { ideal: 1920 }, 
-                    height: { ideal: 1080 },
-                    advanced: [{ focusMode: "continuous" }, { exposureMode: "continuous" }]
+                    width: { ideal: 4096 }, 
+                    height: { ideal: 2160 },
+                    // Rimuoviamo i vincoli advanced vecchi che a volte mandano in palla iOS
                 }
             });
+            
             video.srcObject = stream;
             streamTrack = stream.getVideoTracks()[0];
             
-            video.onloadedmetadata = () => {
+            video.onloadedmetadata = async () => {
                 if (mode === 'barcode') startBarcodeAutoScan();
+                
+                // 2. LOGICA DI ZOOM AUTOMATICO
+                // Controlliamo se il dispositivo supporta lo zoom via web
+                try {
+                    const capabilities = streamTrack.getCapabilities();
+                    if (capabilities.zoom) {
+                        // Applichiamo uno zoom di 2x (o il massimo consentito se inferiore a 2x)
+                        // Questo permette all'operatore di tenere il telefono a 20cm di distanza (fuoco perfetto)
+                        const zoomValue = Math.min(2.5, capabilities.zoom.max);
+                        await streamTrack.applyConstraints({
+                            advanced: [{ zoom: zoomValue }]
+                        });
+                        console.log("Zoom impostato a:", zoomValue);
+                    }
+                    
+                    // Forziamo anche l'autofocus se supportato dal dispositivo
+                    if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
+                        await streamTrack.applyConstraints({
+                            advanced: [{ focusMode: "continuous" }]
+                        });
+                    }
+                } catch (constraintErr) {
+                    console.warn("Il dispositivo non supporta controlli avanzati (zoom/focus):", constraintErr);
+                }
             };
         } catch (err) {
             modalStatus.innerText = "Errore fotocamera: " + err.message;
@@ -709,6 +735,36 @@
         }
         currentTargetInputId = null;
     }
+
+// --- Funzione Tap-to-Focus ---
+    document.querySelector('.video-wrapper').addEventListener('click', async () => {
+        if (!streamTrack) return;
+        
+        modalStatus.innerText = "Messa a fuoco in corso...";
+        if ("vibrate" in navigator) navigator.vibrate([50]); // Piccolo feedback tattile
+        
+        try {
+            const capabilities = streamTrack.getCapabilities();
+            if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
+                // Forziamo un reset applicando e rimuovendo un vincolo
+                await streamTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] });
+                setTimeout(async () => {
+                    await streamTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                    modalStatus.innerText = "Messa a fuoco completata.";
+                }, 100);
+            } else {
+                modalStatus.innerText = "Autofocus forzato non supportato su questo dispositivo.";
+            }
+        } catch(e) {
+            console.error("Errore autofocus:", e);
+        }
+        
+        setTimeout(() => {
+            if (currentScanMode === 'ocr') {
+                modalStatus.innerText = "Allinea il testo nel riquadro e premi il pulsante.";
+            }
+        }, 2000);
+    });
 
     function startBarcodeAutoScan() {
         const context = canvas.getContext('2d', { willReadFrequently: true });
