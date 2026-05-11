@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AvvioPC 2 - Dashboard</title>
     
+    <!-- Google Fonts: Barlow (DIN-Pro equivalent) -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
     
+    <!-- Tesseract.js for OCR (Product Keys) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- ZXing for Barcode (Serial Number) -->
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     
     <style>
@@ -53,7 +56,7 @@
             border-radius: 4px;
         }
 
-        /* Nuovo Titolo Aziendale Barlow/DIN-Pro */
+        /* Corporate Title */
         .app-title { 
             font-family: 'Barlow', sans-serif; 
             font-weight: 500; 
@@ -115,7 +118,7 @@
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
-        /* Email Group - Tight @ symbol */
+        /* Email Group - Tight @ symbol layout */
         .email-group { 
             display: flex; align-items: center; gap: 0; 
             border: 1px solid var(--border-color); border-radius: var(--border-radius); 
@@ -124,7 +127,7 @@
         }
         .email-group:focus-within { border-color: var(--accent-color); }
         .email-group input { 
-            flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; 
+            flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none;
         }
         .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
         .email-group select { 
@@ -168,7 +171,7 @@
         #scanner-video { width: 100%; height: 100%; object-fit: cover; }
         
         #scanner-overlay {
-            position: absolute; width: 80%; height: 60px;
+            position: absolute; width: 95%; height: 80px;
             border: 3px solid #00ff00; border-radius: 8px;
             box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s;
         }
@@ -205,36 +208,41 @@
 </head>
 <body>
 
+    <!-- Top Navigation Bar -->
     <header class="app-header">
         <div class="header-brand">
             <img src="logo.png" alt="Company Logo" class="header-logo" onerror="this.style.display='none'">
             <div class="app-title">AvvioPC 2</div>
         </div>
         <div class="operator-badge" onclick="openOperatorModal()">
-            <div class="operator-label">Operatore</div>
+            <div class="operator-label">Operator</div>
             <div class="operator-id-display" id="header-operator-id">00000</div>
         </div>
     </header>
 
+    <!-- Main Data Entry Form -->
     <main class="form-container">
         
+        <!-- Serial Data Section -->
         <div class="form-group">
-            <label class="form-label">Serial number del prodotto</label>
+            <label class="form-label">Device Serial Number</label>
             <div class="input-with-icon">
                 <input type="text" id="pc-serial" placeholder="..." style="text-transform: none;">
-                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Serial number del prodotto', 'barcode')">
+                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Device Serial Number', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
             </div>
         </div>
 
+        <!-- Local Account Section -->
         <div class="form-group">
-            <label class="form-label">Nome account locale (Windows)</label>
-            <input type="text" id="local-account" class="standard-input" placeholder="Es. Mario Rossi" oninput="validateForm()">
+            <label class="form-label">Local Account Name (Windows)</label>
+            <input type="text" id="local-account" class="standard-input" placeholder="E.g., John Doe" style="text-transform: none;" oninput="validateForm()">
         </div>
 
+        <!-- Office Suite Section -->
         <div class="form-group">
-            <label class="form-label">Suite da ufficio</label>
+            <label class="form-label">Office Suite</label>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms-office" onchange="toggleFields(); validateForm();">
                 <label for="office-ms">MS-Office</label>
@@ -244,18 +252,19 @@
             </div>
             
             <div id="ms-office-field" class="conditional-field">
-                <label class="form-label" style="font-size: 14px;">Product Key Microsoft Office</label>
+                <label class="form-label" style="font-size: 14px;">Microsoft Office Product Key</label>
                 <div class="input-with-icon">
                     <input type="text" id="office-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" oninput="formatProductKey(this, '-')">
-                    <button type="button" class="camera-btn" onclick="openScanner('office-key', 'Product Key Microsoft Office', 'ocr')">
+                    <button type="button" class="camera-btn" onclick="openScanner('office-key', 'Microsoft Office Product Key', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Antivirus Section -->
         <div class="form-group">
-            <label class="form-label">Protezione antivirus</label>
+            <label class="form-label">Antivirus Protection</label>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
                 <label for="av-norton">Norton</label>
@@ -264,26 +273,27 @@
                 <label for="av-mcafee">McAfee</label>
 
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
-                <label for="av-none">Nessuna</label>
+                <label for="av-none">None</label>
             </div>
 
             <div id="av-field" class="conditional-field">
-                <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key Antivirus</label>
+                <label class="form-label" id="av-key-label" style="font-size: 14px;">Antivirus Product Key</label>
                 <div class="input-with-icon">
                     <input type="text" id="av-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" oninput="formatAvKey(this)">
-                    <button type="button" class="camera-btn" onclick="openScanner('av-key', 'Product Key Antivirus', 'ocr')">
+                    <button type="button" class="camera-btn" onclick="openScanner('av-key', 'Antivirus Product Key', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Microsoft Account Section -->
         <div class="form-group">
-            <div class="section-title">Account Microsoft</div>
+            <div class="section-title">Microsoft Account</div>
             
-            <label class="form-label">Nome utente</label>
+            <label class="form-label">Username</label>
             <div class="email-group">
-                <input type="text" id="ms-username" placeholder="Inserisci username" oninput="validateForm()">
+                <input type="text" id="ms-username" placeholder="Enter username" oninput="validateForm()">
                 <span>@</span>
                 <select id="ms-domain">
                     <option value="outlook.it">outlook.it</option>
@@ -293,51 +303,57 @@
             </div>
 
             <label class="form-label">Password</label>
-            <input type="text" id="ms-password" class="standard-input" placeholder="..." oninput="validateForm()">
+            <input type="text" id="ms-password" class="standard-input" placeholder="..." style="text-transform: none;" oninput="validateForm()">
         </div>
 
+        <!-- Windows Update Section -->
         <div class="form-group">
             <div class="section-title">Windows Update</div>
             <label class="checkbox-group">
                 <input type="checkbox" id="run-updates" checked>
-                <span>Esegui Windows Update al primo avvio</span>
+                <span>Execute Windows Update on first boot</span>
             </label>
         </div>
 
+        <!-- Submit Section -->
         <div class="submit-container">
-            <button id="submit-btn" disabled>Caricamento dati</button>
+            <button id="submit-btn" disabled>Submit Data</button>
         </div>
 
     </main>
 
+    <!-- Modal: Operator Selection -->
     <div id="operator-modal" class="fullscreen-modal">
         <div class="operator-dialog">
-            <h3>Seleziona Operatore</h3>
+            <h3>Select Operator</h3>
             <select id="operator-dropdown" class="operator-select">
-                <option value="00000">-- Nessun operatore --</option>
+                <option value="00000">-- No operator selected --</option>
             </select>
             
-            <input type="password" id="operator-pin" class="standard-input" placeholder="PIN (4 cifre)" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
+            <!-- Operator PIN Input -->
+            <input type="password" id="operator-pin" class="standard-input" placeholder="PIN (4 digits)" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
             
             <div class="dialog-actions">
-                <button class="dialog-btn btn-cancel" onclick="closeOperatorModal()">Annulla</button>
-                <button class="dialog-btn btn-save" onclick="saveOperatorSelection()">Salva</button>
+                <button class="dialog-btn btn-cancel" onclick="closeOperatorModal()">Cancel</button>
+                <button class="dialog-btn btn-save" onclick="saveOperatorSelection()">Save</button>
             </div>
         </div>
     </div>
 
+    <!-- Modal: Camera Scanner Overlay -->
     <div id="scanner-modal" class="fullscreen-modal">
         <div class="modal-header">
-            <div class="modal-title" id="scanner-title">Scansione in corso</div>
+            <div class="modal-title" id="scanner-title">Scanning in progress</div>
             <button class="close-modal-btn" onclick="closeScanner()">&times;</button>
         </div>
         <div class="video-wrapper">
+            <!-- Muted attribute required to unlock camera autoplay on iOS/Android -->
             <video id="scanner-video" autoplay playsinline muted></video>
             <div id="scanner-overlay"></div>
         </div>
         <div class="modal-footer">
-            <button id="capture-btn">SCANSIONA CODICE</button>
-            <div id="modal-status">Inizializzazione fotocamera...</div>
+            <button id="capture-btn">CAPTURE CODE</button>
+            <div id="modal-status">Initializing camera...</div>
             <div id="scan-animation" class="scan-animation"></div>
         </div>
     </div>
@@ -345,10 +361,10 @@
     <canvas id="hidden-canvas"></canvas>
 
 <script>
+    // --- Configuration ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIbF5CTeFzENAOT_8kfb01AlRCIagclrTczeizuadgyDZgQP0G6NAXtu7gxH57kk8/exec';
 
-// --- Mock Database (Operators) ---
-// --- Per aggiungere un nuovo operatore, andare su un sito gratuito come sha256online.com, digitare il PIN scelto e copiare la stringa generata
+    // --- Database (Operators & SHA-256 PIN Hashes) ---
     const OPERATOR_DB = [
         { id: "35259", lastName: "Chin",    firstName: "Paolo", pinHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4" },
         { id: "22598", lastName: "Girardi", firstName: "Sofia", pinHash: "e5566f19f18730bb03cbdf2b1ff905342d039f37cff0937a496b823e4e945c71" },
@@ -383,7 +399,7 @@
 
     const elements = {
         pcSerial: document.getElementById('pc-serial'),
-        localAccount: document.getElementById('local-account'), // Nuovo Campo
+        localAccount: document.getElementById('local-account'),
         officeMs: document.getElementById('office-ms'),
         officeKey: document.getElementById('office-key'),
         msOfficeField: document.getElementById('ms-office-field'),
@@ -408,7 +424,7 @@
 
     window.addEventListener('load', () => {
         initializeOperatorSystem();
-        initializeOCRWorker(); // Avvia OCR in background
+        initializeOCRWorker(); // Initialize OCR in background
     });
 
     // --- Input Masking Logic ---
@@ -467,33 +483,31 @@
         elements.operatorModal.classList.remove('active');
     }
 
-	async function saveOperatorSelection() {
+    async function saveOperatorSelection() {
         const selectedId = elements.operatorDropdown.value;
         const enteredPin = elements.operatorPin.value;
         
         if (selectedId !== "00000") {
-            // 1. Controllo formale
+            // 1. Format Validation
             if (!/^\d{4}$/.test(enteredPin)) {
-                alert("Inserisci un PIN numerico valido di 4 cifre.");
+                alert("Please enter a valid 4-digit numeric PIN.");
                 return;
             }
 
-            // 2. Controllo Crittografico
+            // 2. Cryptographic Validation
             const activeOp = OPERATOR_DB.find(op => op.id === selectedId);
             if (activeOp && activeOp.pinHash) {
-                // Trasforma il PIN digitato nel suo Hash SHA-256
                 const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(enteredPin));
                 const hash = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
                 
-                // Se l'hash non combacia, ferma tutto!
                 if (hash !== activeOp.pinHash) {
-                    alert("❌ Accesso Negato: PIN errato.");
-                    elements.operatorPin.value = ''; // Svuota il campo
+                    alert("❌ Access Denied: Invalid PIN.");
+                    elements.operatorPin.value = ''; 
                     return; 
                 }
             }
 
-            // 3. Login confermato
+            // 3. Confirm Login
             currentOperatorId = selectedId;
             localStorage.setItem('operator_id', selectedId);
             localStorage.setItem('operator_pin', enteredPin);
@@ -534,7 +548,7 @@
 
         if (elements.avNorton.checked || elements.avMcafee.checked) {
             elements.avField.classList.add('visible');
-            elements.avKeyLabel.innerText = elements.avNorton.checked ? "Product key Norton Antivirus" : "Product key McAfee";
+            elements.avKeyLabel.innerText = elements.avNorton.checked ? "Norton Antivirus Product Key" : "McAfee Product Key";
             if (elements.avNorton.checked) {
                 elements.avKey.placeholder = "XXXXX XXXXX XXXXX XXXXX XXXXX";
             } else {
@@ -584,7 +598,7 @@
     elements.submitBtn.addEventListener('click', async () => {
         elements.submitBtn.disabled = true;
         const originalBtnText = elements.submitBtn.innerText;
-        elements.submitBtn.innerText = "Invio in corso...";
+        elements.submitBtn.innerText = "Uploading...";
 
         const activeOperator = OPERATOR_DB.find(op => op.id === currentOperatorId);
         const operatorName = activeOperator ? `${activeOperator.lastName} ${activeOperator.firstName}` : currentOperatorId;
@@ -605,23 +619,20 @@
             timestamp: new Date().toISOString()
         };
 
-		try {
-            // Modificato Content-Type in text/plain per permettere al browser di leggere
-            // la risposta di Google senza generare errori di CORS
+        try {
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
 
-            // Ora possiamo finalmente leggere cosa risponde il server!
             const result = await response.json();
 
             if (result.status === "error") {
-                throw new Error(result.message); // Lancia l'errore se il PIN sul server è cambiato/sbagliato
+                throw new Error(result.message); 
             }
 
-            elements.submitBtn.innerText = "✅ Dati caricati con successo!";
+            elements.submitBtn.innerText = "✅ Data successfully uploaded!";
             elements.submitBtn.style.backgroundColor = "var(--success-color)";
             if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
 
@@ -631,7 +642,7 @@
             }, 3000);
 
         } catch (err) {
-            elements.submitBtn.innerText = "❌ Errore: " + err.message;
+            elements.submitBtn.innerText = "❌ Error: " + err.message;
             elements.submitBtn.style.backgroundColor = "var(--error-color)";
             console.error("Data transmission failed:", err);
             
@@ -643,7 +654,7 @@
         }
     });
 
-// --- Scanner Logic ---
+    // --- Scanner Logic ---
     let currentTargetInputId = null;
     let currentScanMode = null;
     let streamTrack = null;
@@ -665,16 +676,15 @@
         scannerTitle.innerText = contextTitle;
         scannerModal.classList.add('active');
         
-        // Nascondiamo il bottone e mostriamo l'animazione per ENTRAMBE le modalità!
         captureBtn.style.display = 'none';
         scanAnimation.style.display = 'block';
 
         if (mode === 'barcode') {
             overlay.classList.add('barcode-mode');
-            modalStatus.innerText = "Ricerca automatica codice a barre...";
+            modalStatus.innerText = "Searching for barcode...";
         } else {
             overlay.classList.remove('barcode-mode');
-            modalStatus.innerText = "Inizializzazione OCR... (cerca 25 caratteri)";
+            modalStatus.innerText = "Initializing OCR... (looking for 25 characters)";
         }
 
         try {
@@ -689,33 +699,32 @@
             streamTrack = stream.getVideoTracks()[0];
             
             video.onloadedmetadata = async () => {
-                // Avvio dello scanner in base alla modalità
                 if (mode === 'barcode') {
                     startBarcodeAutoScan();
                 } else if (mode === 'ocr') {
-                    startOcrAutoScan(); // Avvia il nuovo ciclo OCR automatico
+                    startOcrAutoScan();
                 }
 
                 try {
                     const capabilities = streamTrack.getCapabilities();
                     if (capabilities.zoom) {
-                        const zoomValue = Math.min(2.5, capabilities.zoom.max);
+                        const zoomValue = Math.min(1.5, capabilities.zoom.max);
                         await streamTrack.applyConstraints({ advanced: [{ zoom: zoomValue }] });
                     }
                     if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
                         await streamTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
                     }
                 } catch (e) {
-                    console.warn("Controlli avanzati camera non supportati.");
+                    console.warn("Advanced camera controls not supported.");
                 }
             };
         } catch (err) {
-            modalStatus.innerText = "Errore fotocamera: " + err.message;
+            modalStatus.innerText = "Camera error: " + err.message;
         }
     }
 
     function closeScanner() {
-        currentScanMode = null; // Questo "uccide" le scansioni in corso
+        currentScanMode = null; 
         scannerModal.classList.remove('active');
         if (streamTrack) {
             streamTrack.stop();
@@ -775,23 +784,19 @@
         }, 333); 
     }
 
-    // --- Auto-Scan: OCR (NUOVO CODICE) ---
+    // --- Auto-Scan: OCR (WITH VISUAL DEBUG) ---
     function startOcrAutoScan() {
         const context = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Creiamo una funzione asincrona che richiama se stessa solo QUANDO ha finito il frame precedente
         async function processOcrFrame() {
-            // Condizione di uscita: se l'utente ha chiuso il popup o cambiato modalità
             if (currentScanMode !== 'ocr' || !streamTrack) return;
             
             if (!video.videoWidth || !isOcrReady) {
-                setTimeout(processOcrFrame, 500); // Riprova tra mezzo secondo
+                setTimeout(processOcrFrame, 500); 
                 return;
             }
 
-            modalStatus.innerText = "Scansione Product Key in corso...";
-
-            // Calcoli di crop per concentrarsi solo sul riquadro verde
+            // Crop calculations
             const containerRect = video.parentElement.getBoundingClientRect();
             const overlayRect = overlay.getBoundingClientRect();
             const videoRatio = video.videoWidth / video.videoHeight;
@@ -820,7 +825,7 @@
             canvas.height = cropH;
             context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-            // Binarizzazione Adattiva per massimizzare il contrasto
+            // Adaptive Binarization to maximize contrast
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
             let totalLuma = 0;
@@ -837,41 +842,38 @@
             context.putImageData(imageData, 0, 0);
 
             try {
-                // Passiamo l'immagine elaborata al motore AI
                 const result = await tesseractWorker.recognize(canvas);
-                // Pulizia feroce: teniamo SOLO lettere e numeri
+                // Aggressive cleanup: keep ONLY alphanumeric characters
                 const text = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
                 
-                // EURISTICA DI SUCCESSO: Deve essere lungo esattamente 25 caratteri
+                // Visual Debug
+                if (text.length > 5 && text.length !== 25) {
+                     modalStatus.innerText = `Read (${text.length}/25): ${text}`;
+                }
+
+                // SUCCESS HEURISTIC: Must be exactly 25 characters long
                 if (text.length === 25) {
                     const targetInput = document.getElementById(currentTargetInputId);
                     targetInput.value = text;
-                    // Scateniamo l'evento input per far scattare le tue bellissime maschere di formattazione (trattini/spazi)
                     targetInput.dispatchEvent(new Event('input'));
 
                     if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-                    modalStatus.innerText = "✅ Codice acquisito!";
+                    modalStatus.innerText = "✅ Code successfully captured!";
                     
-                    // Aspettiamo mezzo secondo per far leggere il messaggio e chiudiamo
-                    setTimeout(() => { closeScanner(); }, 500);
-                    return; // Fermiamo definitivamente il loop
-                } else if (text.length > 10) {
-                    modalStatus.innerText = `Lettura parziale (${text.length}/25 caratteri). Mantieni fermo...`;
+                    setTimeout(() => { closeScanner(); }, 800);
+                    return; 
                 }
             } catch (err) {
                 console.error("OCR Frame Error:", err);
             }
 
-            // Se siamo arrivati qui, la scansione non era perfetta. 
-            // Aspettiamo 150ms per far "respirare" il telefono e analizziamo il prossimo frame
             setTimeout(processOcrFrame, 150);
         }
         
-        // Inneschiamo il primo ciclo
         processOcrFrame();
     }
 
-    // --- Funzione Tap-to-Focus per schermi sfuocati ---
+    // --- Tap-to-Focus Function ---
     document.querySelector('.video-wrapper').addEventListener('click', async () => {
         if (!streamTrack) return;
         
