@@ -329,4 +329,286 @@
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIbF5CTeFzENAOT_8kfb01AlRCIagclrTczeizuadgyDZgQP0G6NAXtu7gxH57kk8/exec';
 
     const OPERATOR_DB = [
-        { id: "35259", lastName: "Chin", firstName: "Paolo", pinHash: "03ac674216f3e15c761ee1a5e255f067953
+        { id: "35259", lastName: "Chin", firstName: "Paolo", pinHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4" },
+        { id: "22598", lastName: "Girardi", firstName: "Sofia", pinHash: "e5566f19f18730bb03cbdf2b1ff905342d039f37cff0937a496b823e4e945c71" }
+    ];
+
+    let currentOperatorId = "00000";
+    let isOcrReady = false;
+    let tesseractWorker = null;
+    const zxingReader = new ZXing.BrowserMultiFormatReader();
+
+    const elements = {
+        pcSerial: document.getElementById('pc-serial'),
+        localAccount: document.getElementById('local-account'),
+        officeMs: document.getElementById('office-ms'),
+        officeKey: document.getElementById('office-key'),
+        msOfficeField: document.getElementById('ms-office-field'),
+        avNorton: document.getElementById('av-norton'),
+        avMcafee: document.getElementById('av-mcafee'),
+        avKey: document.getElementById('av-key'),
+        avField: document.getElementById('av-field'),
+        avKeyLabel: document.getElementById('av-key-label'),
+        msUsername: document.getElementById('ms-username'),
+        msDomain: document.getElementById('ms-domain'),
+        msPassword: document.getElementById('ms-password'),
+        submitBtn: document.getElementById('submit-btn'),
+        operatorBadge: document.getElementById('header-operator-id'),
+        operatorModal: document.getElementById('operator-modal'),
+        operatorDropdown: document.getElementById('operator-dropdown'),
+        operatorPin: document.getElementById('operator-pin'),
+        scannerModal: document.getElementById('scanner-modal'),
+        video: document.getElementById('scanner-video'),
+        modalStatus: document.getElementById('modal-status'),
+        scanAnimation: document.getElementById('scan-animation'),
+        overlay: document.getElementById('scanner-overlay'),
+        canvas: document.getElementById('hidden-canvas')
+    };
+
+    // Initialize Tesseract Engine with proper v4 sequence
+    async function initializeOCRWorker() {
+        try {
+            console.log("OCR Engine: Loading worker...");
+            tesseractWorker = await Tesseract.createWorker();
+            await tesseractWorker.loadLanguage('eng');
+            await tesseractWorker.initialize('eng');
+            await tesseractWorker.setParameters({
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-',
+                tessedit_pageseg_mode: '7',
+            });
+            isOcrReady = true;
+            console.log("OCR Engine: Ready");
+        } catch (e) {
+            console.error("OCR Engine Error:", e);
+            alert("Critical: Failed to load OCR engine. Check internet connection.");
+        }
+    }
+
+    window.addEventListener('load', () => {
+        initializeOperatorSystem();
+        initializeOCRWorker();
+    });
+
+    // Formatting Logic
+    function formatProductKey(input, sep) {
+        let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
+        let res = "";
+        for (let i = 0; i < val.length; i++) {
+            if (i > 0 && i % 5 === 0) res += sep;
+            res += val[i];
+        }
+        input.value = res;
+        validateForm();
+    }
+
+    function formatAvKey(input) {
+        formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
+    }
+
+    // Operator Logic
+    function initializeOperatorSystem() {
+        OPERATOR_DB.forEach(op => {
+            const opt = document.createElement('option');
+            opt.value = op.id;
+            opt.textContent = `${op.id} - ${op.lastName} ${op.firstName}`;
+            elements.operatorDropdown.appendChild(opt);
+        });
+        const savedId = localStorage.getItem('operator_id');
+        if (savedId) {
+            currentOperatorId = savedId;
+            elements.operatorDropdown.value = savedId;
+        }
+        updateOperatorUI();
+    }
+
+    function openOperatorModal() { elements.operatorModal.classList.add('active'); }
+    function closeOperatorModal() { elements.operatorModal.classList.remove('active'); }
+
+    async function saveOperatorSelection() {
+        const id = elements.operatorDropdown.value;
+        const pin = elements.operatorPin.value;
+        if (id === "00000") return;
+        if (!/^\d{4}$/.test(pin)) { alert("Enter 4 digits."); return; }
+
+        const op = OPERATOR_DB.find(o => o.id === id);
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+        const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        if (hash !== op.pinHash) { alert("Invalid PIN."); return; }
+        
+        currentOperatorId = id;
+        localStorage.setItem('operator_id', id);
+        localStorage.setItem('operator_pin', pin);
+        updateOperatorUI();
+        closeOperatorModal();
+    }
+
+    function updateOperatorUI() {
+        elements.operatorBadge.innerText = currentOperatorId;
+        validateForm();
+    }
+
+    function toggleFields() {
+        elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
+        elements.avField.classList.toggle('visible', !elements.avNone.checked);
+        validateForm();
+    }
+
+    function validateForm() {
+        let ok = currentOperatorId !== "00000" && elements.pcSerial.value.trim() !== "" && 
+                 elements.localAccount.value.trim() !== "" && elements.msUsername.value.trim() !== "" &&
+                 elements.msPassword.value.trim() !== "";
+        if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
+        elements.submitBtn.disabled = !ok;
+    }
+
+    // Scanner Logic
+    let currentInputId = null;
+    let currentMode = null;
+    let streamTrack = null;
+
+    async function openScanner(targetId, title, mode) {
+        currentInputId = targetId;
+        currentMode = mode;
+        document.getElementById('scanner-title').innerText = title;
+        elements.scannerModal.classList.add('active');
+        elements.scanAnimation.style.display = 'block';
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } }
+            });
+            elements.video.srcObject = stream;
+            streamTrack = stream.getVideoTracks()[0];
+            
+            elements.video.onloadedmetadata = () => {
+                const capabilities = streamTrack.getCapabilities();
+                if (capabilities.zoom) streamTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
+                if (mode === 'barcode') startBarcodeAutoScan();
+                else startOcrAutoScan();
+            };
+        } catch (e) { elements.modalStatus.innerText = "Camera Error: " + e.message; }
+    }
+
+    function closeScanner() {
+        currentMode = null;
+        elements.scannerModal.classList.remove('active');
+        if (streamTrack) streamTrack.stop();
+        elements.video.srcObject = null;
+    }
+
+    function startBarcodeAutoScan() {
+        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        const interval = setInterval(async () => {
+            if (currentMode !== 'barcode') { clearInterval(interval); return; }
+            elements.canvas.width = elements.video.videoWidth / 2;
+            elements.canvas.height = elements.video.videoHeight / 2;
+            ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
+            try {
+                const res = await zxingReader.decodeFromCanvas(elements.canvas);
+                if (res) {
+                    document.getElementById(currentInputId).value = res.text;
+                    if ("vibrate" in navigator) navigator.vibrate(200);
+                    closeScanner();
+                    validateForm();
+                }
+            } catch(e) {}
+        }, 300);
+    }
+
+    async function startOcrAutoScan() {
+        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        
+        async function loop() {
+            if (currentMode !== 'ocr' || !streamTrack) return;
+            
+            // Wait for engine and video
+            if (!isOcrReady || elements.video.videoWidth === 0) {
+                elements.modalStatus.innerText = "OCR Engine: Loading Assets...";
+                setTimeout(loop, 500);
+                return;
+            }
+
+            elements.modalStatus.innerText = "OCR Engine: Ready. Scanning...";
+
+            // Precise cropping logic
+            const v = elements.video;
+            const overlay = elements.overlay.getBoundingClientRect();
+            const wrapper = v.parentElement.getBoundingClientRect();
+            const scaleX = v.videoWidth / wrapper.width;
+            const scaleY = v.videoHeight / wrapper.height;
+            
+            const cw = overlay.width * scaleX;
+            const ch = overlay.height * scaleY;
+            const cx = (overlay.left - wrapper.left) * scaleX;
+            const cy = (overlay.top - wrapper.top) * scaleY;
+
+            elements.canvas.width = cw;
+            elements.canvas.height = ch;
+            ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
+
+            // Binarization
+            const imgData = ctx.getImageData(0, 0, cw, ch);
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const lum = 0.21 * d[i] + 0.72 * d[i+1] + 0.07 * d[i+2];
+                const col = lum > 128 ? 255 : 0;
+                d[i] = d[i+1] = d[i+2] = col;
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            try {
+                const res = await tesseractWorker.recognize(elements.canvas);
+                const text = res.data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                
+                if (text.length > 5) elements.modalStatus.innerText = `Read (${text.length}/25): ${text}`;
+
+                if (text.length === 25) {
+                    const target = document.getElementById(currentInputId);
+                    target.value = text;
+                    target.dispatchEvent(new Event('input'));
+                    if ("vibrate" in navigator) navigator.vibrate(200);
+                    setTimeout(closeScanner, 500);
+                    return;
+                }
+            } catch(e) {}
+            setTimeout(loop, 200);
+        }
+        loop();
+    }
+
+    // Submit Action
+    elements.submitBtn.onclick = async () => {
+        elements.submitBtn.disabled = true;
+        const payload = {
+            operator_id: currentOperatorId,
+            pin: localStorage.getItem('operator_pin'),
+            pc_serial: elements.pcSerial.value.trim(),
+            local_account: elements.localAccount.value.trim(),
+            office_suite: document.querySelector('input[name="office_type"]:checked').value,
+            office_key: elements.officeKey.value,
+            antivirus: document.querySelector('input[name="av_type"]:checked').value,
+            antivirus_key: elements.avKey.value,
+            microsoft_account: `${elements.msUsername.value}@${elements.msDomain.value}`,
+            microsoft_password: elements.msPassword.value,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const data = await res.json();
+            if (data.status === "error") throw new Error(data.message);
+            alert("Upload Success!");
+            location.reload();
+        } catch (e) {
+            alert("Error: " + e.message);
+            elements.submitBtn.disabled = false;
+        }
+    };
+</script>
+</body>
+</html>
