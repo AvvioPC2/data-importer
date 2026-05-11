@@ -643,7 +643,7 @@
         }
     });
 
-    // --- Scanner Logic ---
+// --- Scanner Logic ---
     let currentTargetInputId = null;
     let currentScanMode = null;
     let streamTrack = null;
@@ -658,64 +658,55 @@
     const captureBtn = document.getElementById('capture-btn');
     const scanAnimation = document.getElementById('scan-animation');
 
-	async function openScanner(targetInputId, contextTitle, mode) {
+    async function openScanner(targetInputId, contextTitle, mode) {
         currentTargetInputId = targetInputId;
         currentScanMode = mode;
         
         scannerTitle.innerText = contextTitle;
         scannerModal.classList.add('active');
         
+        // Nascondiamo il bottone e mostriamo l'animazione per ENTRAMBE le modalità!
+        captureBtn.style.display = 'none';
+        scanAnimation.style.display = 'block';
+
         if (mode === 'barcode') {
             overlay.classList.add('barcode-mode');
-            captureBtn.style.display = 'none';
-            scanAnimation.style.display = 'block';
             modalStatus.innerText = "Ricerca automatica codice a barre...";
         } else {
             overlay.classList.remove('barcode-mode');
-            captureBtn.style.display = 'block';
-            scanAnimation.style.display = 'none';
-            modalStatus.innerText = "Tocca lo schermo per mettere a fuoco. Allinea e premi il pulsante.";
+            modalStatus.innerText = "Inizializzazione OCR... (cerca 25 caratteri)";
         }
 
         try {
-            // 1. Richiediamo la massima risoluzione possibile (4K)
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { 
                     facingMode: "environment", 
                     width: { ideal: 4096 }, 
-                    height: { ideal: 2160 },
-                    // Rimuoviamo i vincoli advanced vecchi che a volte mandano in palla iOS
+                    height: { ideal: 2160 }
                 }
             });
-            
             video.srcObject = stream;
             streamTrack = stream.getVideoTracks()[0];
             
             video.onloadedmetadata = async () => {
-                if (mode === 'barcode') startBarcodeAutoScan();
-                
-                // 2. LOGICA DI ZOOM AUTOMATICO
-                // Controlliamo se il dispositivo supporta lo zoom via web
+                // Avvio dello scanner in base alla modalità
+                if (mode === 'barcode') {
+                    startBarcodeAutoScan();
+                } else if (mode === 'ocr') {
+                    startOcrAutoScan(); // Avvia il nuovo ciclo OCR automatico
+                }
+
                 try {
                     const capabilities = streamTrack.getCapabilities();
                     if (capabilities.zoom) {
-                        // Applichiamo uno zoom di 2x (o il massimo consentito se inferiore a 2x)
-                        // Questo permette all'operatore di tenere il telefono a 20cm di distanza (fuoco perfetto)
                         const zoomValue = Math.min(2.5, capabilities.zoom.max);
-                        await streamTrack.applyConstraints({
-                            advanced: [{ zoom: zoomValue }]
-                        });
-                        console.log("Zoom impostato a:", zoomValue);
+                        await streamTrack.applyConstraints({ advanced: [{ zoom: zoomValue }] });
                     }
-                    
-                    // Forziamo anche l'autofocus se supportato dal dispositivo
                     if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
-                        await streamTrack.applyConstraints({
-                            advanced: [{ focusMode: "continuous" }]
-                        });
+                        await streamTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
                     }
-                } catch (constraintErr) {
-                    console.warn("Il dispositivo non supporta controlli avanzati (zoom/focus):", constraintErr);
+                } catch (e) {
+                    console.warn("Controlli avanzati camera non supportati.");
                 }
             };
         } catch (err) {
@@ -724,6 +715,7 @@
     }
 
     function closeScanner() {
+        currentScanMode = null; // Questo "uccide" le scansioni in corso
         scannerModal.classList.remove('active');
         if (streamTrack) {
             streamTrack.stop();
@@ -736,41 +728,12 @@
         currentTargetInputId = null;
     }
 
-// --- Funzione Tap-to-Focus ---
-    document.querySelector('.video-wrapper').addEventListener('click', async () => {
-        if (!streamTrack) return;
-        
-        modalStatus.innerText = "Messa a fuoco in corso...";
-        if ("vibrate" in navigator) navigator.vibrate([50]); // Piccolo feedback tattile
-        
-        try {
-            const capabilities = streamTrack.getCapabilities();
-            if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
-                // Forziamo un reset applicando e rimuovendo un vincolo
-                await streamTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] });
-                setTimeout(async () => {
-                    await streamTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-                    modalStatus.innerText = "Messa a fuoco completata.";
-                }, 100);
-            } else {
-                modalStatus.innerText = "Autofocus forzato non supportato su questo dispositivo.";
-            }
-        } catch(e) {
-            console.error("Errore autofocus:", e);
-        }
-        
-        setTimeout(() => {
-            if (currentScanMode === 'ocr') {
-                modalStatus.innerText = "Allinea il testo nel riquadro e premi il pulsante.";
-            }
-        }, 2000);
-    });
-
+    // --- Auto-Scan: BARCODE ---
     function startBarcodeAutoScan() {
         const context = canvas.getContext('2d', { willReadFrequently: true });
         
         autoScanInterval = setInterval(async () => {
-            if (!video.videoWidth) return;
+            if (!video.videoWidth || currentScanMode !== 'barcode') return;
 
             canvas.width = video.videoWidth / 2;
             canvas.height = video.videoHeight / 2;
@@ -812,86 +775,117 @@
         }, 333); 
     }
 
-    captureBtn.addEventListener('click', async () => {
-        if (!currentTargetInputId || currentScanMode !== 'ocr') return;
-        
-        if (!isOcrReady) {
-            modalStatus.innerText = "Inizializzazione motore OCR in corso...";
-            await initializeOCRWorker();
-        }
-        
-        captureBtn.disabled = true;
-        modalStatus.innerText = "Elaborazione immagine in corso...";
-        
+    // --- Auto-Scan: OCR (NUOVO CODICE) ---
+    function startOcrAutoScan() {
         const context = canvas.getContext('2d', { willReadFrequently: true });
         
-        const containerRect = video.parentElement.getBoundingClientRect();
-        const overlayRect = overlay.getBoundingClientRect();
-        const videoRatio = video.videoWidth / video.videoHeight;
-        const domRatio = containerRect.width / containerRect.height;
-        
-        let actualRenderedWidth, actualRenderedHeight;
-        let renderedOffsetX = 0, renderedOffsetY = 0;
-
-        if (domRatio > videoRatio) {
-            actualRenderedWidth = containerRect.width;
-            actualRenderedHeight = containerRect.width / videoRatio;
-            renderedOffsetY = (actualRenderedHeight - containerRect.height) / 2;
-        } else {
-            actualRenderedHeight = containerRect.height;
-            actualRenderedWidth = containerRect.height * videoRatio;
-            renderedOffsetX = (actualRenderedWidth - containerRect.width) / 2;
-        }
-
-        const scaleX = video.videoWidth / actualRenderedWidth;
-        const scaleY = video.videoHeight / actualRenderedHeight;
-
-        const cropX = ((overlayRect.left - containerRect.left) + renderedOffsetX) * scaleX;
-        const cropY = ((overlayRect.top - containerRect.top) + renderedOffsetY) * scaleY;
-        const cropW = overlayRect.width * scaleX;
-        const cropH = overlayRect.height * scaleY;
-
-        canvas.width = cropW;
-        canvas.height = cropH;
-
-        context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        let totalLuma = 0;
-        
-        for (let i = 0; i < data.length; i += 4) {
-            totalLuma += 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
-        }
-        const avgLuma = totalLuma / (canvas.width * canvas.height);
-        const dynamicThreshold = avgLuma * 0.85;
-
-        for (let i = 0; i < data.length; i += 4) {
-            const luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
-            const color = luma > dynamicThreshold ? 255 : 0;
-            data[i] = data[i+1] = data[i+2] = color;
-        }
-        context.putImageData(imageData, 0, 0);
-
-        try {
-            const result = await tesseractWorker.recognize(canvas);
-            const text = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
+        // Creiamo una funzione asincrona che richiama se stessa solo QUANDO ha finito il frame precedente
+        async function processOcrFrame() {
+            // Condizione di uscita: se l'utente ha chiuso il popup o cambiato modalità
+            if (currentScanMode !== 'ocr' || !streamTrack) return;
             
-            if (text.length > 5) {
-                const targetInput = document.getElementById(currentTargetInputId);
-                targetInput.value = text;
-                targetInput.dispatchEvent(new Event('input'));
-
-                if ("vibrate" in navigator) navigator.vibrate([150]);
-                closeScanner();
-            } else {
-                modalStatus.innerText = "❌ Scansione fallita. Riprova.";
+            if (!video.videoWidth || !isOcrReady) {
+                setTimeout(processOcrFrame, 500); // Riprova tra mezzo secondo
+                return;
             }
-        } catch (err) {
-            modalStatus.innerText = "Errore di sistema: " + err.message;
-        } finally {
-            captureBtn.disabled = false;
+
+            modalStatus.innerText = "Scansione Product Key in corso...";
+
+            // Calcoli di crop per concentrarsi solo sul riquadro verde
+            const containerRect = video.parentElement.getBoundingClientRect();
+            const overlayRect = overlay.getBoundingClientRect();
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const domRatio = containerRect.width / containerRect.height;
+            
+            let actualRenderedWidth, actualRenderedHeight, renderedOffsetX = 0, renderedOffsetY = 0;
+
+            if (domRatio > videoRatio) {
+                actualRenderedWidth = containerRect.width;
+                actualRenderedHeight = containerRect.width / videoRatio;
+                renderedOffsetY = (actualRenderedHeight - containerRect.height) / 2;
+            } else {
+                actualRenderedHeight = containerRect.height;
+                actualRenderedWidth = containerRect.height * videoRatio;
+                renderedOffsetX = (actualRenderedWidth - containerRect.width) / 2;
+            }
+
+            const scaleX = video.videoWidth / actualRenderedWidth;
+            const scaleY = video.videoHeight / actualRenderedHeight;
+            const cropX = ((overlayRect.left - containerRect.left) + renderedOffsetX) * scaleX;
+            const cropY = ((overlayRect.top - containerRect.top) + renderedOffsetY) * scaleY;
+            const cropW = overlayRect.width * scaleX;
+            const cropH = overlayRect.height * scaleY;
+
+            canvas.width = cropW;
+            canvas.height = cropH;
+            context.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+            // Binarizzazione Adattiva per massimizzare il contrasto
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            let totalLuma = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                totalLuma += 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
+            }
+            const dynamicThreshold = (totalLuma / (canvas.width * canvas.height)) * 0.85;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const luma = 0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2];
+                const color = luma > dynamicThreshold ? 255 : 0;
+                data[i] = data[i+1] = data[i+2] = color;
+            }
+            context.putImageData(imageData, 0, 0);
+
+            try {
+                // Passiamo l'immagine elaborata al motore AI
+                const result = await tesseractWorker.recognize(canvas);
+                // Pulizia feroce: teniamo SOLO lettere e numeri
+                const text = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
+                
+                // EURISTICA DI SUCCESSO: Deve essere lungo esattamente 25 caratteri
+                if (text.length === 25) {
+                    const targetInput = document.getElementById(currentTargetInputId);
+                    targetInput.value = text;
+                    // Scateniamo l'evento input per far scattare le tue bellissime maschere di formattazione (trattini/spazi)
+                    targetInput.dispatchEvent(new Event('input'));
+
+                    if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+                    modalStatus.innerText = "✅ Codice acquisito!";
+                    
+                    // Aspettiamo mezzo secondo per far leggere il messaggio e chiudiamo
+                    setTimeout(() => { closeScanner(); }, 500);
+                    return; // Fermiamo definitivamente il loop
+                } else if (text.length > 10) {
+                    modalStatus.innerText = `Lettura parziale (${text.length}/25 caratteri). Mantieni fermo...`;
+                }
+            } catch (err) {
+                console.error("OCR Frame Error:", err);
+            }
+
+            // Se siamo arrivati qui, la scansione non era perfetta. 
+            // Aspettiamo 150ms per far "respirare" il telefono e analizziamo il prossimo frame
+            setTimeout(processOcrFrame, 150);
         }
+        
+        // Inneschiamo il primo ciclo
+        processOcrFrame();
+    }
+
+    // --- Funzione Tap-to-Focus per schermi sfuocati ---
+    document.querySelector('.video-wrapper').addEventListener('click', async () => {
+        if (!streamTrack) return;
+        
+        if ("vibrate" in navigator) navigator.vibrate([50]); 
+        
+        try {
+            const capabilities = streamTrack.getCapabilities();
+            if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
+                await streamTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] });
+                setTimeout(async () => {
+                    await streamTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                }, 100);
+            }
+        } catch(e) {}
     });
 
     toggleFields();
