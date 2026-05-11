@@ -153,8 +153,14 @@
         #submit-btn:active:not(:disabled) { transform: scale(0.98); }
 
         /* --- Modals (Camera & Operator) --- */
+        
+        /* 
+         * Changed from 100vh to absolute anchoring (top/bottom/left/right 0).
+         * This forces the modal to respect the browser's available UI space,
+         * avoiding overlaps with Android software navigation bars.
+         */
         .fullscreen-modal {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; bottom: 0; left: 0; right: 0;
             background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
@@ -177,7 +183,15 @@
         }
         #scanner-overlay.barcode-mode { height: 120px; border-color: #007bff; }
 
-        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 90px; display: flex; flex-direction: column; justify-content: center; }
+        /* 
+         * Increased padding-bottom to ensure the footer clears the OS navigation bar.
+         * env(safe-area-inset-bottom) dynamically adds space for modern swipe-bars.
+         */
+        .modal-footer { 
+            padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 90px; 
+            display: flex; flex-direction: column; justify-content: center; 
+            padding-bottom: calc(30px + env(safe-area-inset-bottom));
+        }
         #capture-btn { background: var(--accent-color); color: white; border: none; padding: 16px 30px; font-size: 18px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
         #modal-status { color: white; font-size: 16px; min-height: 20px; font-weight: 500; }
         
