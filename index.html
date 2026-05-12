@@ -165,24 +165,36 @@
         .modal-title { font-size: 18px; font-weight: bold; }
         .close-modal-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 5px; }
         
-        .video-wrapper { position: relative; flex-grow: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .video-wrapper { position: relative; flex-grow: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #111; }
         #scanner-video { width: 100%; height: 100%; object-fit: cover; }
         
+        /* The targeting reticle */
         #scanner-overlay {
-            position: absolute; width: 95%; height: 80px;
+            position: absolute; width: 95%; height: 100px;
             border: 3px solid #00ff00; border-radius: 8px;
             box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s;
         }
         #scanner-overlay.barcode-mode { height: 120px; border-color: #007bff; }
 
         .modal-footer { 
-            padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 90px; 
+            padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 120px; 
             display: flex; flex-direction: column; justify-content: center; 
             padding-bottom: calc(30px + env(safe-area-inset-bottom));
         }
-        #modal-status { color: white; font-size: 16px; min-height: 20px; font-weight: 500; }
         
-        .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-top: 10px; }
+        /* Large Capture Button */
+        #capture-btn { 
+            background: var(--accent-color); color: white; border: none; 
+            padding: 16px 30px; font-size: 18px; border-radius: 50px; 
+            font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; 
+            transition: all 0.2s; display: none;
+        }
+        #capture-btn:active { transform: scale(0.95); background: #0056b3; }
+        #capture-btn:disabled { background: #555; cursor: wait; }
+
+        #modal-status { color: white; font-size: 15px; min-height: 20px; font-weight: 500; }
+        
+        .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-bottom: 10px; }
         .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
         @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
 
@@ -225,7 +237,7 @@
         <div class="form-group">
             <label class="form-label">Device Serial Number</label>
             <div class="input-with-icon">
-                <input type="text" id="pc-serial" placeholder="..." style="text-transform: none;">
+                <input type="text" id="pc-serial" placeholder="..." style="text-transform: none;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Device Serial Number', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
@@ -330,6 +342,7 @@
         </div>
     </div>
 
+    <!-- Camera / Scanner Modal -->
     <div id="scanner-modal" class="fullscreen-modal">
         <div class="modal-header">
             <div class="modal-title" id="scanner-title">Scanning</div>
@@ -340,8 +353,10 @@
             <div id="scanner-overlay"></div>
         </div>
         <div class="modal-footer">
-            <div id="modal-status">Initializing...</div>
             <div id="scan-animation" class="scan-animation"></div>
+            <!-- Restored Manual Capture Button for OCR -->
+            <button id="capture-btn">CAPTURE CODE</button>
+            <div id="modal-status">Initializing...</div>
         </div>
     </div>
     
@@ -389,11 +404,12 @@
         video: document.getElementById('scanner-video'),
         modalStatus: document.getElementById('modal-status'),
         scanAnimation: document.getElementById('scan-animation'),
+        captureBtn: document.getElementById('capture-btn'),
         overlay: document.getElementById('scanner-overlay'),
         canvas: document.getElementById('hidden-canvas')
     };
 
-    // Initialize Tesseract Engine with proper v4 sequence
+    // Initialize Tesseract Engine
     async function initializeOCRWorker() {
         try {
             console.log("OCR Engine: Loading worker...");
@@ -401,14 +417,13 @@
             await tesseractWorker.loadLanguage('eng');
             await tesseractWorker.initialize('eng');
             await tesseractWorker.setParameters({
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                tessedit_pageseg_mode: '7',
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
+                tessedit_pageseg_mode: '6', // Assume a single uniform block of text
             });
             isOcrReady = true;
             console.log("OCR Engine: Ready");
         } catch (e) {
             console.error("OCR Engine Error:", e);
-            alert("Critical: Failed to load OCR engine. Check internet connection.");
         }
     }
 
@@ -507,13 +522,28 @@
     let currentInputId = null;
     let currentMode = null;
     let streamTrack = null;
+    let barcodeInterval = null;
 
     async function openScanner(targetId, title, mode) {
         currentInputId = targetId;
         currentMode = mode;
         document.getElementById('scanner-title').innerText = title;
         elements.scannerModal.classList.add('active');
-        elements.scanAnimation.style.display = 'block';
+
+        // Configure UI based on mode
+        if (mode === 'barcode') {
+            elements.overlay.classList.add('barcode-mode');
+            elements.captureBtn.style.display = 'none';
+            elements.scanAnimation.style.display = 'block';
+            elements.modalStatus.innerText = "Searching for barcode...";
+        } else {
+            // OCR Mode: Manual Capture
+            elements.overlay.classList.remove('barcode-mode');
+            elements.captureBtn.style.display = 'block';
+            elements.captureBtn.disabled = false;
+            elements.scanAnimation.style.display = 'none';
+            elements.modalStatus.innerText = "Align product key in the box and tap CAPTURE";
+        }
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -525,10 +555,14 @@
             elements.video.onloadedmetadata = () => {
                 const capabilities = streamTrack.getCapabilities();
                 if (capabilities.zoom) streamTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
-                if (mode === 'barcode') startBarcodeAutoScan();
-                else startOcrAutoScan();
+                
+                if (mode === 'barcode') {
+                    startBarcodeAutoScan();
+                }
             };
-        } catch (e) { elements.modalStatus.innerText = "Camera Error: " + e.message; }
+        } catch (e) { 
+            elements.modalStatus.innerText = "Camera Error: " + e.message; 
+        }
     }
 
     function closeScanner() {
@@ -536,12 +570,18 @@
         elements.scannerModal.classList.remove('active');
         if (streamTrack) streamTrack.stop();
         elements.video.srcObject = null;
+        if (barcodeInterval) {
+            clearInterval(barcodeInterval);
+            barcodeInterval = null;
+        }
+        if (elements.video.paused) elements.video.play(); // unfreeze if frozen
     }
 
+    // Live Auto-Scan for Barcodes ONLY
     function startBarcodeAutoScan() {
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
-        const interval = setInterval(async () => {
-            if (currentMode !== 'barcode') { clearInterval(interval); return; }
+        barcodeInterval = setInterval(async () => {
+            if (currentMode !== 'barcode') { clearInterval(barcodeInterval); return; }
             elements.canvas.width = elements.video.videoWidth / 2;
             elements.canvas.height = elements.video.videoHeight / 2;
             ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
@@ -557,87 +597,80 @@
         }, 300);
     }
 
-    // Advanced OCR with Consecutive Frame Verification (Debouncing)
-    async function startOcrAutoScan() {
-        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
-        
-        // Debouncing variables
-        let previousValidText = "";
-        let consecutiveMatches = 0;
-        const requiredMatches = 2; // Needs 2 consecutive identical 25-char strings
-        
-        async function loop() {
-            if (currentMode !== 'ocr' || !streamTrack) return;
-            
-            // Wait for engine and video
-            if (!isOcrReady || elements.video.videoWidth === 0) {
-                elements.modalStatus.innerText = "OCR Engine: Loading Assets...";
-                setTimeout(loop, 500);
-                return;
-            }
+    // Manual Capture & Regex Extract for OCR
+    elements.captureBtn.onclick = async () => {
+        if (!streamTrack || currentMode !== 'ocr') return;
 
-            // Precise cropping logic based on the green overlay position
-            const v = elements.video;
-            const overlay = elements.overlay.getBoundingClientRect();
-            const wrapper = v.parentElement.getBoundingClientRect();
-            const scaleX = v.videoWidth / wrapper.width;
-            const scaleY = v.videoHeight / wrapper.height;
-            
-            const cw = overlay.width * scaleX;
-            const ch = overlay.height * scaleY;
-            const cx = (overlay.left - wrapper.left) * scaleX;
-            const cy = (overlay.top - wrapper.top) * scaleY;
-
-            elements.canvas.width = cw;
-            elements.canvas.height = ch;
-            
-            // Soft contrast boost instead of harsh binarization to preserve LSTM legibility
-            ctx.filter = "contrast(1.5) grayscale(1)";
-            ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
-            ctx.filter = "none";
-
-            try {
-                const res = await tesseractWorker.recognize(elements.canvas);
-                const text = res.data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                
-                if (text.length > 5 && text.length !== 25) {
-                    elements.modalStatus.innerText = `Searching... read ${text.length}/25 chars`;
-                    previousValidText = "";
-                    consecutiveMatches = 0;
-                }
-
-                // Debouncing Logic: Accept only if exact string is read sequentially
-                if (text.length === 25) {
-                    if (text === previousValidText) {
-                        consecutiveMatches++;
-                        
-                        if (consecutiveMatches >= requiredMatches) {
-                            // Verified Match!
-                            const target = document.getElementById(currentInputId);
-                            target.value = text;
-                            target.dispatchEvent(new Event('input'));
-                            if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-                            elements.modalStatus.innerText = "✅ Verified and Captured!";
-                            setTimeout(closeScanner, 500);
-                            return; 
-                        } else {
-                            elements.modalStatus.innerText = "Target locked. Verifying... hold still!";
-                        }
-                    } else {
-                        // First time seeing this exact 25-char string
-                        previousValidText = text;
-                        consecutiveMatches = 1;
-                        elements.modalStatus.innerText = "Potential match found. Verifying...";
-                    }
-                }
-            } catch(e) {}
-            
-            setTimeout(loop, 150); // Recursive processing loop
+        if (!isOcrReady) {
+            alert("OCR Engine is still loading. Please wait a few seconds.");
+            return;
         }
-        loop();
-    }
 
-    // Focus Camera on Tap
+        // 1. Freeze Video & Update UI
+        elements.video.pause(); 
+        elements.captureBtn.disabled = true;
+        elements.modalStatus.innerText = "Processing image... Please wait.";
+        if ("vibrate" in navigator) navigator.vibrate([50]);
+
+        // 2. Crop High-Res Image
+        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        const v = elements.video;
+        const overlay = elements.overlay.getBoundingClientRect();
+        const wrapper = v.parentElement.getBoundingClientRect();
+        const scaleX = v.videoWidth / wrapper.width;
+        const scaleY = v.videoHeight / wrapper.height;
+        
+        const cw = overlay.width * scaleX;
+        const ch = overlay.height * scaleY;
+        const cx = (overlay.left - wrapper.left) * scaleX;
+        const cy = (overlay.top - wrapper.top) * scaleY;
+
+        elements.canvas.width = cw;
+        elements.canvas.height = ch;
+        
+        // Enhance image for Tesseract (high contrast)
+        ctx.filter = "contrast(1.5) grayscale(1)";
+        ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
+        ctx.filter = "none";
+
+        try {
+            // 3. Analyze Image
+            const res = await tesseractWorker.recognize(elements.canvas);
+            const rawText = res.data.text.toUpperCase();
+            
+            // 4. Smart Regex Extraction
+            // Looks for 5 blocks of 5 alphanumeric chars, separated by spaces, dashes, or nothing.
+            // This ignores all surrounding noise (logos, instructions, barcodes).
+            const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
+            const match = rawText.match(regex);
+
+            if (match) {
+                // Combine the 5 capture groups perfectly
+                const finalKey = `${match[1]}${match[2]}${match[3]}${match[4]}${match[5]}`;
+                
+                const target = document.getElementById(currentInputId);
+                target.value = finalKey;
+                target.dispatchEvent(new Event('input')); // Triggers auto-formatting dashes
+                
+                elements.modalStatus.innerText = "✅ Key successfully extracted!";
+                if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+                
+                setTimeout(closeScanner, 800);
+            } else {
+                // Extraction Failed
+                elements.modalStatus.innerText = "❌ Key not found. Please adjust and retry.";
+                elements.captureBtn.disabled = false;
+                elements.video.play(); // Unfreeze to try again
+            }
+        } catch(e) {
+            console.error("OCR Process Error:", e);
+            elements.modalStatus.innerText = "System error during OCR.";
+            elements.captureBtn.disabled = false;
+            elements.video.play();
+        }
+    };
+
+    // Focus Camera on Video Tap
     document.querySelector('.video-wrapper').addEventListener('click', async () => {
         if (!streamTrack) return;
         if ("vibrate" in navigator) navigator.vibrate([50]); 
