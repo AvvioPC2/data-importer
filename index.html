@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -85,10 +85,11 @@
         #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
         #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
-        /* Modals */
+        /* Modals Viewport Fix */
         .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .fullscreen-modal.active { opacity: 1; pointer-events: auto; }
         
+        /* Camera Modal Layout */
         #scanner-modal { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
         #scanner-modal.active { transform: translateY(0); }
         .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: #000; z-index: 10; }
@@ -113,6 +114,7 @@
         .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
         @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
 
+        /* Operator Modal Dialog */
         #operator-modal { justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .operator-dialog { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; }
         #operator-modal.active .operator-dialog { transform: translateY(0); }
@@ -135,12 +137,14 @@
             <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
         </div>
         <div class="operator-badge" onclick="openOperatorModal()">
-            <div class="operator-label" id="lbl-operator">Operatore</div>
+            <div class="operator-label" id="lbl-operator">Operator</div>
             <div class="operator-id-display" id="header-operator-id">00000</div>
         </div>
     </header>
 
+    <!-- Main Data Entry Form -->
     <main class="form-container">
+        
         <!-- Serial Section -->
         <div class="form-group">
             <label class="form-label" id="lbl-serial">Serial Number</label>
@@ -154,13 +158,13 @@
 
         <!-- Local Account Section -->
         <div class="form-group">
-            <label class="form-label" id="lbl-local-account">Account Locale (Windows)</label>
+            <label class="form-label" id="lbl-local-account">Local Account (Windows)</label>
             <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
         <!-- Office Section -->
         <div class="form-group">
-            <label class="form-label" id="lbl-office-suite">Suite Office</label>
+            <label class="form-label" id="lbl-office-suite">Office Suite</label>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms-office" onchange="toggleFields(); validateForm();">
                 <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
@@ -180,14 +184,14 @@
 
         <!-- Antivirus Section -->
         <div class="form-group">
-            <label class="form-label" id="lbl-av-protection">Antivirus</label>
+            <label class="form-label" id="lbl-av-protection">Antivirus Protection</label>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
                 <label for="av-norton" id="lbl-opt-norton">Norton</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
                 <label for="av-mcafee" id="lbl-opt-mcafee">McAfee</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
-                <label for="av-none" id="lbl-opt-none">Nessuno</label>
+                <label for="av-none" id="lbl-opt-none">None</label>
             </div>
             <div id="av-field" class="conditional-field">
                 <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key</label>
@@ -202,8 +206,8 @@
 
         <!-- Microsoft Account Section -->
         <div class="form-group">
-            <div class="section-title" id="lbl-ms-title">Account Microsoft</div>
-            <label class="form-label" id="lbl-ms-username">Nome Utente</label>
+            <div class="section-title" id="lbl-ms-title">Microsoft Account</div>
+            <label class="form-label" id="lbl-ms-username">Username</label>
             <div class="email-group">
                 <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
                 <span>@</span>
@@ -222,34 +226,34 @@
             <div class="section-title" id="lbl-winupd-title">Windows Update</div>
             <label class="checkbox-group">
                 <input type="checkbox" id="run-updates" checked>
-                <span id="lbl-winupd-check">Esegui Windows Update al primo avvio</span>
+                <span id="lbl-winupd-check">Execute Windows Update on first boot</span>
             </label>
         </div>
 
         <!-- Submit Section -->
         <div class="submit-container">
-            <button id="submit-btn" disabled>Invia Dati</button>
+            <button id="submit-btn" disabled>Submit Data</button>
         </div>
     </main>
 
     <!-- Modals -->
     <div id="operator-modal" class="fullscreen-modal">
         <div class="operator-dialog">
-            <h3 id="lbl-modal-op-title">Seleziona Operatore</h3>
+            <h3 id="lbl-modal-op-title">Select Operator</h3>
             <select id="operator-dropdown" class="operator-select">
-                <option value="00000" id="lbl-modal-op-default">-- Seleziona --</option>
+                <option value="00000" id="lbl-modal-op-default">-- Select --</option>
             </select>
             <input type="password" id="operator-pin" class="standard-input" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
             <div class="dialog-actions">
-                <button class="dialog-btn btn-cancel" id="btn-cancel" onclick="closeOperatorModal()">Annulla</button>
-                <button class="dialog-btn btn-save" id="btn-save" onclick="saveOperatorSelection()">Salva</button>
+                <button class="dialog-btn btn-cancel" id="btn-cancel" onclick="closeOperatorModal()">Cancel</button>
+                <button class="dialog-btn btn-save" id="btn-save" onclick="saveOperatorSelection()">Save</button>
             </div>
         </div>
     </div>
 
     <div id="scanner-modal" class="fullscreen-modal">
         <div class="modal-header">
-            <div class="modal-title" id="scanner-title">Scansione</div>
+            <div class="modal-title" id="scanner-title">Scanning</div>
             <button class="close-modal-btn" onclick="closeScanner()">&times;</button>
         </div>
         <div class="video-wrapper">
@@ -258,8 +262,8 @@
         </div>
         <div class="modal-footer">
             <div id="scan-animation" class="scan-animation"></div>
-            <button id="capture-btn">CATTURA CODICE</button>
-            <div id="modal-status">Inizializzazione...</div>
+            <button id="capture-btn">CAPTURE CODE</button>
+            <div id="modal-status">Initializing...</div>
         </div>
     </div>
     
@@ -269,7 +273,7 @@
     // =====================================================================
     // 1. DICTIONARY & LOCALIZATION (Modify phrases here)
     // =====================================================================
-    const DIZIONARIO = {
+    const DICTIONARY = {
         appTitle: "AvvioPC 2",
         operatorBadge: "Operatore",
         serialLabel: "Numero di Serie Dispositivo (S/N)",
@@ -336,12 +340,10 @@
     // =====================================================================
     // 2. SYSTEM CONFIGURATION & VARIABLES
     // =====================================================================
-    // IMPORTANT: Update this URL if you create a new deployment in Google Apps Script!
+    // IMPORTANT: Ensure this matches your deployed Google Apps Script URL
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQL8UtZi8-hgP6L1ji7fosiqQ9QC4ciJXNIinHTx425vHPdeanjIKjSmJL_T8eGqA/exec';
 
-    // Dynamic database fetched from server
     let OPERATOR_DB = [];
-
     let currentOperatorId = "00000";
     let isOcrReady = false;
     let tesseractWorker = null;
@@ -386,45 +388,43 @@
     // 3. UI INITIALIZATION & TRANSLATION
     // =====================================================================
     function initializeUIStrings() {
-        document.getElementById('lbl-app-title').innerText = DIZIONARIO.appTitle;
-        document.getElementById('lbl-operator').innerText = DIZIONARIO.operatorBadge;
-        document.getElementById('lbl-serial').innerText = DIZIONARIO.serialLabel;
-        elements.pcSerial.placeholder = DIZIONARIO.serialPlaceholder;
-        document.getElementById('lbl-local-account').innerText = DIZIONARIO.localAccountLabel;
-        elements.localAccount.placeholder = DIZIONARIO.localAccountPlaceholder;
-        document.getElementById('lbl-office-suite').innerText = DIZIONARIO.officeTitle;
-        document.getElementById('lbl-opt-ms').innerText = DIZIONARIO.officeOptMs;
-        document.getElementById('lbl-opt-libre').innerText = DIZIONARIO.officeOptLibre;
-        document.getElementById('lbl-office-key').innerText = DIZIONARIO.officeKeyLabel;
-        elements.officeKey.placeholder = DIZIONARIO.officeKeyPlaceholder;
-        document.getElementById('lbl-av-protection').innerText = DIZIONARIO.avTitle;
-        document.getElementById('lbl-opt-norton').innerText = DIZIONARIO.avOptNorton;
-        document.getElementById('lbl-opt-mcafee').innerText = DIZIONARIO.avOptMcafee;
-        document.getElementById('lbl-opt-none').innerText = DIZIONARIO.avOptNone;
-        document.getElementById('lbl-ms-title').innerText = DIZIONARIO.msTitle;
-        document.getElementById('lbl-ms-username').innerText = DIZIONARIO.msUserLabel;
-        elements.msUsername.placeholder = DIZIONARIO.msUserPlaceholder;
-        document.getElementById('lbl-ms-password').innerText = DIZIONARIO.msPassLabel;
-        elements.msPassword.placeholder = DIZIONARIO.msPassPlaceholder;
-        document.getElementById('lbl-winupd-title').innerText = DIZIONARIO.winUpdTitle;
-        document.getElementById('lbl-winupd-check').innerText = DIZIONARIO.winUpdCheck;
-        elements.submitBtn.innerText = DIZIONARIO.btnSubmit;
-        document.getElementById('lbl-modal-op-title').innerText = DIZIONARIO.opModalTitle;
-        document.getElementById('lbl-modal-op-default').innerText = DIZIONARIO.opModalDefault;
-        elements.operatorPin.placeholder = DIZIONARIO.opModalPinPlaceholder;
-        document.getElementById('btn-cancel').innerText = DIZIONARIO.btnCancel;
-        document.getElementById('btn-save').innerText = DIZIONARIO.btnSave;
-        elements.captureBtn.innerText = DIZIONARIO.btnCaptureOcr;
+        document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
+        document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
+        document.getElementById('lbl-serial').innerText = DICTIONARY.serialLabel;
+        elements.pcSerial.placeholder = DICTIONARY.serialPlaceholder;
+        document.getElementById('lbl-local-account').innerText = DICTIONARY.localAccountLabel;
+        elements.localAccount.placeholder = DICTIONARY.localAccountPlaceholder;
+        document.getElementById('lbl-office-suite').innerText = DICTIONARY.officeTitle;
+        document.getElementById('lbl-opt-ms').innerText = DICTIONARY.officeOptMs;
+        document.getElementById('lbl-opt-libre').innerText = DICTIONARY.officeOptLibre;
+        document.getElementById('lbl-office-key').innerText = DICTIONARY.officeKeyLabel;
+        elements.officeKey.placeholder = DICTIONARY.officeKeyPlaceholder;
+        document.getElementById('lbl-av-protection').innerText = DICTIONARY.avTitle;
+        document.getElementById('lbl-opt-norton').innerText = DICTIONARY.avOptNorton;
+        document.getElementById('lbl-opt-mcafee').innerText = DICTIONARY.avOptMcafee;
+        document.getElementById('lbl-opt-none').innerText = DICTIONARY.avOptNone;
+        document.getElementById('lbl-ms-title').innerText = DICTIONARY.msTitle;
+        document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
+        elements.msUsername.placeholder = DICTIONARY.msUserPlaceholder;
+        document.getElementById('lbl-ms-password').innerText = DICTIONARY.msPassLabel;
+        elements.msPassword.placeholder = DICTIONARY.msPassPlaceholder;
+        document.getElementById('lbl-winupd-title').innerText = DICTIONARY.winUpdTitle;
+        document.getElementById('lbl-winupd-check').innerText = DICTIONARY.winUpdCheck;
+        elements.submitBtn.innerText = DICTIONARY.btnSubmit;
+        document.getElementById('lbl-modal-op-title').innerText = DICTIONARY.opModalTitle;
+        document.getElementById('lbl-modal-op-default').innerText = DICTIONARY.opModalDefault;
+        elements.operatorPin.placeholder = DICTIONARY.opModalPinPlaceholder;
+        document.getElementById('btn-cancel').innerText = DICTIONARY.btnCancel;
+        document.getElementById('btn-save').innerText = DICTIONARY.btnSave;
+        elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
     }
 
     // =====================================================================
     // 4. NETWORK FETCH & CORE LOGIC
     // =====================================================================
-    
-    // Fetch Active Operators from Server
     async function fetchOperatorsFromServer() {
         try {
-            elements.operatorDropdown.innerHTML = `<option value="00000">${DIZIONARIO.opModalLoading}</option>`;
+            elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalLoading}</option>`;
             const response = await fetch(GOOGLE_SCRIPT_URL);
             const result = await response.json();
             
@@ -435,16 +435,14 @@
                 throw new Error(result.message);
             }
         } catch (err) {
-            console.error("Fetch Operators Error:", err);
             elements.operatorDropdown.innerHTML = `<option value="00000">Error</option>`;
-            alert(DIZIONARIO.alertFetchError);
+            alert(DICTIONARY.alertFetchError);
         }
     }
 
-    // Load OCR Engine
     async function initializeOCRWorker() {
         try {
-            console.log(DIZIONARIO.statusOcrLoading);
+            console.log(DICTIONARY.statusOcrLoading);
             tesseractWorker = await Tesseract.createWorker();
             await tesseractWorker.loadLanguage('eng');
             await tesseractWorker.initialize('eng');
@@ -453,10 +451,9 @@
                 tessedit_pageseg_mode: '6', 
             });
             isOcrReady = true;
-            console.log(DIZIONARIO.statusOcrReady);
+            console.log(DICTIONARY.statusOcrReady);
         } catch (e) {
-            console.error("OCR Engine Error:", e);
-            alert(DIZIONARIO.alertOcrCritical);
+            alert(DICTIONARY.alertOcrCritical);
         }
     }
 
@@ -492,8 +489,8 @@
         elements.avField.classList.toggle('visible', !elements.avNone.checked);
         
         if (!elements.avNone.checked) {
-            elements.avKeyLabel.innerText = elements.avNorton.checked ? DIZIONARIO.avNortonKeyLabel : DIZIONARIO.avMcafeeKeyLabel;
-            elements.avKey.placeholder = elements.avNorton.checked ? DIZIONARIO.avKeyPlaceholderNorton : DIZIONARIO.avKeyPlaceholderMcafee;
+            elements.avKeyLabel.innerText = elements.avNorton.checked ? DICTIONARY.avNortonKeyLabel : DICTIONARY.avMcafeeKeyLabel;
+            elements.avKey.placeholder = elements.avNorton.checked ? DICTIONARY.avKeyPlaceholderNorton : DICTIONARY.avKeyPlaceholderMcafee;
             if (elements.avKey.value !== '') formatAvKey(elements.avKey);
         }
         validateForm();
@@ -514,21 +511,19 @@
 
     // Operator Authentication Logic
     function populateOperatorDropdown() {
-        elements.operatorDropdown.innerHTML = `<option value="00000">${DIZIONARIO.opModalDefault}</option>`;
+        elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalDefault}</option>`;
         OPERATOR_DB.forEach(op => {
             const opt = document.createElement('option');
-            opt.value = op.id; // Primary key is the 5-digit ID
+            opt.value = op.id; 
             opt.textContent = `${op.id} - ${op.lastName} ${op.firstName}`;
             elements.operatorDropdown.appendChild(opt);
         });
 
-        // Restore active session if the saved operator is still active in DB
         const savedId = localStorage.getItem('operator_id');
         if (savedId && OPERATOR_DB.find(o => o.id === savedId)) {
             currentOperatorId = savedId;
             elements.operatorDropdown.value = savedId;
         } else {
-            // Clear invalid session
             currentOperatorId = "00000";
             localStorage.removeItem('operator_id');
             localStorage.removeItem('operator_pin');
@@ -537,28 +532,45 @@
         updateOperatorUI();
     }
 
-    function openOperatorModal() { elements.operatorModal.classList.add('active'); }
-    function closeOperatorModal() { elements.operatorModal.classList.remove('active'); }
+    // Modal Control: Forces PIN reset on open to prevent invisible input stacking
+    function openOperatorModal() { 
+        elements.operatorDropdown.value = currentOperatorId;
+        elements.operatorPin.value = ''; 
+        elements.operatorModal.classList.add('active'); 
+    }
+    
+    function closeOperatorModal() { 
+        elements.operatorModal.classList.remove('active'); 
+    }
 
     async function saveOperatorSelection() {
         const id = elements.operatorDropdown.value;
         const pin = elements.operatorPin.value;
         
         if (id === "00000") return;
-        if (!/^\d{4}$/.test(pin)) { alert(DIZIONARIO.alertPinLength); return; }
+        if (!/^\d{4}$/.test(pin)) { 
+            alert(DICTIONARY.alertPinLength); 
+            return; 
+        }
 
         const op = OPERATOR_DB.find(o => o.id === id);
         const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
         const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         
-        if (hash !== op.pinHash) { alert(DIZIONARIO.alertPinInvalid); return; }
+        // Strict validation: Clear invisible spaces and force lowercase
+        if (hash !== op.pinHash.trim().toLowerCase()) { 
+            alert(DICTIONARY.alertPinInvalid); 
+            elements.operatorPin.value = ''; // Clear incorrect input automatically
+            return; 
+        }
         
-        // Successful Login: Save session and specific STORE ID
+        // Successful Login
         currentOperatorId = id;
         localStorage.setItem('operator_id', id);
         localStorage.setItem('operator_pin', pin);
         localStorage.setItem('store_id', op.storeId); 
         
+        elements.operatorPin.value = ''; // Clean up
         updateOperatorUI();
         closeOperatorModal();
     }
@@ -578,20 +590,20 @@
         currentInputId = targetId;
         currentMode = mode;
         
-        document.getElementById('scanner-title').innerText = mode === 'barcode' ? DIZIONARIO.scanTitleBarcode : DIZIONARIO.scanTitleOcr;
+        document.getElementById('scanner-title').innerText = mode === 'barcode' ? DICTIONARY.scanTitleBarcode : DICTIONARY.scanTitleOcr;
         elements.scannerModal.classList.add('active');
 
         if (mode === 'barcode') {
             elements.overlay.classList.add('barcode-mode');
             elements.captureBtn.style.display = 'none';
             elements.scanAnimation.style.display = 'block';
-            elements.modalStatus.innerText = DIZIONARIO.statusBarcodeSearch;
+            elements.modalStatus.innerText = DICTIONARY.statusBarcodeSearch;
         } else {
             elements.overlay.classList.remove('barcode-mode');
             elements.captureBtn.style.display = 'block';
             elements.captureBtn.disabled = false;
             elements.scanAnimation.style.display = 'none';
-            elements.modalStatus.innerText = DIZIONARIO.statusOcrAlign;
+            elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
         }
 
         try {
@@ -607,7 +619,7 @@
                 if (mode === 'barcode') startBarcodeAutoScan();
             };
         } catch (e) { 
-            elements.modalStatus.innerText = DIZIONARIO.alertCameraError + e.message; 
+            elements.modalStatus.innerText = DICTIONARY.alertCameraError + e.message; 
         }
     }
 
@@ -671,13 +683,13 @@
         if (!streamTrack || currentMode !== 'ocr') return;
 
         if (!isOcrReady) {
-            alert(DIZIONARIO.alertOcrNotReady);
+            alert(DICTIONARY.alertOcrNotReady);
             return;
         }
 
         elements.video.pause(); 
         elements.captureBtn.disabled = true;
-        elements.modalStatus.innerText = DIZIONARIO.statusOcrProcessing;
+        elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
         if ("vibrate" in navigator) navigator.vibrate([50]);
 
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
@@ -712,17 +724,17 @@
                 target.value = finalKey;
                 target.dispatchEvent(new Event('input')); 
                 
-                elements.modalStatus.innerText = DIZIONARIO.statusOcrSuccess;
+                elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
                 if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
                 
                 setTimeout(closeScanner, 800);
             } else {
-                elements.modalStatus.innerText = DIZIONARIO.statusOcrFailed;
+                elements.modalStatus.innerText = DICTIONARY.statusOcrFailed;
                 elements.captureBtn.disabled = false;
                 elements.video.play(); 
             }
         } catch(e) {
-            elements.modalStatus.innerText = DIZIONARIO.alertOcrSystemError;
+            elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError;
             elements.captureBtn.disabled = false;
             elements.video.play();
         }
@@ -749,7 +761,6 @@
     elements.submitBtn.onclick = async () => {
         elements.submitBtn.disabled = true;
         
-        // Assemble payload with STORE ID injected dynamically
         const payload = {
             operator_id: currentOperatorId,
             store_id: localStorage.getItem('store_id') || "UNKNOWN",
@@ -775,10 +786,10 @@
             
             if (data.status === "error") throw new Error(data.message);
             
-            alert(DIZIONARIO.alertUploadSuccess);
+            alert(DICTIONARY.alertUploadSuccess);
             location.reload();
         } catch (e) {
-            alert(DIZIONARIO.alertUploadError + e.message);
+            alert(DICTIONARY.alertUploadError + e.message);
             elements.submitBtn.disabled = false;
         }
     };
