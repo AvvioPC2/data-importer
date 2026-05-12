@@ -283,7 +283,6 @@
                 <label for="av-none">None</label>
             </div>
             
-            <!-- Conditional AV Field -->
             <div id="av-field" class="conditional-field">
                 <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key</label>
                 <div class="input-with-icon">
@@ -300,7 +299,6 @@
             <div class="section-title">Microsoft Account</div>
             <label class="form-label">Username</label>
             <div class="email-group">
-                <!-- Added autocapitalize, autocorrect, and spellcheck to override mobile keyboard habits -->
                 <input type="text" id="ms-username" placeholder="Username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
                 <span>@</span>
                 <select id="ms-domain">
@@ -376,7 +374,13 @@
     let currentOperatorId = "00000";
     let isOcrReady = false;
     let tesseractWorker = null;
+    let nativeBarcodeDetector = null;
     const zxingReader = new ZXing.BrowserMultiFormatReader();
+
+    // Check for native BarcodeDetector API
+    if ('BarcodeDetector' in window) {
+        nativeBarcodeDetector = new BarcodeDetector({ formats: ['code_128', 'qr_code', 'ean_13', 'code_39'] });
+    }
 
     // DOM Elements Map
     const elements = {
@@ -450,9 +454,7 @@
         formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
     }
 
-    // Force lowercase and strip invalid email characters instantly
     function formatUsername(input) {
-        // Allows only lowercase a-z, numbers, dots, hyphens, and underscores
         input.value = input.value.toLowerCase().replace(/[^a-z0-9.\-_]/g, '');
         validateForm();
     }
@@ -538,14 +540,12 @@
         document.getElementById('scanner-title').innerText = title;
         elements.scannerModal.classList.add('active');
 
-        // Configure UI based on mode
         if (mode === 'barcode') {
             elements.overlay.classList.add('barcode-mode');
             elements.captureBtn.style.display = 'none';
             elements.scanAnimation.style.display = 'block';
             elements.modalStatus.innerText = "Searching for barcode...";
         } else {
-            // OCR Mode: Manual Capture
             elements.overlay.classList.remove('barcode-mode');
             elements.captureBtn.style.display = 'block';
             elements.captureBtn.disabled = false;
@@ -585,24 +585,55 @@
         if (elements.video.paused) elements.video.play(); 
     }
 
-    // Live Auto-Scan for Barcodes ONLY
+    // Fully Restored Hybrid Barcode Scanner (Native + ZXing Fallback)
     function startBarcodeAutoScan() {
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        
         barcodeInterval = setInterval(async () => {
-            if (currentMode !== 'barcode') { clearInterval(barcodeInterval); return; }
+            if (currentMode !== 'barcode' || !elements.video.videoWidth) return;
+
             elements.canvas.width = elements.video.videoWidth / 2;
             elements.canvas.height = elements.video.videoHeight / 2;
             ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
+
             try {
-                const res = await zxingReader.decodeFromCanvas(elements.canvas);
-                if (res) {
-                    document.getElementById(currentInputId).value = res.text;
-                    if ("vibrate" in navigator) navigator.vibrate(200);
+                let detectedValue = null;
+
+                // 1. Try Native BarcodeDetector
+                if (nativeBarcodeDetector) {
+                    const barcodes = await nativeBarcodeDetector.detect(elements.canvas);
+                    if (barcodes.length > 0) detectedValue = barcodes[0].rawValue;
+                }
+                
+                // 2. Try ZXing Fallback if Native failed or is missing
+                if (!detectedValue) {
+                    const imgUrl = elements.canvas.toDataURL("image/jpeg", 0.6);
+                    const img = new Image();
+                    img.src = imgUrl;
+                    await new Promise((resolve) => {
+                        img.onload = async () => {
+                            try {
+                                const result = await zxingReader.decodeFromImageElement(img);
+                                detectedValue = result.text;
+                            } catch(e) {}
+                            resolve();
+                        };
+                    });
+                }
+
+                // 3. Process Result
+                if (detectedValue) {
+                    clearInterval(barcodeInterval);
+                    barcodeInterval = null;
+                    
+                    document.getElementById(currentInputId).value = detectedValue;
+                    if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+                    
                     closeScanner();
                     validateForm();
                 }
-            } catch(e) {}
-        }, 300);
+            } catch (err) {}
+        }, 300); 
     }
 
     // Manual Capture & Regex Extract for OCR
@@ -614,13 +645,11 @@
             return;
         }
 
-        // 1. Freeze Video & Update UI
         elements.video.pause(); 
         elements.captureBtn.disabled = true;
         elements.modalStatus.innerText = "Processing image... Please wait.";
         if ("vibrate" in navigator) navigator.vibrate([50]);
 
-        // 2. Crop High-Res Image
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         const v = elements.video;
         const overlay = elements.overlay.getBoundingClientRect();
@@ -636,24 +665,19 @@
         elements.canvas.width = cw;
         elements.canvas.height = ch;
         
-        // Enhance image for Tesseract (high contrast)
         ctx.filter = "contrast(1.5) grayscale(1)";
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
         ctx.filter = "none";
 
         try {
-            // 3. Analyze Image
             const res = await tesseractWorker.recognize(elements.canvas);
             const rawText = res.data.text.toUpperCase();
             
-            // 4. Smart Regex Extraction
             const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
             const match = rawText.match(regex);
 
             if (match) {
-                // Combine the 5 capture groups perfectly
                 const finalKey = `${match[1]}${match[2]}${match[3]}${match[4]}${match[5]}`;
-                
                 const target = document.getElementById(currentInputId);
                 target.value = finalKey;
                 target.dispatchEvent(new Event('input')); 
