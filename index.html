@@ -300,7 +300,8 @@
             <div class="section-title">Microsoft Account</div>
             <label class="form-label">Username</label>
             <div class="email-group">
-                <input type="text" id="ms-username" placeholder="Username" oninput="validateForm()">
+                <!-- Added autocapitalize, autocorrect, and spellcheck to override mobile keyboard habits -->
+                <input type="text" id="ms-username" placeholder="Username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
                 <span>@</span>
                 <select id="ms-domain">
                     <option value="outlook.it">outlook.it</option>
@@ -354,7 +355,7 @@
         </div>
         <div class="modal-footer">
             <div id="scan-animation" class="scan-animation"></div>
-            <!-- Restored Manual Capture Button for OCR -->
+            <!-- Manual Capture Button for OCR -->
             <button id="capture-btn">CAPTURE CODE</button>
             <div id="modal-status">Initializing...</div>
         </div>
@@ -418,7 +419,7 @@
             await tesseractWorker.initialize('eng');
             await tesseractWorker.setParameters({
                 tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
-                tessedit_pageseg_mode: '6', // Assume a single uniform block of text
+                tessedit_pageseg_mode: '6', 
             });
             isOcrReady = true;
             console.log("OCR Engine: Ready");
@@ -447,6 +448,13 @@
 
     function formatAvKey(input) {
         formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
+    }
+
+    // Force lowercase and strip invalid email characters instantly
+    function formatUsername(input) {
+        // Allows only lowercase a-z, numbers, dots, hyphens, and underscores
+        input.value = input.value.toLowerCase().replace(/[^a-z0-9.\-_]/g, '');
+        validateForm();
     }
 
     // Operator Logic
@@ -574,7 +582,7 @@
             clearInterval(barcodeInterval);
             barcodeInterval = null;
         }
-        if (elements.video.paused) elements.video.play(); // unfreeze if frozen
+        if (elements.video.paused) elements.video.play(); 
     }
 
     // Live Auto-Scan for Barcodes ONLY
@@ -639,8 +647,6 @@
             const rawText = res.data.text.toUpperCase();
             
             // 4. Smart Regex Extraction
-            // Looks for 5 blocks of 5 alphanumeric chars, separated by spaces, dashes, or nothing.
-            // This ignores all surrounding noise (logos, instructions, barcodes).
             const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
             const match = rawText.match(regex);
 
@@ -650,17 +656,16 @@
                 
                 const target = document.getElementById(currentInputId);
                 target.value = finalKey;
-                target.dispatchEvent(new Event('input')); // Triggers auto-formatting dashes
+                target.dispatchEvent(new Event('input')); 
                 
                 elements.modalStatus.innerText = "✅ Key successfully extracted!";
                 if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
                 
                 setTimeout(closeScanner, 800);
             } else {
-                // Extraction Failed
                 elements.modalStatus.innerText = "❌ Key not found. Please adjust and retry.";
                 elements.captureBtn.disabled = false;
-                elements.video.play(); // Unfreeze to try again
+                elements.video.play(); 
             }
         } catch(e) {
             console.error("OCR Process Error:", e);
