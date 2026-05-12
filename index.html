@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,53 +34,18 @@
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
         /* Header Bar */
-        .app-header {
-            background-color: var(--header-bg);
-            color: var(--header-text);
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+        .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
         .header-brand { display: flex; align-items: center; gap: 15px; }
+        .header-logo { height: 40px; width: auto; object-fit: contain; border-radius: 4px; }
+        .app-title { font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; }
         
-        .header-logo {
-            height: 40px;
-            width: auto;
-            object-fit: contain;
-            border-radius: 4px;
-        }
-
-        /* Corporate Title */
-        .app-title { 
-            font-family: 'Barlow', sans-serif; 
-            font-weight: 500; 
-            font-size: 38px; 
-            color: #ffffff; 
-            letter-spacing: 0.5px;
-        }
-        
-        /* Operator Badge in Header */
-        .operator-badge {
-            display: flex; flex-direction: column; align-items: flex-end;
-            cursor: pointer; transition: opacity 0.2s;
-        }
+        .operator-badge { display: flex; flex-direction: column; align-items: flex-end; cursor: pointer; transition: opacity 0.2s; }
         .operator-badge:hover { opacity: 0.8; }
         .operator-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 4px; }
-        .operator-id-display {
-            font-size: 18px; font-weight: bold; font-family: monospace; letter-spacing: 1px;
-            background: rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
+        .operator-id-display { font-size: 18px; font-weight: bold; font-family: monospace; letter-spacing: 1px; background: rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.3); }
 
         /* Main Form Container */
         .form-container { max-width: 600px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
-        
-        /* Form Groups & Labels */
         .form-group { background: #fff; padding: 15px; border-radius: var(--border-radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .form-label { display: block; font-weight: 600; font-size: 16px; margin-bottom: 8px; color: var(--text-main); }
         .section-title { font-size: 18px; font-weight: bold; border-bottom: 2px solid var(--primary-bg); padding-bottom: 8px; margin-bottom: 15px; margin-top: 10px; color: var(--header-bg); }
@@ -90,75 +55,40 @@
         .input-with-icon:focus-within { border-color: var(--accent-color); }
         .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
         
-        /* Specific sizing for product keys */
-        #office-key, #av-key {
-            font-size: 13px;
-            letter-spacing: -0.5px;
-        }
+        #office-key, #av-key { font-size: 13px; letter-spacing: -0.5px; }
 
-        .camera-btn { 
-            background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); 
-            padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: background 0.2s; 
-        }
+        .camera-btn { background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .camera-btn:hover { background: #e2e6ea; }
         .camera-btn svg { width: 26px; height: 26px; fill: var(--header-bg); }
 
-        /* Segmented Controls */
         .segmented-control { display: flex; gap: 5px; background: var(--disabled-bg); padding: 4px; border-radius: var(--border-radius); margin-bottom: 10px; }
-        .segmented-control label {
-            flex: 1; text-align: center; padding: 12px 5px; font-size: 16px; font-weight: 500;
-            color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: all 0.2s;
-        }
+        .segmented-control label { flex: 1; text-align: center; padding: 12px 5px; font-size: 16px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: all 0.2s; }
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
 
-        /* Conditional Fields */
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
-        /* Email Group */
-        .email-group { 
-            display: flex; align-items: center; gap: 0; 
-            border: 1px solid var(--border-color); border-radius: var(--border-radius); 
-            background: #fff; margin-bottom: 15px; padding-right: 8px; 
-            transition: border-color 0.2s;
-        }
+        .email-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: #fff; margin-bottom: 15px; padding-right: 8px; transition: border-color 0.2s; }
         .email-group:focus-within { border-color: var(--accent-color); }
-        .email-group input { 
-            flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none;
-        }
+        .email-group input { flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none; }
         .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
-        .email-group select { 
-            flex: 0 0 auto; border: none; outline: none; font-size: 16px; 
-            background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; 
-        }
+        .email-group select { flex: 0 0 auto; border: none; outline: none; font-size: 16px; background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; }
 
-        /* Password Group & Checkbox */
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
         .checkbox-group { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 0; }
         .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
         .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; }
 
-        /* Submit Button */
         .submit-container { padding: 20px 0; position: sticky; bottom: 0; background: linear-gradient(transparent, var(--primary-bg) 20%); text-align: center; margin-top: 10px; z-index: 50; }
-        #submit-btn {
-            width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold;
-            border: none; border-radius: 50px; color: white; background: var(--success-color);
-            cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s;
-        }
+        #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
         #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
-        /* Modals Viewport Fix for Mobile Devices */
-        .fullscreen-modal {
-            position: fixed; top: 0; bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-        }
+        /* Modals */
+        .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .fullscreen-modal.active { opacity: 1; pointer-events: auto; }
         
-        /* Camera Modal Layout */
         #scanner-modal { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
         #scanner-modal.active { transform: translateY(0); }
         .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: #000; z-index: 10; }
@@ -168,27 +98,12 @@
         .video-wrapper { position: relative; flex-grow: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #111; }
         #scanner-video { width: 100%; height: 100%; object-fit: cover; }
         
-        /* The targeting reticle */
-        #scanner-overlay {
-            position: absolute; width: 95%; height: 100px;
-            border: 3px solid #00ff00; border-radius: 8px;
-            box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s;
-        }
+        #scanner-overlay { position: absolute; width: 95%; height: 100px; border: 3px solid #00ff00; border-radius: 8px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s; }
         #scanner-overlay.barcode-mode { height: 120px; border-color: #007bff; }
 
-        .modal-footer { 
-            padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 120px; 
-            display: flex; flex-direction: column; justify-content: center; 
-            padding-bottom: calc(30px + env(safe-area-inset-bottom));
-        }
+        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 120px; display: flex; flex-direction: column; justify-content: center; padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
         
-        /* Large Capture Button */
-        #capture-btn { 
-            background: var(--accent-color); color: white; border: none; 
-            padding: 16px 30px; font-size: 18px; border-radius: 50px; 
-            font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; 
-            transition: all 0.2s; display: none;
-        }
+        #capture-btn { background: var(--accent-color); color: white; border: none; padding: 16px 30px; font-size: 18px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s; display: none; }
         #capture-btn:active { transform: scale(0.95); background: #0056b3; }
         #capture-btn:disabled { background: #555; cursor: wait; }
 
@@ -198,14 +113,8 @@
         .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
         @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
 
-        /* Operator Modal Dialog */
         #operator-modal { justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .operator-dialog {
-            background: #fff; width: 90%; max-width: 350px; padding: 25px;
-            border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            transform: translateY(20px); transition: transform 0.3s;
-            display: flex; flex-direction: column; gap: 15px;
-        }
+        .operator-dialog { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; }
         #operator-modal.active .operator-dialog { transform: translateY(0); }
         .operator-dialog h3 { color: var(--header-bg); margin: 0; font-size: 20px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
         .operator-select { padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 18px; outline: none; width: 100%; }
@@ -219,26 +128,25 @@
 </head>
 <body>
 
-    <!-- Top Navigation Bar -->
+    <!-- Header -->
     <header class="app-header">
         <div class="header-brand">
-            <img src="logo.png" alt="Company Logo" class="header-logo" onerror="this.style.display='none'">
-            <div class="app-title">AvvioPC 2</div>
+            <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+            <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
         </div>
         <div class="operator-badge" onclick="openOperatorModal()">
-            <div class="operator-label">Operator</div>
+            <div class="operator-label" id="lbl-operator">Operatore</div>
             <div class="operator-id-display" id="header-operator-id">00000</div>
         </div>
     </header>
 
-    <!-- Main Data Entry Form -->
     <main class="form-container">
-        <!-- Device Serial Section -->
+        <!-- Serial Section -->
         <div class="form-group">
-            <label class="form-label">Device Serial Number</label>
+            <label class="form-label" id="lbl-serial">Serial Number</label>
             <div class="input-with-icon">
-                <input type="text" id="pc-serial" placeholder="..." style="text-transform: none;" oninput="validateForm()">
-                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'Device Serial Number', 'barcode')">
+                <input type="text" id="pc-serial" style="text-transform: none;" oninput="validateForm()">
+                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
             </div>
@@ -246,25 +154,24 @@
 
         <!-- Local Account Section -->
         <div class="form-group">
-            <label class="form-label">Local Account Name (Windows)</label>
-            <input type="text" id="local-account" class="standard-input" placeholder="E.g., John Doe" style="text-transform: none;" oninput="validateForm()">
+            <label class="form-label" id="lbl-local-account">Account Locale (Windows)</label>
+            <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
-        <!-- Office Suite Section -->
+        <!-- Office Section -->
         <div class="form-group">
-            <label class="form-label">Office Suite</label>
+            <label class="form-label" id="lbl-office-suite">Suite Office</label>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms-office" onchange="toggleFields(); validateForm();">
-                <label for="office-ms">MS-Office</label>
+                <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
                 <input type="radio" id="office-libre" name="office_type" value="libre-office" onchange="toggleFields(); validateForm();" checked>
-                <label for="office-libre">Libre Office</label>
+                <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
             </div>
-            
             <div id="ms-office-field" class="conditional-field">
-                <label class="form-label" style="font-size: 14px;">Product Key</label>
+                <label class="form-label" id="lbl-office-key" style="font-size: 14px;">Product Key</label>
                 <div class="input-with-icon">
-                    <input type="text" id="office-key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" oninput="formatProductKey(this, '-')">
-                    <button type="button" class="camera-btn" onclick="openScanner('office-key', 'Office Product Key', 'ocr')">
+                    <input type="text" id="office-key" oninput="formatProductKey(this, '-')">
+                    <button type="button" class="camera-btn" onclick="openScanner('office-key', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
                 </div>
@@ -273,33 +180,32 @@
 
         <!-- Antivirus Section -->
         <div class="form-group">
-            <label class="form-label">Antivirus Protection</label>
+            <label class="form-label" id="lbl-av-protection">Antivirus</label>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
-                <label for="av-norton">Norton</label>
+                <label for="av-norton" id="lbl-opt-norton">Norton</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
-                <label for="av-mcafee">McAfee</label>
+                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
-                <label for="av-none">None</label>
+                <label for="av-none" id="lbl-opt-none">Nessuno</label>
             </div>
-            
             <div id="av-field" class="conditional-field">
                 <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key</label>
                 <div class="input-with-icon">
-                    <input type="text" id="av-key" placeholder="..." oninput="formatAvKey(this)">
-                    <button type="button" class="camera-btn" onclick="openScanner('av-key', 'Antivirus Key', 'ocr')">
+                    <input type="text" id="av-key" oninput="formatAvKey(this)">
+                    <button type="button" class="camera-btn" onclick="openScanner('av-key', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- MS Account Section -->
+        <!-- Microsoft Account Section -->
         <div class="form-group">
-            <div class="section-title">Microsoft Account</div>
-            <label class="form-label">Username</label>
+            <div class="section-title" id="lbl-ms-title">Account Microsoft</div>
+            <label class="form-label" id="lbl-ms-username">Nome Utente</label>
             <div class="email-group">
-                <input type="text" id="ms-username" placeholder="Username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
+                <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
                 <span>@</span>
                 <select id="ms-domain">
                     <option value="outlook.it">outlook.it</option>
@@ -307,44 +213,43 @@
                     <option value="hotmail.com">hotmail.com</option>
                 </select>
             </div>
-            <label class="form-label">Password</label>
-            <input type="text" id="ms-password" class="standard-input" placeholder="Password" style="text-transform: none;" oninput="validateForm()">
+            <label class="form-label" id="lbl-ms-password">Password</label>
+            <input type="text" id="ms-password" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
         <!-- Windows Update Section -->
         <div class="form-group">
-            <div class="section-title">Windows Update</div>
+            <div class="section-title" id="lbl-winupd-title">Windows Update</div>
             <label class="checkbox-group">
                 <input type="checkbox" id="run-updates" checked>
-                <span>Execute Windows Update on first boot</span>
+                <span id="lbl-winupd-check">Esegui Windows Update al primo avvio</span>
             </label>
         </div>
 
-        <!-- Submission -->
+        <!-- Submit Section -->
         <div class="submit-container">
-            <button id="submit-btn" disabled>Submit Data</button>
+            <button id="submit-btn" disabled>Invia Dati</button>
         </div>
     </main>
 
     <!-- Modals -->
     <div id="operator-modal" class="fullscreen-modal">
         <div class="operator-dialog">
-            <h3>Select Operator</h3>
+            <h3 id="lbl-modal-op-title">Seleziona Operatore</h3>
             <select id="operator-dropdown" class="operator-select">
-                <option value="00000">-- Select --</option>
+                <option value="00000" id="lbl-modal-op-default">-- Seleziona --</option>
             </select>
-            <input type="password" id="operator-pin" class="standard-input" placeholder="PIN (4 digits)" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
+            <input type="password" id="operator-pin" class="standard-input" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
             <div class="dialog-actions">
-                <button class="dialog-btn btn-cancel" onclick="closeOperatorModal()">Cancel</button>
-                <button class="dialog-btn btn-save" onclick="saveOperatorSelection()">Save</button>
+                <button class="dialog-btn btn-cancel" id="btn-cancel" onclick="closeOperatorModal()">Annulla</button>
+                <button class="dialog-btn btn-save" id="btn-save" onclick="saveOperatorSelection()">Salva</button>
             </div>
         </div>
     </div>
 
-    <!-- Camera / Scanner Modal -->
     <div id="scanner-modal" class="fullscreen-modal">
         <div class="modal-header">
-            <div class="modal-title" id="scanner-title">Scanning</div>
+            <div class="modal-title" id="scanner-title">Scansione</div>
             <button class="close-modal-btn" onclick="closeScanner()">&times;</button>
         </div>
         <div class="video-wrapper">
@@ -353,23 +258,89 @@
         </div>
         <div class="modal-footer">
             <div id="scan-animation" class="scan-animation"></div>
-            <!-- Manual Capture Button for OCR -->
-            <button id="capture-btn">CAPTURE CODE</button>
-            <div id="modal-status">Initializing...</div>
+            <button id="capture-btn">CATTURA CODICE</button>
+            <div id="modal-status">Inizializzazione...</div>
         </div>
     </div>
     
     <canvas id="hidden-canvas"></canvas>
 
 <script>
-    // System Configuration
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIbF5CTeFzENAOT_8kfb01AlRCIagclrTczeizuadgyDZgQP0G6NAXtu7gxH57kk8/exec';
+    // =====================================================================
+    // 1. DICTIONARY & LOCALIZATION (Modify phrases here)
+    // =====================================================================
+    const DIZIONARIO = {
+        appTitle: "AvvioPC 2",
+        operatorBadge: "Operatore",
+        serialLabel: "Numero di Serie Dispositivo (S/N)",
+        serialPlaceholder: "Es. 5CD1234567",
+        localAccountLabel: "Nome Account Locale (Windows)",
+        localAccountPlaceholder: "Es. Mario Rossi",
+        officeTitle: "Suite Office",
+        officeOptMs: "MS-Office",
+        officeOptLibre: "Libre Office",
+        officeKeyLabel: "Product Key Office",
+        officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+        avTitle: "Protezione Antivirus",
+        avOptNorton: "Norton",
+        avOptMcafee: "McAfee",
+        avOptNone: "Nessuno",
+        avNortonKeyLabel: "Product Key Norton Antivirus",
+        avMcafeeKeyLabel: "Product Key McAfee",
+        avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
+        avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+        msTitle: "Account Microsoft",
+        msUserLabel: "Nome Utente",
+        msUserPlaceholder: "nome.cognome",
+        msPassLabel: "Password",
+        msPassPlaceholder: "Digita password...",
+        winUpdTitle: "Aggiornamenti Sistema",
+        winUpdCheck: "Esegui Windows Update al primo avvio",
+        btnSubmit: "Invia Dati Form",
+        
+        // Modal Operator
+        opModalTitle: "Seleziona Operatore",
+        opModalDefault: "-- Scegli dal menu --",
+        opModalLoading: "Caricamento operatori in corso...",
+        opModalPinPlaceholder: "PIN (4 Cifre)",
+        btnCancel: "Annulla",
+        btnSave: "Conferma",
+        
+        // Modal Scanner
+        scanTitleBarcode: "Scansione Codice a Barre",
+        scanTitleOcr: "Scansione Product Key",
+        btnCaptureOcr: "CATTURA CODICE",
+        
+        // Status Messages
+        statusInit: "Apertura fotocamera...",
+        statusOcrLoading: "Download del motore IA in corso (Attendi)...",
+        statusOcrReady: "Motore OCR Caricato e Pronto.",
+        statusBarcodeSearch: "Ricerca del codice a barre in corso...",
+        statusOcrAlign: "Allinea il codice nel riquadro verde e premi CATTURA",
+        statusOcrProcessing: "Elaborazione dell'immagine in corso...",
+        statusOcrSuccess: "✅ Product Key estratto con successo!",
+        statusOcrFailed: "❌ Nessun codice rilevato. Riprova.",
+        
+        // System Alerts
+        alertOcrCritical: "CRITICO: Impossibile scaricare il motore OCR. Controlla la connessione a Internet.",
+        alertPinLength: "Il PIN deve essere di 4 cifre esatte.",
+        alertPinInvalid: "PIN errato. Riprova.",
+        alertOcrNotReady: "Attendi, il motore di intelligenza artificiale si sta ancora avviando.",
+        alertOcrSystemError: "Errore di memoria durante la decodifica dell'immagine.",
+        alertUploadSuccess: "Dati inviati al server con successo!",
+        alertUploadError: "Impossibile inviare i dati: ",
+        alertCameraError: "Errore Fotocamera: ",
+        alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi."
+    };
 
-    // Simulated Database (Operators & SHA-256 PIN Hashes)
-    const OPERATOR_DB = [
-        { id: "35259", lastName: "Chin", firstName: "Paolo", pinHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4" },
-        { id: "22598", lastName: "Girardi", firstName: "Sofia", pinHash: "e5566f19f18730bb03cbdf2b1ff905342d039f37cff0937a496b823e4e945c71" }
-    ];
+    // =====================================================================
+    // 2. SYSTEM CONFIGURATION & VARIABLES
+    // =====================================================================
+    // IMPORTANT: Update this URL if you create a new deployment in Google Apps Script!
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQL8UtZi8-hgP6L1ji7fosiqQ9QC4ciJXNIinHTx425vHPdeanjIKjSmJL_T8eGqA/exec';
+
+    // Dynamic database fetched from server
+    let OPERATOR_DB = [];
 
     let currentOperatorId = "00000";
     let isOcrReady = false;
@@ -377,17 +348,14 @@
     let nativeBarcodeDetector = null;
     const zxingReader = new ZXing.BrowserMultiFormatReader();
 
-    // Check for native BarcodeDetector API
     if ('BarcodeDetector' in window) {
         nativeBarcodeDetector = new BarcodeDetector({ formats: ['code_128', 'qr_code', 'ean_13', 'code_39'] });
     }
 
-    // DOM Elements Map
     const elements = {
         pcSerial: document.getElementById('pc-serial'),
         localAccount: document.getElementById('local-account'),
         officeMs: document.getElementById('office-ms'),
-        officeLibre: document.getElementById('office-libre'),
         officeKey: document.getElementById('office-key'),
         msOfficeField: document.getElementById('ms-office-field'),
         avNorton: document.getElementById('av-norton'),
@@ -414,10 +382,69 @@
         canvas: document.getElementById('hidden-canvas')
     };
 
-    // Initialize Tesseract Engine
+    // =====================================================================
+    // 3. UI INITIALIZATION & TRANSLATION
+    // =====================================================================
+    function initializeUIStrings() {
+        document.getElementById('lbl-app-title').innerText = DIZIONARIO.appTitle;
+        document.getElementById('lbl-operator').innerText = DIZIONARIO.operatorBadge;
+        document.getElementById('lbl-serial').innerText = DIZIONARIO.serialLabel;
+        elements.pcSerial.placeholder = DIZIONARIO.serialPlaceholder;
+        document.getElementById('lbl-local-account').innerText = DIZIONARIO.localAccountLabel;
+        elements.localAccount.placeholder = DIZIONARIO.localAccountPlaceholder;
+        document.getElementById('lbl-office-suite').innerText = DIZIONARIO.officeTitle;
+        document.getElementById('lbl-opt-ms').innerText = DIZIONARIO.officeOptMs;
+        document.getElementById('lbl-opt-libre').innerText = DIZIONARIO.officeOptLibre;
+        document.getElementById('lbl-office-key').innerText = DIZIONARIO.officeKeyLabel;
+        elements.officeKey.placeholder = DIZIONARIO.officeKeyPlaceholder;
+        document.getElementById('lbl-av-protection').innerText = DIZIONARIO.avTitle;
+        document.getElementById('lbl-opt-norton').innerText = DIZIONARIO.avOptNorton;
+        document.getElementById('lbl-opt-mcafee').innerText = DIZIONARIO.avOptMcafee;
+        document.getElementById('lbl-opt-none').innerText = DIZIONARIO.avOptNone;
+        document.getElementById('lbl-ms-title').innerText = DIZIONARIO.msTitle;
+        document.getElementById('lbl-ms-username').innerText = DIZIONARIO.msUserLabel;
+        elements.msUsername.placeholder = DIZIONARIO.msUserPlaceholder;
+        document.getElementById('lbl-ms-password').innerText = DIZIONARIO.msPassLabel;
+        elements.msPassword.placeholder = DIZIONARIO.msPassPlaceholder;
+        document.getElementById('lbl-winupd-title').innerText = DIZIONARIO.winUpdTitle;
+        document.getElementById('lbl-winupd-check').innerText = DIZIONARIO.winUpdCheck;
+        elements.submitBtn.innerText = DIZIONARIO.btnSubmit;
+        document.getElementById('lbl-modal-op-title').innerText = DIZIONARIO.opModalTitle;
+        document.getElementById('lbl-modal-op-default').innerText = DIZIONARIO.opModalDefault;
+        elements.operatorPin.placeholder = DIZIONARIO.opModalPinPlaceholder;
+        document.getElementById('btn-cancel').innerText = DIZIONARIO.btnCancel;
+        document.getElementById('btn-save').innerText = DIZIONARIO.btnSave;
+        elements.captureBtn.innerText = DIZIONARIO.btnCaptureOcr;
+    }
+
+    // =====================================================================
+    // 4. NETWORK FETCH & CORE LOGIC
+    // =====================================================================
+    
+    // Fetch Active Operators from Server
+    async function fetchOperatorsFromServer() {
+        try {
+            elements.operatorDropdown.innerHTML = `<option value="00000">${DIZIONARIO.opModalLoading}</option>`;
+            const response = await fetch(GOOGLE_SCRIPT_URL);
+            const result = await response.json();
+            
+            if (result.status === "success") {
+                OPERATOR_DB = result.data;
+                populateOperatorDropdown();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (err) {
+            console.error("Fetch Operators Error:", err);
+            elements.operatorDropdown.innerHTML = `<option value="00000">Error</option>`;
+            alert(DIZIONARIO.alertFetchError);
+        }
+    }
+
+    // Load OCR Engine
     async function initializeOCRWorker() {
         try {
-            console.log("OCR Engine: Loading worker...");
+            console.log(DIZIONARIO.statusOcrLoading);
             tesseractWorker = await Tesseract.createWorker();
             await tesseractWorker.loadLanguage('eng');
             await tesseractWorker.initialize('eng');
@@ -426,19 +453,20 @@
                 tessedit_pageseg_mode: '6', 
             });
             isOcrReady = true;
-            console.log("OCR Engine: Ready");
+            console.log(DIZIONARIO.statusOcrReady);
         } catch (e) {
             console.error("OCR Engine Error:", e);
+            alert(DIZIONARIO.alertOcrCritical);
         }
     }
 
-    // Application Boot
     window.addEventListener('load', () => {
-        initializeOperatorSystem();
+        initializeUIStrings();
+        fetchOperatorsFromServer();
         initializeOCRWorker();
     });
 
-    // Formatting Logic
+    // Validations and Masking
     function formatProductKey(input, sep) {
         let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
         let res = "";
@@ -459,57 +487,13 @@
         validateForm();
     }
 
-    // Operator Logic
-    function initializeOperatorSystem() {
-        OPERATOR_DB.forEach(op => {
-            const opt = document.createElement('option');
-            opt.value = op.id;
-            opt.textContent = `${op.id} - ${op.lastName} ${op.firstName}`;
-            elements.operatorDropdown.appendChild(opt);
-        });
-        const savedId = localStorage.getItem('operator_id');
-        if (savedId) {
-            currentOperatorId = savedId;
-            elements.operatorDropdown.value = savedId;
-        }
-        updateOperatorUI();
-    }
-
-    function openOperatorModal() { elements.operatorModal.classList.add('active'); }
-    function closeOperatorModal() { elements.operatorModal.classList.remove('active'); }
-
-    async function saveOperatorSelection() {
-        const id = elements.operatorDropdown.value;
-        const pin = elements.operatorPin.value;
-        if (id === "00000") return;
-        if (!/^\d{4}$/.test(pin)) { alert("Enter 4 digits."); return; }
-
-        const op = OPERATOR_DB.find(o => o.id === id);
-        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
-        const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        if (hash !== op.pinHash) { alert("Invalid PIN."); return; }
-        
-        currentOperatorId = id;
-        localStorage.setItem('operator_id', id);
-        localStorage.setItem('operator_pin', pin);
-        updateOperatorUI();
-        closeOperatorModal();
-    }
-
-    function updateOperatorUI() {
-        elements.operatorBadge.innerText = currentOperatorId;
-        validateForm();
-    }
-
-    // Form Logic & Validation
     function toggleFields() {
         elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
         elements.avField.classList.toggle('visible', !elements.avNone.checked);
         
         if (!elements.avNone.checked) {
-            elements.avKeyLabel.innerText = elements.avNorton.checked ? "Norton Antivirus Product Key" : "McAfee Product Key";
-            elements.avKey.placeholder = elements.avNorton.checked ? "XXXXX XXXXX XXXXX XXXXX XXXXX" : "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX";
+            elements.avKeyLabel.innerText = elements.avNorton.checked ? DIZIONARIO.avNortonKeyLabel : DIZIONARIO.avMcafeeKeyLabel;
+            elements.avKey.placeholder = elements.avNorton.checked ? DIZIONARIO.avKeyPlaceholderNorton : DIZIONARIO.avKeyPlaceholderMcafee;
             if (elements.avKey.value !== '') formatAvKey(elements.avKey);
         }
         validateForm();
@@ -528,29 +512,86 @@
         elements.submitBtn.disabled = !ok;
     }
 
-    // Scanner Logic
+    // Operator Authentication Logic
+    function populateOperatorDropdown() {
+        elements.operatorDropdown.innerHTML = `<option value="00000">${DIZIONARIO.opModalDefault}</option>`;
+        OPERATOR_DB.forEach(op => {
+            const opt = document.createElement('option');
+            opt.value = op.id; // Primary key is the 5-digit ID
+            opt.textContent = `${op.id} - ${op.lastName} ${op.firstName}`;
+            elements.operatorDropdown.appendChild(opt);
+        });
+
+        // Restore active session if the saved operator is still active in DB
+        const savedId = localStorage.getItem('operator_id');
+        if (savedId && OPERATOR_DB.find(o => o.id === savedId)) {
+            currentOperatorId = savedId;
+            elements.operatorDropdown.value = savedId;
+        } else {
+            // Clear invalid session
+            currentOperatorId = "00000";
+            localStorage.removeItem('operator_id');
+            localStorage.removeItem('operator_pin');
+            localStorage.removeItem('store_id');
+        }
+        updateOperatorUI();
+    }
+
+    function openOperatorModal() { elements.operatorModal.classList.add('active'); }
+    function closeOperatorModal() { elements.operatorModal.classList.remove('active'); }
+
+    async function saveOperatorSelection() {
+        const id = elements.operatorDropdown.value;
+        const pin = elements.operatorPin.value;
+        
+        if (id === "00000") return;
+        if (!/^\d{4}$/.test(pin)) { alert(DIZIONARIO.alertPinLength); return; }
+
+        const op = OPERATOR_DB.find(o => o.id === id);
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+        const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        if (hash !== op.pinHash) { alert(DIZIONARIO.alertPinInvalid); return; }
+        
+        // Successful Login: Save session and specific STORE ID
+        currentOperatorId = id;
+        localStorage.setItem('operator_id', id);
+        localStorage.setItem('operator_pin', pin);
+        localStorage.setItem('store_id', op.storeId); 
+        
+        updateOperatorUI();
+        closeOperatorModal();
+    }
+
+    function updateOperatorUI() {
+        elements.operatorBadge.innerText = currentOperatorId;
+        validateForm();
+    }
+
+    // Scanner / Camera Core
     let currentInputId = null;
     let currentMode = null;
     let streamTrack = null;
     let barcodeInterval = null;
 
-    async function openScanner(targetId, title, mode) {
+    async function openScanner(targetId, mode) {
         currentInputId = targetId;
         currentMode = mode;
-        document.getElementById('scanner-title').innerText = title;
+        
+        document.getElementById('scanner-title').innerText = mode === 'barcode' ? DIZIONARIO.scanTitleBarcode : DIZIONARIO.scanTitleOcr;
         elements.scannerModal.classList.add('active');
 
         if (mode === 'barcode') {
             elements.overlay.classList.add('barcode-mode');
             elements.captureBtn.style.display = 'none';
             elements.scanAnimation.style.display = 'block';
-            elements.modalStatus.innerText = "Searching for barcode...";
+            elements.modalStatus.innerText = DIZIONARIO.statusBarcodeSearch;
         } else {
             elements.overlay.classList.remove('barcode-mode');
             elements.captureBtn.style.display = 'block';
             elements.captureBtn.disabled = false;
             elements.scanAnimation.style.display = 'none';
-            elements.modalStatus.innerText = "Align product key in the box and tap CAPTURE";
+            elements.modalStatus.innerText = DIZIONARIO.statusOcrAlign;
         }
 
         try {
@@ -563,13 +604,10 @@
             elements.video.onloadedmetadata = () => {
                 const capabilities = streamTrack.getCapabilities();
                 if (capabilities.zoom) streamTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
-                
-                if (mode === 'barcode') {
-                    startBarcodeAutoScan();
-                }
+                if (mode === 'barcode') startBarcodeAutoScan();
             };
         } catch (e) { 
-            elements.modalStatus.innerText = "Camera Error: " + e.message; 
+            elements.modalStatus.innerText = DIZIONARIO.alertCameraError + e.message; 
         }
     }
 
@@ -578,14 +616,11 @@
         elements.scannerModal.classList.remove('active');
         if (streamTrack) streamTrack.stop();
         elements.video.srcObject = null;
-        if (barcodeInterval) {
-            clearInterval(barcodeInterval);
-            barcodeInterval = null;
-        }
+        if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
         if (elements.video.paused) elements.video.play(); 
     }
 
-    // Fully Restored Hybrid Barcode Scanner (Native + ZXing Fallback)
+    // Hybrid Barcode Scanner (Live Auto-Scan)
     function startBarcodeAutoScan() {
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         
@@ -599,13 +634,11 @@
             try {
                 let detectedValue = null;
 
-                // 1. Try Native BarcodeDetector
                 if (nativeBarcodeDetector) {
                     const barcodes = await nativeBarcodeDetector.detect(elements.canvas);
                     if (barcodes.length > 0) detectedValue = barcodes[0].rawValue;
                 }
                 
-                // 2. Try ZXing Fallback if Native failed or is missing
                 if (!detectedValue) {
                     const imgUrl = elements.canvas.toDataURL("image/jpeg", 0.6);
                     const img = new Image();
@@ -621,14 +654,11 @@
                     });
                 }
 
-                // 3. Process Result
                 if (detectedValue) {
                     clearInterval(barcodeInterval);
                     barcodeInterval = null;
-                    
                     document.getElementById(currentInputId).value = detectedValue;
                     if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-                    
                     closeScanner();
                     validateForm();
                 }
@@ -636,18 +666,18 @@
         }, 300); 
     }
 
-    // Manual Capture & Regex Extract for OCR
+    // OCR Manual Snapshot Engine
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
 
         if (!isOcrReady) {
-            alert("OCR Engine is still loading. Please wait a few seconds.");
+            alert(DIZIONARIO.alertOcrNotReady);
             return;
         }
 
         elements.video.pause(); 
         elements.captureBtn.disabled = true;
-        elements.modalStatus.innerText = "Processing image... Please wait.";
+        elements.modalStatus.innerText = DIZIONARIO.statusOcrProcessing;
         if ("vibrate" in navigator) navigator.vibrate([50]);
 
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
@@ -682,24 +712,23 @@
                 target.value = finalKey;
                 target.dispatchEvent(new Event('input')); 
                 
-                elements.modalStatus.innerText = "✅ Key successfully extracted!";
+                elements.modalStatus.innerText = DIZIONARIO.statusOcrSuccess;
                 if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
                 
                 setTimeout(closeScanner, 800);
             } else {
-                elements.modalStatus.innerText = "❌ Key not found. Please adjust and retry.";
+                elements.modalStatus.innerText = DIZIONARIO.statusOcrFailed;
                 elements.captureBtn.disabled = false;
                 elements.video.play(); 
             }
         } catch(e) {
-            console.error("OCR Process Error:", e);
-            elements.modalStatus.innerText = "System error during OCR.";
+            elements.modalStatus.innerText = DIZIONARIO.alertOcrSystemError;
             elements.captureBtn.disabled = false;
             elements.video.play();
         }
     };
 
-    // Focus Camera on Video Tap
+    // Tap to focus
     document.querySelector('.video-wrapper').addEventListener('click', async () => {
         if (!streamTrack) return;
         if ("vibrate" in navigator) navigator.vibrate([50]); 
@@ -714,13 +743,16 @@
         } catch(e) {}
     });
 
-    // Submit Data Payload
+    // =====================================================================
+    // 5. DATA TRANSMISSION (POST)
+    // =====================================================================
     elements.submitBtn.onclick = async () => {
         elements.submitBtn.disabled = true;
         
+        // Assemble payload with STORE ID injected dynamically
         const payload = {
             operator_id: currentOperatorId,
-            pin: localStorage.getItem('operator_pin'),
+            store_id: localStorage.getItem('store_id') || "UNKNOWN",
             pc_serial: elements.pcSerial.value.trim(),
             local_account: elements.localAccount.value.trim(),
             office_suite: document.querySelector('input[name="office_type"]:checked').value,
@@ -740,11 +772,13 @@
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
             const data = await res.json();
+            
             if (data.status === "error") throw new Error(data.message);
-            alert("Upload Success!");
+            
+            alert(DIZIONARIO.alertUploadSuccess);
             location.reload();
         } catch (e) {
-            alert("Error: " + e.message);
+            alert(DIZIONARIO.alertUploadError + e.message);
             elements.submitBtn.disabled = false;
         }
     };
