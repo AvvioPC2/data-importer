@@ -422,26 +422,29 @@
     // =====================================================================
     // 4. NETWORK FETCH & CORE LOGIC
     // =====================================================================
-    async function fetchOperatorsFromServer() {
+	async function fetchOperatorsFromServer() {
         try {
             elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalLoading}</option>`;
             
-            // TRUCCO CACHE-BUSTER: Aggiungiamo un timestamp unico all'URL
-            // Così forziamo il telefono a scaricare i dati aggiornati ignorando la cache
-            const cacheBusterUrl = `${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`;
+            // Metodo moderno e pulito per ignorare la cache (senza alterare l'URL)
+            const response = await fetch(GOOGLE_SCRIPT_URL, { 
+                method: 'GET',
+                cache: 'no-store' 
+            });
             
-            const response = await fetch(cacheBusterUrl);
             const result = await response.json();
             
             if (result.status === "success") {
                 OPERATOR_DB = result.data;
                 populateOperatorDropdown();
             } else {
-                throw new Error(result.message);
+                // Se Google risponde, ma c'è un errore nello script (es. nome foglio errato)
+                throw new Error("Server error: " + result.message);
             }
         } catch (err) {
-            elements.operatorDropdown.innerHTML = `<option value="00000">Error</option>`;
-            alert(DICTIONARY.alertFetchError);
+            elements.operatorDropdown.innerHTML = `<option value="00000">Errore</option>`;
+            // ORA STAMPIAMO L'ERRORE ESATTO A SCHERMO PER DIAGNOSTICA
+            alert("Errore scaricamento: " + err.message);
         }
     }
 	
