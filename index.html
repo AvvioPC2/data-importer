@@ -425,7 +425,12 @@
     async function fetchOperatorsFromServer() {
         try {
             elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalLoading}</option>`;
-            const response = await fetch(GOOGLE_SCRIPT_URL);
+            
+            // TRUCCO CACHE-BUSTER: Aggiungiamo un timestamp unico all'URL
+            // Così forziamo il telefono a scaricare i dati aggiornati ignorando la cache
+            const cacheBusterUrl = `${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`;
+            
+            const response = await fetch(cacheBusterUrl);
             const result = await response.json();
             
             if (result.status === "success") {
@@ -439,7 +444,7 @@
             alert(DICTIONARY.alertFetchError);
         }
     }
-
+	
     async function initializeOCRWorker() {
         try {
             console.log(DICTIONARY.statusOcrLoading);
