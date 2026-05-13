@@ -344,7 +344,7 @@
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyoq3sQATSP0IaWt-_GHplGtlZEBmtjtauuG2h80sm3J1yRqKEC8wHTwigOLOetIQQ/exec';
 	
 	let OPERATOR_DB = [];
-    let currentOperatorId = "00000";
+    let currentOperatorId = localStorage.getItem('operator_id') || "00000";
     let isOcrReady = false;
     let tesseractWorker = null;
     let nativeBarcodeDetector = null;
@@ -463,8 +463,9 @@
         }
     }
 
-    window.addEventListener('load', () => {
+	window.addEventListener('load', () => {
         initializeUIStrings();
+        updateOperatorUI(); // Mostra subito il badge con l'ID salvato!
         fetchOperatorsFromServer();
         initializeOCRWorker();
     });
@@ -516,7 +517,7 @@
     }
 
     // Operator Authentication Logic
-    function populateOperatorDropdown() {
+	function populateOperatorDropdown() {
         elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalDefault}</option>`;
         OPERATOR_DB.forEach(op => {
             const opt = document.createElement('option');
@@ -526,7 +527,8 @@
         });
 
         const savedId = localStorage.getItem('operator_id');
-        if (savedId && OPERATOR_DB.find(o => o.id === savedId)) {
+        // Usiamo String() per evitare che un numero venga confuso con un testo
+        if (savedId && OPERATOR_DB.find(o => String(o.id) === String(savedId))) {
             currentOperatorId = savedId;
             elements.operatorDropdown.value = savedId;
         } else {
