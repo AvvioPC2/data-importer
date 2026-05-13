@@ -18,7 +18,7 @@
             --header-text: #ffffff;
             --accent-color: #007bff;
             --success-color: #28a745;
-            --reprint-color: #6c757d; /* Color for Reprint Button */
+            --reprint-color: #6c757d; 
             --error-color: #dc3545;
             --border-color: #ced4da;
             --text-main: #333333;
@@ -33,7 +33,6 @@
 
         /* Header Bar */
         .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
-        .header-brand { display: flex; align-items: center; gap: 15px; }
         .header-logo { height: 40px; width: auto; object-fit: contain; border-radius: 4px; }
 		.app-title { flex: 1; text-align: center; padding: 0 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; }
 
@@ -79,12 +78,14 @@
         .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
         .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; }
 
-        .submit-container { padding: 20px 0; position: sticky; bottom: 0; background: linear-gradient(transparent, var(--primary-bg) 20%); text-align: center; margin-top: 10px; z-index: 50; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        /* Updated Submit Container: No more sticky, moved to end of flow */
+        .submit-container { padding: 30px 0; background: transparent; text-align: center; display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
         
         #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
         #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
-        #reprint-btn { width: 100%; max-width: 400px; padding: 14px; font-size: 17px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
+        /* Unified style for Reprint Button (same height as submit) */
+        #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
 
         /* Modals Viewport Fix */
         .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -131,7 +132,7 @@
 </head>
 <body>
 
-	<header class="app-header">
+    <header class="app-header">
         <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
         <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
         <div class="operator-badge" onclick="openOperatorModal()">
@@ -260,9 +261,6 @@
     <canvas id="hidden-canvas"></canvas>
 
 <script>
-    // =====================================================================
-    // 1. DICTIONARY & LOCALIZATION (Modify phrases here)
-    // =====================================================================
     const DICTIONARY = {
         appTitle: "AvvioPC 2",
         operatorBadge: "Operatore",
@@ -292,21 +290,15 @@
         winUpdCheck: "Esegui Windows Update al primo avvio",
         btnSubmit: "Invia Dati Form",
         btnReprint: "RISTAMPA DA S/N",
-
-        // Modal Operator
         opModalTitle: "Seleziona Operatore",
         opModalDefault: "-- Scegli dal menu --",
         opModalLoading: "Caricamento operatori in corso...",
         opModalPinPlaceholder: "PIN (4 Cifre)",
         btnCancel: "Annulla",
         btnSave: "Conferma",
-
-        // Modal Scanner
         scanTitleBarcode: "Scansione Codice a Barre",
         scanTitleOcr: "Scansione Product Key",
         btnCaptureOcr: "CATTURA CODICE",
-
-        // Status Messages
         statusInit: "Apertura fotocamera...",
         statusOcrLoading: "Download del motore IA in corso (Attendi)...",
         statusOcrReady: "Motore OCR Caricato e Pronto.",
@@ -315,8 +307,6 @@
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
         statusOcrFailed: "❌ Nessun codice rilevato. Riprova.",
-
-        // System Alerts
         alertOcrCritical: "CRITICO: Impossibile scaricare il motore OCR. Controlla la connessione a Internet.",
         alertPinLength: "Il PIN deve essere di 4 cifre esatte.",
         alertPinInvalid: "PIN errato. Riprova.",
@@ -328,9 +318,6 @@
         alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi."
     };
 
-    // =====================================================================
-    // 2. SYSTEM CONFIGURATION & VARIABLES
-    // =====================================================================
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec';
 
 	let OPERATOR_DB = [];
@@ -375,9 +362,6 @@
         canvas: document.getElementById('hidden-canvas')
     };
 
-    // =====================================================================
-    // 3. UI INITIALIZATION & TRANSLATION
-    // =====================================================================
     function initializeUIStrings() {
         document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
         document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
@@ -411,9 +395,6 @@
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
     }
 
-    // =====================================================================
-    // 4. NETWORK FETCH & CORE LOGIC
-    // =====================================================================
     async function fetchOperatorsFromServer() {
         try {
             elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalLoading}</option>`;
@@ -683,9 +664,6 @@
         }
     };
 
-    // =====================================================================
-    // 5. DATA TRANSMISSION (POST)
-    // =====================================================================
     elements.submitBtn.onclick = async () => {
         elements.submitBtn.disabled = true;
         const payload = {
@@ -719,7 +697,6 @@
         }
     };
 
-    // Handle Reprint Logic
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
         if (!sn) { alert("Inserisci il S/N per ristampare"); return; }
