@@ -8,156 +8,40 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     
     <style>
+        /* Your Original Styles */
         :root {
             --unieuro-orange: #f37021;
             --unieuro-blue: #003366;
-            --bg-color: #e9ecef;
-            --text-main: #333;
+            --bg-color: #f0f2f5;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            font-family: 'Barlow', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 10px;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        /* HEADER */
-        .app-header {
-            background-color: var(--unieuro-blue);
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
+        body { font-family: 'Barlow', sans-serif; background-color: var(--bg-color); margin: 0; padding: 10px; }
+        .app-container { max-width: 500px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .app-header { background: var(--unieuro-blue); padding: 15px; display: flex; align-items: center; justify-content: space-between; color: white; }
         .header-logo { height: 30px; }
+        .operator-badge { background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; }
 
-        .app-title {
-            color: white;
-            font-size: 22px;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .operator-badge {
-            background: #ffffff20;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 13px;
-            cursor: pointer;
-            border: 1px solid #ffffff50;
-        }
-
-        /* SEZIONI MODULO */
-        form { padding: 15px; }
-
-        .form-section {
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 20px;
-            background-color: #f8f9fa;
-        }
-
-        .section-title {
-            margin: -25px 0 15px 0;
-            background: var(--unieuro-blue);
-            color: white;
-            display: inline-block;
-            padding: 4px 10px;
-            font-size: 14px;
-            border-radius: 4px;
-        }
-
+        form { padding: 20px; }
+        .form-section { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; position: relative; background: #fafafa; }
+        .section-title { position: absolute; top: -12px; left: 15px; background: var(--unieuro-blue); color: white; padding: 2px 10px; font-size: 12px; border-radius: 4px; }
+        
         .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; }
+        
+        .input-group { display: flex; gap: 5px; }
+        input, select { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        
+        .scan-btn { background: #eee; border: 1px solid #ccc; padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 20px; }
 
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 13px;
-            color: #555;
-        }
+        .submit-btn { width: 100%; padding: 15px; background: var(--unieuro-orange); color: white; border: none; border-radius: 4px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        
+        /* New Reprint Button Style */
+        .reprint-btn { width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 4px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* INPUT E SCANNER */
-        .input-group {
-            display: flex;
-            gap: 5px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 15px;
-        }
-
-        .scan-btn {
-            background-color: #e2e6ea;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 0 15px;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .scan-btn:active { background-color: #dae0e5; }
-
-        /* PULSANTI */
-        .submit-btn {
-            width: 100%;
-            padding: 15px;
-            background-color: var(--unieuro-orange);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        .reprint-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* OVERLAY CARICAMENTO */
-        #loader {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000; flex-direction: column; align-items: center; justify-content: center; color: white;
-        }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #fff; border-top: 4px solid var(--unieuro-orange);
-            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--unieuro-orange); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -169,16 +53,14 @@
 
 <div class="app-container">
     <header class="app-header">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Unieuro_Logo.svg/1200px-Unieuro_Logo.svg.png" class="header-logo" alt="Unieuro">
-        <h1 class="app-title">AvvioPC</h1>
-        <div id="op-display" class="operator-badge" onclick="cambiaOperatore()">Login...</div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Unieuro_Logo.svg/1200px-Unieuro_Logo.svg.png" class="header-logo">
+        <h2 style="margin:0; font-size: 20px;">AvvioPC 2.0</h2>
+        <div id="op-display" class="operator-badge" onclick="logout()">Login...</div>
     </header>
 
     <form id="pcForm">
-        
         <div class="form-section">
-            <h3 class="section-title">Dati Dispositivo</h3>
-            
+            <span class="section-title">DISPOSITIVO</span>
             <div class="form-group">
                 <label>S/N SERIAL NUMBER *</label>
                 <div class="input-group">
@@ -186,21 +68,19 @@
                     <button type="button" class="scan-btn" onclick="avviaScanner('pc_serial')">📷</button>
                 </div>
             </div>
-            
             <div class="form-group">
-                <label>NOME UTENTE LOCALE</label>
+                <label>UTENTE WINDOWS</label>
                 <input type="text" id="local_account">
             </div>
         </div>
 
         <div class="form-section">
-            <h3 class="section-title">Software e Licenze</h3>
-            
+            <span class="section-title">SOFTWARE</span>
             <div class="form-group">
-                <label>SUITE OFFICE</label>
+                <label>OFFICE</label>
                 <select id="office_suite">
-                    <option value="none">Nessuna / LibreOffice</option>
-                    <option value="ms-office">Microsoft Office</option>
+                    <option value="none">Nessuno</option>
+                    <option value="ms-office">MS Office</option>
                 </select>
             </div>
             <div class="form-group">
@@ -210,19 +90,16 @@
                     <button type="button" class="scan-btn" onclick="avviaScanner('office_key')">📷</button>
                 </div>
             </div>
-
-            <hr style="border-top: 1px dashed #ccc; margin: 15px 0;">
-
             <div class="form-group">
                 <label>ANTIVIRUS</label>
                 <select id="antivirus">
-                    <option value="none">Free / Defender</option>
-                    <option value="norton">Norton 360</option>
+                    <option value="none">Nessuno</option>
+                    <option value="norton">Norton</option>
                     <option value="mcafee">McAfee</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>ANTIVIRUS KEY</label>
+                <label>AV KEY</label>
                 <div class="input-group">
                     <input type="text" id="antivirus_key">
                     <button type="button" class="scan-btn" onclick="avviaScanner('antivirus_key')">📷</button>
@@ -231,8 +108,7 @@
         </div>
 
         <div class="form-section">
-            <h3 class="section-title">Account Microsoft</h3>
-            
+            <span class="section-title">ACCOUNT MS</span>
             <div class="form-group">
                 <label>EMAIL</label>
                 <input type="email" id="ms_email">
@@ -241,88 +117,69 @@
                 <label>PASSWORD</label>
                 <input type="text" id="ms_password">
             </div>
-            <div class="form-group" style="margin-top: 15px;">
-                <label style="display: flex; align-items: center; font-weight: normal;">
-                    <input type="checkbox" id="win_update" style="width: 20px; margin-right: 10px;"> Windows Update completati?
+            <div class="form-group">
+                <label style="font-weight: normal; font-size: 14px;">
+                    <input type="checkbox" id="win_update"> Windows Update OK
                 </label>
             </div>
         </div>
 
         <button type="submit" class="submit-btn">INVIA DATI</button>
-        <button type="button" class="reprint-btn" onclick="richiediRistampa()">🔄 Ristampa Pratica da S/N</button>
+        <button type="button" class="reprint-btn" onclick="handleReprint()">🔄 RISTAMPA DA S/N</button>
     </form>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec";
-    
-    let appState = {
-        currentOp: null,
-        operators: []
-    };
+    let appState = { currentOp: null, operators: [] };
 
+    // Initialization: Fetch operators and login
     window.onload = async () => {
-        showLoader("Caricamento...");
+        showLoader("Sincronizzazione...");
         try {
             const res = await fetch(GAS_URL);
             const json = await res.json();
-            if(json.status === "success") {
-                appState.operators = json.data;
-                hideLoader();
-                chiediPin();
-            }
-        } catch(e) { alert("Errore di rete"); hideLoader(); }
+            appState.operators = json.data;
+            hideLoader();
+            doLogin();
+        } catch(e) { alert("Errore connessione"); hideLoader(); }
     };
 
-    function chiediPin() {
-        const pin = prompt("Inserisci il PIN Operatore:");
-        if(!pin) return chiediPin();
-
+    function doLogin() {
+        const pin = prompt("PIN OPERATORE:");
+        if(!pin) return doLogin();
         const hash = CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex);
         const op = appState.operators.find(o => o.pinHash === hash);
-
         if(op) {
             appState.currentOp = op;
-            document.getElementById('op-display').innerText = `${op.firstName} @ ${op.storeId}`;
+            document.getElementById('op-display').innerText = op.firstName + " @ " + op.storeId;
         } else {
-            alert("PIN Errato!");
-            chiediPin();
+            alert("PIN errato");
+            doLogin();
         }
     }
 
-    function cambiaOperatore() {
-        if(confirm("Vuoi cambiare operatore?")) {
-            appState.currentOp = null;
-            document.getElementById('op-display').innerText = "Login...";
-            chiediPin();
-        }
+    function logout() {
+        if(confirm("Cambiare operatore?")) { doLogin(); }
     }
 
-    // Funzione segnaposto per la tua logica della fotocamera
-    function avviaScanner(idCampo) {
-        // Qui andrà inserita la tua logica originale per l'acquisizione tramite fotocamera.
-        // Esempio:
-        // alert("Apertura scanner per: " + idCampo);
-    }
-
+    // Submit new data to Google Sheets
     document.getElementById('pcForm').onsubmit = async (e) => {
         e.preventDefault();
-        if(!appState.currentOp) { alert("Devi fare il login!"); return; }
-        
-        showLoader("Invio...");
+        showLoader("Invio in corso...");
         const payload = {
             action: "new",
             timestamp: new Date().toLocaleString(),
             operator_id: appState.currentOp.id,
             store_id: appState.currentOp.storeId,
             pc_serial: document.getElementById('pc_serial').value.trim(),
-            local_account: document.getElementById('local_account').value.trim(),
+            local_account: document.getElementById('local_account').value,
             office_suite: document.getElementById('office_suite').value,
             office_key: document.getElementById('office_key').value.trim(),
             antivirus: document.getElementById('antivirus').value,
             antivirus_key: document.getElementById('antivirus_key').value.trim(),
-            microsoft_account: document.getElementById('ms_email').value.trim(),
-            microsoft_password: document.getElementById('ms_password').value.trim(),
+            microsoft_account: document.getElementById('ms_email').value,
+            microsoft_password: document.getElementById('ms_password').value,
             windows_update: document.getElementById('win_update').checked ? "SI" : "NO"
         };
 
@@ -330,34 +187,37 @@
             const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
             const result = await res.json();
             if(result.status === "success") {
-                alert("Dati acquisiti con successo!");
+                alert("Dati inviati con successo!");
                 document.getElementById('pcForm').reset();
-            } else {
-                alert("Errore Server: " + result.message);
             }
         } catch(e) { alert("Errore invio"); }
         hideLoader();
     };
 
-    async function richiediRistampa() {
+    // Request reprint for an existing Serial Number
+    async function handleReprint() {
         const sn = document.getElementById('pc_serial').value.trim();
-        if(!sn) { alert("Inserisci il Serial Number per la ristampa."); return; }
-
-        showLoader("Ricerca...");
-        const payload = { action: "reprint", store_id: appState.currentOp.storeId, pc_serial: sn };
+        if(!sn) { alert("Inserisci il S/N per ristampare"); return; }
+        
+        showLoader("Ricerca pratica...");
+        const payload = { 
+            action: "reprint", 
+            store_id: appState.currentOp.storeId, 
+            pc_serial: sn 
+        };
 
         try {
             const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
             const result = await res.json();
             alert(result.message);
-        } catch(e) { alert("Errore di rete"); }
+        } catch(e) { alert("Errore rete"); }
         hideLoader();
     }
 
-    function showLoader(txt) { 
-        document.getElementById('loader-text').innerText = txt;
-        document.getElementById('loader').style.display = 'flex'; 
-    }
+    // Your existing scanner logic (Ensure this function is defined in your actual environment)
+    // function avviaScanner(id) { ... }
+
+    function showLoader(t) { document.getElementById('loader-text').innerText = t; document.getElementById('loader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('loader').style.display = 'none'; }
 </script>
 
