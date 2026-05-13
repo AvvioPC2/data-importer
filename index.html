@@ -37,7 +37,7 @@
         .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
         .header-brand { display: flex; align-items: center; gap: 15px; }
         .header-logo { height: 40px; width: auto; object-fit: contain; border-radius: 4px; }
-        .app-title { font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; }
+		.app-title { position: absolute; left: 50%; transform: translateX(-50%); font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; pointer-events: none; }
         
         .operator-badge { display: flex; flex-direction: column; align-items: flex-end; cursor: pointer; transition: opacity 0.2s; }
         .operator-badge:hover { opacity: 0.8; }
@@ -130,14 +130,17 @@
 </head>
 <body>
 
-    <!-- Header -->
+	<!-- Header -->
     <header class="app-header">
-        <div class="header-brand">
-            <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
-            <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
-        </div>
+        <!-- Sinistra: Logo -->
+        <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+        
+        <!-- Centro: Titolo Assoluto -->
+        <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
+        
+        <!-- Destra: Operatore -->
         <div class="operator-badge" onclick="openOperatorModal()">
-            <div class="operator-label" id="lbl-operator">Operator</div>
+            <div class="operator-label" id="lbl-operator">Operatore</div>
             <div class="operator-id-display" id="header-operator-id">00000</div>
         </div>
     </header>
