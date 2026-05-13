@@ -1,225 +1,809 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Unieuro AvvioPC 2.0</title>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AvvioPC 2 - Dashboard</title>
+
+    <!-- Google Fonts: Barlow (DIN-Pro equivalent) -->
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
+
+    <!-- Tesseract.js v4 for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- ZXing for Barcode scanning -->
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+
     <style>
-        /* Your Original Styles */
+        /* CSS Variables for consistent theming */
         :root {
-            --unieuro-orange: #f37021;
-            --unieuro-blue: #003366;
-            --bg-color: #f0f2f5;
+            --primary-bg: #f4f7f6;
+            --header-bg: #003366;
+            --header-text: #ffffff;
+            --accent-color: #007bff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --border-color: #ced4da;
+            --text-main: #333333;
+            --text-muted: #6c757d;
+            --disabled-bg: #e9ecef;
+            --border-radius: 8px;
         }
 
-        body { font-family: 'Barlow', sans-serif; background-color: var(--bg-color); margin: 0; padding: 10px; }
-        .app-container { max-width: 500px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        
-        .app-header { background: var(--unieuro-blue); padding: 15px; display: flex; align-items: center; justify-content: space-between; color: white; }
-        .header-logo { height: 30px; }
-        .operator-badge { background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        /* Base Reset & Typography */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
-        form { padding: 20px; }
-        .form-section { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; position: relative; background: #fafafa; }
-        .section-title { position: absolute; top: -12px; left: 15px; background: var(--unieuro-blue); color: white; padding: 2px 10px; font-size: 12px; border-radius: 4px; }
-        
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; }
-        
-        .input-group { display: flex; gap: 5px; }
-        input, select { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        
-        .scan-btn { background: #eee; border: 1px solid #ccc; padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 20px; }
+        /* Header Bar */
+        .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+        .header-brand { display: flex; align-items: center; gap: 15px; }
+        .header-logo { height: 40px; width: auto; object-fit: contain; border-radius: 4px; }
+		.app-title { position: absolute; left: 50%; transform: translateX(-50%); font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; pointer-events: none; }
+		.app-title { flex: 1; text-align: center; padding: 0 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; }
 
-        .submit-btn { width: 100%; padding: 15px; background: var(--unieuro-orange); color: white; border: none; border-radius: 4px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        
-        /* New Reprint Button Style */
-        .reprint-btn { width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 4px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .operator-badge { display: flex; flex-direction: column; align-items: flex-end; cursor: pointer; transition: opacity 0.2s; }
+        .operator-badge:hover { opacity: 0.8; }
+        .operator-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 4px; }
+        .operator-id-display { font-size: 18px; font-weight: bold; font-family: monospace; letter-spacing: 1px; background: rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.3); }
 
-        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--unieuro-orange); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Main Form Container */
+        .form-container { max-width: 600px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+        .form-group { background: #fff; padding: 15px; border-radius: var(--border-radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .form-label { display: block; font-weight: 600; font-size: 16px; margin-bottom: 8px; color: var(--text-main); }
+        .section-title { font-size: 18px; font-weight: bold; border-bottom: 2px solid var(--primary-bg); padding-bottom: 8px; margin-bottom: 15px; margin-top: 10px; color: var(--header-bg); }
+
+        /* Input Layouts */
+        .input-with-icon { display: flex; align-items: stretch; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background: #fff; transition: border-color 0.2s; }
+        .input-with-icon:focus-within { border-color: var(--accent-color); }
+        .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
+
+        #office-key, #av-key { font-size: 13px; letter-spacing: -0.5px; }
+
+        .camera-btn { background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .camera-btn:hover { background: #e2e6ea; }
+        .camera-btn svg { width: 26px; height: 26px; fill: var(--header-bg); }
+
+        .segmented-control { display: flex; gap: 5px; background: var(--disabled-bg); padding: 4px; border-radius: var(--border-radius); margin-bottom: 10px; }
+        .segmented-control label { flex: 1; text-align: center; padding: 12px 5px; font-size: 16px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: all 0.2s; }
+        .segmented-control input[type="radio"] { display: none; }
+        .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+
+        .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
+        .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
+
+        .email-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: #fff; margin-bottom: 15px; padding-right: 8px; transition: border-color 0.2s; }
+        .email-group:focus-within { border-color: var(--accent-color); }
+        .email-group input { flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none; }
+        .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
+        .email-group select { flex: 0 0 auto; border: none; outline: none; font-size: 16px; background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; }
+
+        .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
+        .standard-input:focus { border-color: var(--accent-color); }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 0; }
+        .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; }
+
+        .submit-container { padding: 20px 0; position: sticky; bottom: 0; background: linear-gradient(transparent, var(--primary-bg) 20%); text-align: center; margin-top: 10px; z-index: 50; }
+        #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
+        #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
+
+        /* Modals Viewport Fix */
+        .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .fullscreen-modal.active { opacity: 1; pointer-events: auto; }
+
+        /* Camera Modal Layout */
+        #scanner-modal { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
+        #scanner-modal.active { transform: translateY(0); }
+        .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: #000; z-index: 10; }
+        .modal-title { font-size: 18px; font-weight: bold; }
+        .close-modal-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 5px; }
+
+        .video-wrapper { position: relative; flex-grow: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #111; }
+        #scanner-video { width: 100%; height: 100%; object-fit: cover; }
+
+        #scanner-overlay { position: absolute; width: 95%; height: 100px; border: 3px solid #00ff00; border-radius: 8px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s; }
+        #scanner-overlay.barcode-mode { height: 120px; border-color: #007bff; }
+
+        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 120px; display: flex; flex-direction: column; justify-content: center; padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
+
+        #capture-btn { background: var(--accent-color); color: white; border: none; padding: 16px 30px; font-size: 18px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s; display: none; }
+        #capture-btn:active { transform: scale(0.95); background: #0056b3; }
+        #capture-btn:disabled { background: #555; cursor: wait; }
+
+        #modal-status { color: white; font-size: 15px; min-height: 20px; font-weight: 500; }
+
+        .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-bottom: 10px; }
+        .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
+        @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
+
+        /* Operator Modal Dialog */
+        #operator-modal { justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .operator-dialog { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; }
+        #operator-modal.active .operator-dialog { transform: translateY(0); }
+        .operator-dialog h3 { color: var(--header-bg); margin: 0; font-size: 20px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
+        .operator-select { padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 18px; outline: none; width: 100%; }
+        .dialog-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .dialog-btn { flex: 1; padding: 14px; border: none; border-radius: var(--border-radius); font-weight: bold; cursor: pointer; font-size: 17px; transition: background 0.2s; }
+        .btn-cancel { background: var(--disabled-bg); color: var(--text-main); }
+        .btn-save { background: var(--header-bg); color: white; }
+
+        #hidden-canvas { display: none; }
     </style>
 </head>
 <body>
 
-<div id="loader">
-    <div class="spinner"></div>
-    <p id="loader-text">Attendere...</p>
-</div>
-
-<div class="app-container">
+	<!-- Header -->
     <header class="app-header">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Unieuro_Logo.svg/1200px-Unieuro_Logo.svg.png" class="header-logo">
-        <h2 style="margin:0; font-size: 20px;">AvvioPC 2.0</h2>
-        <div id="op-display" class="operator-badge" onclick="logout()">Login...</div>
+        <!-- Sinistra: Logo -->
+        <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+
+        <!-- Centro: Titolo Assoluto -->
+        <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
+
+        <!-- Destra: Operatore -->
+        <div class="operator-badge" onclick="openOperatorModal()">
+            <div class="operator-label" id="lbl-operator">Operatore</div>
+            <div class="operator-id-display" id="header-operator-id">00000</div>
+        </div>
     </header>
 
-    <form id="pcForm">
-        <div class="form-section">
-            <span class="section-title">DISPOSITIVO</span>
-            <div class="form-group">
-                <label>S/N SERIAL NUMBER *</label>
-                <div class="input-group">
-                    <input type="text" id="pc_serial" required>
-                    <button type="button" class="scan-btn" onclick="avviaScanner('pc_serial')">📷</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>UTENTE WINDOWS</label>
-                <input type="text" id="local_account">
+    <!-- Main Data Entry Form -->
+    <main class="form-container">
+
+        <!-- Serial Section -->
+        <div class="form-group">
+            <label class="form-label" id="lbl-serial">Serial Number</label>
+            <div class="input-with-icon">
+                <input type="text" id="pc-serial" style="text-transform: none;" oninput="validateForm()">
+                <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'barcode')">
+                    <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                </button>
             </div>
         </div>
 
-        <div class="form-section">
-            <span class="section-title">SOFTWARE</span>
-            <div class="form-group">
-                <label>OFFICE</label>
-                <select id="office_suite">
-                    <option value="none">Nessuno</option>
-                    <option value="ms-office">MS Office</option>
+        <!-- Local Account Section -->
+        <div class="form-group">
+            <label class="form-label" id="lbl-local-account">Local Account (Windows)</label>
+            <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="validateForm()">
+        </div>
+
+        <!-- Office Section -->
+        <div class="form-group">
+            <label class="form-label" id="lbl-office-suite">Office Suite</label>
+            <div class="segmented-control">
+                <input type="radio" id="office-ms" name="office_type" value="ms-office" onchange="toggleFields(); validateForm();">
+                <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
+                <input type="radio" id="office-libre" name="office_type" value="libre-office" onchange="toggleFields(); validateForm();" checked>
+                <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
+            </div>
+            <div id="ms-office-field" class="conditional-field">
+                <label class="form-label" id="lbl-office-key" style="font-size: 14px;">Product Key</label>
+                <div class="input-with-icon">
+                    <input type="text" id="office-key" oninput="formatProductKey(this, '-')">
+                    <button type="button" class="camera-btn" onclick="openScanner('office-key', 'ocr')">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Antivirus Section -->
+        <div class="form-group">
+            <label class="form-label" id="lbl-av-protection">Antivirus Protection</label>
+            <div class="segmented-control">
+                <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
+                <label for="av-norton" id="lbl-opt-norton">Norton</label>
+                <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
+                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee</label>
+                <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
+                <label for="av-none" id="lbl-opt-none">None</label>
+            </div>
+            <div id="av-field" class="conditional-field">
+                <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key</label>
+                <div class="input-with-icon">
+                    <input type="text" id="av-key" oninput="formatAvKey(this)">
+                    <button type="button" class="camera-btn" onclick="openScanner('av-key', 'ocr')">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Microsoft Account Section -->
+        <div class="form-group">
+            <div class="section-title" id="lbl-ms-title">Microsoft Account</div>
+            <label class="form-label" id="lbl-ms-username">Username</label>
+            <div class="email-group">
+                <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
+                <span>@</span>
+                <select id="ms-domain">
+                    <option value="outlook.it">outlook.it</option>
+                    <option value="outlook.com">outlook.com</option>
+                    <option value="hotmail.com">hotmail.com</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>OFFICE KEY</label>
-                <div class="input-group">
-                    <input type="text" id="office_key">
-                    <button type="button" class="scan-btn" onclick="avviaScanner('office_key')">📷</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>ANTIVIRUS</label>
-                <select id="antivirus">
-                    <option value="none">Nessuno</option>
-                    <option value="norton">Norton</option>
-                    <option value="mcafee">McAfee</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>AV KEY</label>
-                <div class="input-group">
-                    <input type="text" id="antivirus_key">
-                    <button type="button" class="scan-btn" onclick="avviaScanner('antivirus_key')">📷</button>
-                </div>
-            </div>
+            <label class="form-label" id="lbl-ms-password">Password</label>
+            <input type="text" id="ms-password" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
-        <div class="form-section">
-            <span class="section-title">ACCOUNT MS</span>
-            <div class="form-group">
-                <label>EMAIL</label>
-                <input type="email" id="ms_email">
-            </div>
-            <div class="form-group">
-                <label>PASSWORD</label>
-                <input type="text" id="ms_password">
-            </div>
-            <div class="form-group">
-                <label style="font-weight: normal; font-size: 14px;">
-                    <input type="checkbox" id="win_update"> Windows Update OK
-                </label>
-            </div>
+        <!-- Windows Update Section -->
+        <div class="form-group">
+            <div class="section-title" id="lbl-winupd-title">Windows Update</div>
+            <label class="checkbox-group">
+                <input type="checkbox" id="run-updates" checked>
+                <span id="lbl-winupd-check">Execute Windows Update on first boot</span>
+            </label>
         </div>
 
-        <button type="submit" class="submit-btn">INVIA DATI</button>
-        <button type="button" class="reprint-btn" onclick="handleReprint()">🔄 RISTAMPA DA S/N</button>
-    </form>
-</div>
+        <!-- Submit Section -->
+        <div class="submit-container">
+            <button id="submit-btn" disabled>Submit Data</button>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="operator-modal" class="fullscreen-modal">
+        <div class="operator-dialog">
+            <h3 id="lbl-modal-op-title">Select Operator</h3>
+            <select id="operator-dropdown" class="operator-select">
+                <option value="00000" id="lbl-modal-op-default">-- Select --</option>
+            </select>
+            <input type="password" id="operator-pin" class="standard-input" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
+            <div class="dialog-actions">
+                <button class="dialog-btn btn-cancel" id="btn-cancel" onclick="closeOperatorModal()">Cancel</button>
+                <button class="dialog-btn btn-save" id="btn-save" onclick="saveOperatorSelection()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scanner-modal" class="fullscreen-modal">
+        <div class="modal-header">
+            <div class="modal-title" id="scanner-title">Scanning</div>
+            <button class="close-modal-btn" onclick="closeScanner()">&times;</button>
+        </div>
+        <div class="video-wrapper">
+            <video id="scanner-video" autoplay playsinline muted></video>
+            <div id="scanner-overlay"></div>
+        </div>
+        <div class="modal-footer">
+            <div id="scan-animation" class="scan-animation"></div>
+            <button id="capture-btn">CAPTURE CODE</button>
+            <div id="modal-status">Initializing...</div>
+        </div>
+    </div>
+
+    <canvas id="hidden-canvas"></canvas>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec";
-    let appState = { currentOp: null, operators: [] };
+    // =====================================================================
+    // 1. DICTIONARY & LOCALIZATION (Modify phrases here)
+    // =====================================================================
+    const DICTIONARY = {
+        appTitle: "AvvioPC 2",
+        operatorBadge: "Operatore",
+        serialLabel: "Numero di Serie Dispositivo (S/N)",
+        serialPlaceholder: "Es. 5CD1234567",
+        localAccountLabel: "Nome Account Locale (Windows)",
+        localAccountPlaceholder: "Es. Mario Rossi",
+        officeTitle: "Suite Office",
+        officeOptMs: "MS-Office",
+        officeOptLibre: "Libre Office",
+        officeKeyLabel: "Product Key Office",
+        officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+        avTitle: "Protezione Antivirus",
+        avOptNorton: "Norton",
+        avOptMcafee: "McAfee",
+        avOptNone: "Nessuno",
+        avNortonKeyLabel: "Product Key Norton Antivirus",
+        avMcafeeKeyLabel: "Product Key McAfee",
+        avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
+        avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+        msTitle: "Account Microsoft",
+        msUserLabel: "Nome Utente",
+        msUserPlaceholder: "nome.cognome",
+        msPassLabel: "Password",
+        msPassPlaceholder: "Digita password...",
+        winUpdTitle: "Aggiornamenti Sistema",
+        winUpdCheck: "Esegui Windows Update al primo avvio",
+        btnSubmit: "Invia Dati Form",
 
-    // Initialization: Fetch operators and login
-    window.onload = async () => {
-        showLoader("Sincronizzazione...");
-        try {
-            const res = await fetch(GAS_URL);
-            const json = await res.json();
-            appState.operators = json.data;
-            hideLoader();
-            doLogin();
-        } catch(e) { alert("Errore connessione"); hideLoader(); }
+        // Modal Operator
+        opModalTitle: "Seleziona Operatore",
+        opModalDefault: "-- Scegli dal menu --",
+        opModalLoading: "Caricamento operatori in corso...",
+        opModalPinPlaceholder: "PIN (4 Cifre)",
+        btnCancel: "Annulla",
+        btnSave: "Conferma",
+
+        // Modal Scanner
+        scanTitleBarcode: "Scansione Codice a Barre",
+        scanTitleOcr: "Scansione Product Key",
+        btnCaptureOcr: "CATTURA CODICE",
+
+        // Status Messages
+        statusInit: "Apertura fotocamera...",
+        statusOcrLoading: "Download del motore IA in corso (Attendi)...",
+        statusOcrReady: "Motore OCR Caricato e Pronto.",
+        statusBarcodeSearch: "Ricerca del codice a barre in corso...",
+        statusOcrAlign: "Allinea il codice nel riquadro verde e premi CATTURA",
+        statusOcrProcessing: "Elaborazione dell'immagine in corso...",
+        statusOcrSuccess: "✅ Product Key estratto con successo!",
+        statusOcrFailed: "❌ Nessun codice rilevato. Riprova.",
+
+        // System Alerts
+        alertOcrCritical: "CRITICO: Impossibile scaricare il motore OCR. Controlla la connessione a Internet.",
+        alertPinLength: "Il PIN deve essere di 4 cifre esatte.",
+        alertPinInvalid: "PIN errato. Riprova.",
+        alertOcrNotReady: "Attendi, il motore di intelligenza artificiale si sta ancora avviando.",
+        alertOcrSystemError: "Errore di memoria durante la decodifica dell'immagine.",
+        alertUploadSuccess: "Dati inviati al server con successo!",
+        alertUploadError: "Impossibile inviare i dati: ",
+        alertCameraError: "Errore Fotocamera: ",
+        alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi."
     };
 
-    function doLogin() {
-        const pin = prompt("PIN OPERATORE:");
-        if(!pin) return doLogin();
-        const hash = CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex);
-        const op = appState.operators.find(o => o.pinHash === hash);
-        if(op) {
-            appState.currentOp = op;
-            document.getElementById('op-display').innerText = op.firstName + " @ " + op.storeId;
-        } else {
-            alert("PIN errato");
-            doLogin();
+    // =====================================================================
+    // 2. SYSTEM CONFIGURATION & VARIABLES
+    // =====================================================================
+    // IMPORTANT: Ensure this matches your deployed Google Apps Script URL
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec';
+
+	let OPERATOR_DB = [];
+    let currentOperatorId = localStorage.getItem('operator_id') || "00000";
+    let isOcrReady = false;
+    let tesseractWorker = null;
+    let nativeBarcodeDetector = null;
+    const zxingReader = new ZXing.BrowserMultiFormatReader();
+
+    if ('BarcodeDetector' in window) {
+        nativeBarcodeDetector = new BarcodeDetector({ formats: ['code_128', 'qr_code', 'ean_13', 'code_39'] });
+    }
+
+    const elements = {
+        pcSerial: document.getElementById('pc-serial'),
+        localAccount: document.getElementById('local-account'),
+        officeMs: document.getElementById('office-ms'),
+        officeKey: document.getElementById('office-key'),
+        msOfficeField: document.getElementById('ms-office-field'),
+        avNorton: document.getElementById('av-norton'),
+        avMcafee: document.getElementById('av-mcafee'),
+        avNone: document.getElementById('av-none'),
+        avKey: document.getElementById('av-key'),
+        avField: document.getElementById('av-field'),
+        avKeyLabel: document.getElementById('av-key-label'),
+        msUsername: document.getElementById('ms-username'),
+        msDomain: document.getElementById('ms-domain'),
+        msPassword: document.getElementById('ms-password'),
+        runUpdates: document.getElementById('run-updates'),
+        submitBtn: document.getElementById('submit-btn'),
+        operatorBadge: document.getElementById('header-operator-id'),
+        operatorModal: document.getElementById('operator-modal'),
+        operatorDropdown: document.getElementById('operator-dropdown'),
+        operatorPin: document.getElementById('operator-pin'),
+        scannerModal: document.getElementById('scanner-modal'),
+        video: document.getElementById('scanner-video'),
+        modalStatus: document.getElementById('modal-status'),
+        scanAnimation: document.getElementById('scan-animation'),
+        captureBtn: document.getElementById('capture-btn'),
+        overlay: document.getElementById('scanner-overlay'),
+        canvas: document.getElementById('hidden-canvas')
+    };
+
+    // =====================================================================
+    // 3. UI INITIALIZATION & TRANSLATION
+    // =====================================================================
+    function initializeUIStrings() {
+        document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
+        document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
+        document.getElementById('lbl-serial').innerText = DICTIONARY.serialLabel;
+        elements.pcSerial.placeholder = DICTIONARY.serialPlaceholder;
+        document.getElementById('lbl-local-account').innerText = DICTIONARY.localAccountLabel;
+        elements.localAccount.placeholder = DICTIONARY.localAccountPlaceholder;
+        document.getElementById('lbl-office-suite').innerText = DICTIONARY.officeTitle;
+        document.getElementById('lbl-opt-ms').innerText = DICTIONARY.officeOptMs;
+        document.getElementById('lbl-opt-libre').innerText = DICTIONARY.officeOptLibre;
+        document.getElementById('lbl-office-key').innerText = DICTIONARY.officeKeyLabel;
+        elements.officeKey.placeholder = DICTIONARY.officeKeyPlaceholder;
+        document.getElementById('lbl-av-protection').innerText = DICTIONARY.avTitle;
+        document.getElementById('lbl-opt-norton').innerText = DICTIONARY.avOptNorton;
+        document.getElementById('lbl-opt-mcafee').innerText = DICTIONARY.avOptMcafee;
+        document.getElementById('lbl-opt-none').innerText = DICTIONARY.avOptNone;
+        document.getElementById('lbl-ms-title').innerText = DICTIONARY.msTitle;
+        document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
+        elements.msUsername.placeholder = DICTIONARY.msUserPlaceholder;
+        document.getElementById('lbl-ms-password').innerText = DICTIONARY.msPassLabel;
+        elements.msPassword.placeholder = DICTIONARY.msPassPlaceholder;
+        document.getElementById('lbl-winupd-title').innerText = DICTIONARY.winUpdTitle;
+        document.getElementById('lbl-winupd-check').innerText = DICTIONARY.winUpdCheck;
+        elements.submitBtn.innerText = DICTIONARY.btnSubmit;
+        document.getElementById('lbl-modal-op-title').innerText = DICTIONARY.opModalTitle;
+        document.getElementById('lbl-modal-op-default').innerText = DICTIONARY.opModalDefault;
+        elements.operatorPin.placeholder = DICTIONARY.opModalPinPlaceholder;
+        document.getElementById('btn-cancel').innerText = DICTIONARY.btnCancel;
+        document.getElementById('btn-save').innerText = DICTIONARY.btnSave;
+        elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
+    }
+
+// =====================================================================
+    // 4. NETWORK FETCH & CORE LOGIC
+    // =====================================================================
+    async function fetchOperatorsFromServer() {
+        try {
+            elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalLoading}</option>`;
+
+            // Trucco Cache-Buster integrato direttamente nell'URL.
+            // Crea una "Richiesta Semplice" che i server di Google accettano senza blocchi CORS.
+            const safeUrl = `${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`;
+
+            const response = await fetch(safeUrl);
+            const result = await response.json();
+
+            if (result.status === "success") {
+                OPERATOR_DB = result.data;
+                populateOperatorDropdown();
+            } else {
+                throw new Error("Server error: " + result.message);
+            }
+        } catch (err) {
+            console.error("Fetch err:", err);
+            elements.operatorDropdown.innerHTML = `<option value="00000">Errore Rete</option>`;
+            alert("Errore scaricamento: Verifica connessione o permessi script.");
         }
     }
 
-    function logout() {
-        if(confirm("Cambiare operatore?")) { doLogin(); }
+    async function initializeOCRWorker() {
+        try {
+            console.log(DICTIONARY.statusOcrLoading);
+            tesseractWorker = await Tesseract.createWorker();
+            await tesseractWorker.loadLanguage('eng');
+            await tesseractWorker.initialize('eng');
+            await tesseractWorker.setParameters({
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
+                tessedit_pageseg_mode: '6', 
+            });
+            isOcrReady = true;
+            console.log(DICTIONARY.statusOcrReady);
+        } catch (e) {
+            alert(DICTIONARY.alertOcrCritical);
+        }
     }
 
-    // Submit new data to Google Sheets
-    document.getElementById('pcForm').onsubmit = async (e) => {
-        e.preventDefault();
-        showLoader("Invio in corso...");
-        const payload = {
-            action: "new",
-            timestamp: new Date().toLocaleString(),
-            operator_id: appState.currentOp.id,
-            store_id: appState.currentOp.storeId,
-            pc_serial: document.getElementById('pc_serial').value.trim(),
-            local_account: document.getElementById('local_account').value,
-            office_suite: document.getElementById('office_suite').value,
-            office_key: document.getElementById('office_key').value.trim(),
-            antivirus: document.getElementById('antivirus').value,
-            antivirus_key: document.getElementById('antivirus_key').value.trim(),
-            microsoft_account: document.getElementById('ms_email').value,
-            microsoft_password: document.getElementById('ms_password').value,
-            windows_update: document.getElementById('win_update').checked ? "SI" : "NO"
-        };
+	window.addEventListener('load', () => {
+        initializeUIStrings();
+        updateOperatorUI(); // Mostra subito il badge con l'ID salvato!
+        fetchOperatorsFromServer();
+        initializeOCRWorker();
+    });
+
+    // Validations and Masking
+    function formatProductKey(input, sep) {
+        let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
+        let res = "";
+        for (let i = 0; i < val.length; i++) {
+            if (i > 0 && i % 5 === 0) res += sep;
+            res += val[i];
+        }
+        input.value = res;
+        validateForm();
+    }
+
+    function formatAvKey(input) {
+        formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
+    }
+
+    function formatUsername(input) {
+        input.value = input.value.toLowerCase().replace(/[^a-z0-9.\-_]/g, '');
+        validateForm();
+    }
+
+    function toggleFields() {
+        elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
+        elements.avField.classList.toggle('visible', !elements.avNone.checked);
+
+        if (!elements.avNone.checked) {
+            elements.avKeyLabel.innerText = elements.avNorton.checked ? DICTIONARY.avNortonKeyLabel : DICTIONARY.avMcafeeKeyLabel;
+            elements.avKey.placeholder = elements.avNorton.checked ? DICTIONARY.avKeyPlaceholderNorton : DICTIONARY.avKeyPlaceholderMcafee;
+            if (elements.avKey.value !== '') formatAvKey(elements.avKey);
+        }
+        validateForm();
+    }
+
+    function validateForm() {
+        let ok = currentOperatorId !== "00000" && 
+                 elements.pcSerial.value.trim() !== "" && 
+                 elements.localAccount.value.trim() !== "" && 
+                 elements.msUsername.value.trim() !== "" &&
+                 elements.msPassword.value.trim() !== "";
+
+        if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
+        if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
+
+        elements.submitBtn.disabled = !ok;
+    }
+
+    // Operator Authentication Logic
+	function populateOperatorDropdown() {
+        elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalDefault}</option>`;
+        OPERATOR_DB.forEach(op => {
+            const opt = document.createElement('option');
+            opt.value = op.id; 
+            opt.textContent = `${op.id} - ${op.lastName} ${op.firstName}`;
+            elements.operatorDropdown.appendChild(opt);
+        });
+
+        const savedId = localStorage.getItem('operator_id');
+        // Usiamo String() per evitare che un numero venga confuso con un testo
+        if (savedId && OPERATOR_DB.find(o => String(o.id) === String(savedId))) {
+            currentOperatorId = savedId;
+            elements.operatorDropdown.value = savedId;
+        } else {
+            currentOperatorId = "00000";
+            localStorage.removeItem('operator_id');
+            localStorage.removeItem('operator_pin');
+            localStorage.removeItem('store_id');
+        }
+        updateOperatorUI();
+    }
+
+    // Modal Control: Forces PIN reset on open to prevent invisible input stacking
+    function openOperatorModal() { 
+        elements.operatorDropdown.value = currentOperatorId;
+        elements.operatorPin.value = ''; 
+        elements.operatorModal.classList.add('active'); 
+    }
+
+    function closeOperatorModal() { 
+        elements.operatorModal.classList.remove('active'); 
+    }
+
+    async function saveOperatorSelection() {
+        const id = elements.operatorDropdown.value;
+        const pin = elements.operatorPin.value;
+
+        if (id === "00000") return;
+        if (!/^\d{4}$/.test(pin)) { 
+            alert(DICTIONARY.alertPinLength); 
+            return; 
+        }
+
+        const op = OPERATOR_DB.find(o => o.id === id);
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+        const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // Strict validation: Clear invisible spaces and force lowercase
+        if (hash !== op.pinHash.trim().toLowerCase()) { 
+            alert(DICTIONARY.alertPinInvalid); 
+            elements.operatorPin.value = ''; // Clear incorrect input automatically
+            return; 
+        }
+
+        // Successful Login
+        currentOperatorId = id;
+        localStorage.setItem('operator_id', id);
+        localStorage.setItem('operator_pin', pin);
+        localStorage.setItem('store_id', op.storeId); 
+
+        elements.operatorPin.value = ''; // Clean up
+        updateOperatorUI();
+        closeOperatorModal();
+    }
+
+    function updateOperatorUI() {
+        elements.operatorBadge.innerText = currentOperatorId;
+        validateForm();
+    }
+
+    // Scanner / Camera Core
+    let currentInputId = null;
+    let currentMode = null;
+    let streamTrack = null;
+    let barcodeInterval = null;
+
+    async function openScanner(targetId, mode) {
+        currentInputId = targetId;
+        currentMode = mode;
+
+        document.getElementById('scanner-title').innerText = mode === 'barcode' ? DICTIONARY.scanTitleBarcode : DICTIONARY.scanTitleOcr;
+        elements.scannerModal.classList.add('active');
+
+        if (mode === 'barcode') {
+            elements.overlay.classList.add('barcode-mode');
+            elements.captureBtn.style.display = 'none';
+            elements.scanAnimation.style.display = 'block';
+            elements.modalStatus.innerText = DICTIONARY.statusBarcodeSearch;
+        } else {
+            elements.overlay.classList.remove('barcode-mode');
+            elements.captureBtn.style.display = 'block';
+            elements.captureBtn.disabled = false;
+            elements.scanAnimation.style.display = 'none';
+            elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
+        }
 
         try {
-            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-            const result = await res.json();
-            if(result.status === "success") {
-                alert("Dati inviati con successo!");
-                document.getElementById('pcForm').reset();
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } }
+            });
+            elements.video.srcObject = stream;
+            streamTrack = stream.getVideoTracks()[0];
+
+            elements.video.onloadedmetadata = () => {
+                const capabilities = streamTrack.getCapabilities();
+                if (capabilities.zoom) streamTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
+                if (mode === 'barcode') startBarcodeAutoScan();
+            };
+        } catch (e) { 
+            elements.modalStatus.innerText = DICTIONARY.alertCameraError + e.message; 
+        }
+    }
+
+    function closeScanner() {
+        currentMode = null;
+        elements.scannerModal.classList.remove('active');
+        if (streamTrack) streamTrack.stop();
+        elements.video.srcObject = null;
+        if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
+        if (elements.video.paused) elements.video.play(); 
+    }
+
+    // Hybrid Barcode Scanner (Live Auto-Scan)
+    function startBarcodeAutoScan() {
+        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+
+        barcodeInterval = setInterval(async () => {
+            if (currentMode !== 'barcode' || !elements.video.videoWidth) return;
+
+            elements.canvas.width = elements.video.videoWidth / 2;
+            elements.canvas.height = elements.video.videoHeight / 2;
+            ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
+
+            try {
+                let detectedValue = null;
+
+                if (nativeBarcodeDetector) {
+                    const barcodes = await nativeBarcodeDetector.detect(elements.canvas);
+                    if (barcodes.length > 0) detectedValue = barcodes[0].rawValue;
+                }
+
+                if (!detectedValue) {
+                    const imgUrl = elements.canvas.toDataURL("image/jpeg", 0.6);
+                    const img = new Image();
+                    img.src = imgUrl;
+                    await new Promise((resolve) => {
+                        img.onload = async () => {
+                            try {
+                                const result = await zxingReader.decodeFromImageElement(img);
+                                detectedValue = result.text;
+                            } catch(e) {}
+                            resolve();
+                        };
+                    });
+                }
+
+                if (detectedValue) {
+                    clearInterval(barcodeInterval);
+                    barcodeInterval = null;
+                    document.getElementById(currentInputId).value = detectedValue;
+                    if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+                    closeScanner();
+                    validateForm();
+                }
+            } catch (err) {}
+        }, 300); 
+    }
+
+    // OCR Manual Snapshot Engine
+    elements.captureBtn.onclick = async () => {
+        if (!streamTrack || currentMode !== 'ocr') return;
+
+        if (!isOcrReady) {
+            alert(DICTIONARY.alertOcrNotReady);
+            return;
+        }
+
+        elements.video.pause(); 
+        elements.captureBtn.disabled = true;
+        elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
+        if ("vibrate" in navigator) navigator.vibrate([50]);
+
+        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        const v = elements.video;
+        const overlay = elements.overlay.getBoundingClientRect();
+        const wrapper = v.parentElement.getBoundingClientRect();
+        const scaleX = v.videoWidth / wrapper.width;
+        const scaleY = v.videoHeight / wrapper.height;
+
+        const cw = overlay.width * scaleX;
+        const ch = overlay.height * scaleY;
+        const cx = (overlay.left - wrapper.left) * scaleX;
+        const cy = (overlay.top - wrapper.top) * scaleY;
+
+        elements.canvas.width = cw;
+        elements.canvas.height = ch;
+
+        ctx.filter = "contrast(1.5) grayscale(1)";
+        ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
+        ctx.filter = "none";
+
+        try {
+            const res = await tesseractWorker.recognize(elements.canvas);
+            const rawText = res.data.text.toUpperCase();
+
+            const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
+            const match = rawText.match(regex);
+
+            if (match) {
+                const finalKey = `${match[1]}${match[2]}${match[3]}${match[4]}${match[5]}`;
+                const target = document.getElementById(currentInputId);
+                target.value = finalKey;
+                target.dispatchEvent(new Event('input')); 
+
+                elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
+                if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+
+                setTimeout(closeScanner, 800);
+            } else {
+                elements.modalStatus.innerText = DICTIONARY.statusOcrFailed;
+                elements.captureBtn.disabled = false;
+                elements.video.play(); 
             }
-        } catch(e) { alert("Errore invio"); }
-        hideLoader();
+        } catch(e) {
+            elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError;
+            elements.captureBtn.disabled = false;
+            elements.video.play();
+        }
     };
 
-    // Request reprint for an existing Serial Number
-    async function handleReprint() {
-        const sn = document.getElementById('pc_serial').value.trim();
-        if(!sn) { alert("Inserisci il S/N per ristampare"); return; }
-        
-        showLoader("Ricerca pratica...");
-        const payload = { 
-            action: "reprint", 
-            store_id: appState.currentOp.storeId, 
-            pc_serial: sn 
+    // Tap to focus
+    document.querySelector('.video-wrapper').addEventListener('click', async () => {
+        if (!streamTrack) return;
+        if ("vibrate" in navigator) navigator.vibrate([50]); 
+        try {
+            const capabilities = streamTrack.getCapabilities();
+            if (capabilities.focusMode && capabilities.focusMode.includes("continuous")) {
+                await streamTrack.applyConstraints({ advanced: [{ focusMode: "manual" }] });
+                setTimeout(async () => {
+                    await streamTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                }, 100);
+            }
+        } catch(e) {}
+    });
+
+    // =====================================================================
+    // 5. DATA TRANSMISSION (POST)
+    // =====================================================================
+    elements.submitBtn.onclick = async () => {
+        elements.submitBtn.disabled = true;
+
+        const payload = {
+            operator_id: currentOperatorId,
+            store_id: localStorage.getItem('store_id') || "UNKNOWN",
+            pc_serial: elements.pcSerial.value.trim(),
+            local_account: elements.localAccount.value.trim(),
+            office_suite: document.querySelector('input[name="office_type"]:checked').value,
+            office_key: elements.officeKey.value,
+            antivirus: document.querySelector('input[name="av_type"]:checked').value,
+            antivirus_key: elements.avKey.value,
+            microsoft_account: `${elements.msUsername.value}@${elements.msDomain.value}`,
+            microsoft_password: elements.msPassword.value,
+            windows_update: elements.runUpdates.checked ? "Yes" : "No",
+            timestamp: new Date().toISOString()
         };
 
         try {
-            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-            const result = await res.json();
-            alert(result.message);
-        } catch(e) { alert("Errore rete"); }
-        hideLoader();
-    }
+            const res = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const data = await res.json();
 
-    // Your existing scanner logic (Ensure this function is defined in your actual environment)
-    // function avviaScanner(id) { ... }
+            if (data.status === "error") throw new Error(data.message);
 
-    function showLoader(t) { document.getElementById('loader-text').innerText = t; document.getElementById('loader').style.display = 'flex'; }
-    function hideLoader() { document.getElementById('loader').style.display = 'none'; }
+            alert(DICTIONARY.alertUploadSuccess);
+            location.reload();
+        } catch (e) {
+            alert(DICTIONARY.alertUploadError + e.message);
+            elements.submitBtn.disabled = false;
+        }
+    };
 </script>
-
 </body>
-</html>
