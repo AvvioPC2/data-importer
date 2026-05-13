@@ -8,13 +8,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     
     <style>
-        /* CSS Variables for theming */
         :root {
             --unieuro-orange: #f37021;
             --unieuro-blue: #003366;
-            --bg-color: #f0f2f5;
-            --card-bg: #ffffff;
-            --text-main: #1c1e21;
+            --bg-color: #e9ecef;
+            --text-main: #333;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -25,22 +23,17 @@
             color: var(--text-main);
             margin: 0;
             padding: 10px;
-            display: flex;
-            justify-content: center;
         }
 
-        /* Main Application Container */
         .app-container {
             width: 100%;
-            max-width: 500px;
-            background: var(--card-bg);
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            overflow: hidden;
-            padding-bottom: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
-        /* Header Section */
+        /* HEADER */
         .app-header {
             background-color: var(--unieuro-blue);
             padding: 15px;
@@ -49,28 +42,45 @@
             justify-content: space-between;
         }
 
-        .header-logo { height: 35px; }
+        .header-logo { height: 30px; }
 
         .app-title {
-            flex: 1;
-            text-align: center;
             color: white;
-            font-size: 24px;
-            font-weight: 500;
+            font-size: 22px;
             margin: 0;
+            font-weight: 500;
         }
 
         .operator-badge {
-            background: rgba(255,255,255,0.1);
+            background: #ffffff20;
             color: white;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #ffffff50;
         }
 
-        /* Form Elements Styling */
-        form { padding: 20px; }
+        /* SEZIONI MODULO */
+        form { padding: 15px; }
+
+        .form-section {
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .section-title {
+            margin: -25px 0 15px 0;
+            background: var(--unieuro-blue);
+            color: white;
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
 
         .form-group { margin-bottom: 15px; }
 
@@ -78,46 +88,50 @@
             display: block;
             font-weight: 600;
             margin-bottom: 5px;
-            font-size: 14px;
-            color: var(--unieuro-blue);
+            font-size: 13px;
+            color: #555;
+        }
+
+        /* INPUT E SCANNER */
+        .input-group {
+            display: flex;
+            gap: 5px;
         }
 
         input, select {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 15px;
         }
 
-        input:focus {
-            border-color: var(--unieuro-orange);
-            outline: none;
+        .scan-btn {
+            background-color: #e2e6ea;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 0 15px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Grid layout for inline fields */
-        .row { display: flex; gap: 10px; }
-        .row .form-group { flex: 1; }
+        .scan-btn:active { background-color: #dae0e5; }
 
-        /* Action Buttons */
+        /* PULSANTI */
         .submit-btn {
             width: 100%;
-            padding: 16px;
+            padding: 15px;
             background-color: var(--unieuro-orange);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             font-size: 18px;
-            font-weight: 700;
+            font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 0 #c55a1a;
-            margin-top: 10px;
-        }
-
-        .submit-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #c55a1a;
+            margin-bottom: 10px;
         }
 
         .reprint-btn {
@@ -126,84 +140,81 @@
             background-color: #6c757d;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             font-size: 15px;
-            font-weight: 600;
-            margin-top: 15px;
+            font-weight: bold;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
 
-        /* Loading Overlay Overlay */
+        /* OVERLAY CARICAMENTO */
         #loader {
             display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 51, 102, 0.9);
-            z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000; flex-direction: column; align-items: center; justify-content: center; color: white;
         }
-
         .spinner {
-            width: 50px; height: 50px;
-            border: 5px solid rgba(255,255,255,0.3);
-            border-top: 5px solid var(--unieuro-orange);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            width: 40px; height: 40px; border: 4px solid #fff; border-top: 4px solid var(--unieuro-orange);
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px;
         }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div id="loader">
     <div class="spinner"></div>
-    <p id="loader-text">Comunicazione con il server...</p>
+    <p id="loader-text">Attendere...</p>
 </div>
 
 <div class="app-container">
     <header class="app-header">
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Unieuro_Logo.svg/1200px-Unieuro_Logo.svg.png" class="header-logo" alt="Unieuro">
         <h1 class="app-title">AvvioPC</h1>
-        <div id="op-display" class="operator-badge">Login...</div>
+        <div id="op-display" class="operator-badge" onclick="cambiaOperatore()">Login...</div>
     </header>
 
     <form id="pcForm">
-        <div class="form-group">
-            <label for="pc_serial">S/N SERIAL NUMBER (OBBLIGATORIO)</label>
-            <input type="text" id="pc_serial" placeholder="Es: SPF5QJ47A" required>
-        </div>
-
-        <div class="form-group">
-            <label for="local_account">NOME UTENTE LOCALE (WINDOWS)</label>
-            <input type="text" id="local_account" placeholder="Es: Cliente Unieuro">
-        </div>
-
-        <div class="row">
+        
+        <div class="form-section">
+            <h3 class="section-title">Dati Dispositivo</h3>
+            
             <div class="form-group">
-                <label for="office_suite">SUITE OFFICE</label>
+                <label>S/N SERIAL NUMBER *</label>
+                <div class="input-group">
+                    <input type="text" id="pc_serial" required>
+                    <button type="button" class="scan-btn" onclick="avviaScanner('pc_serial')">📷</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>NOME UTENTE LOCALE</label>
+                <input type="text" id="local_account">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title">Software e Licenze</h3>
+            
+            <div class="form-group">
+                <label>SUITE OFFICE</label>
                 <select id="office_suite">
                     <option value="none">Nessuna / LibreOffice</option>
                     <option value="ms-office">Microsoft Office</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="office_key">OFFICE KEY</label>
-                <input type="text" id="office_key" placeholder="XXXXX-...">
+                <label>OFFICE KEY</label>
+                <div class="input-group">
+                    <input type="text" id="office_key">
+                    <button type="button" class="scan-btn" onclick="avviaScanner('office_key')">📷</button>
+                </div>
             </div>
-        </div>
 
-        <div class="row">
+            <hr style="border-top: 1px dashed #ccc; margin: 15px 0;">
+
             <div class="form-group">
-                <label for="antivirus">ANTIVIRUS</label>
+                <label>ANTIVIRUS</label>
                 <select id="antivirus">
                     <option value="none">Free / Defender</option>
                     <option value="norton">Norton 360</option>
@@ -211,71 +222,63 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="antivirus_key">AV KEY</label>
-                <input type="text" id="antivirus_key" placeholder="Key Attivazione">
+                <label>ANTIVIRUS KEY</label>
+                <div class="input-group">
+                    <input type="text" id="antivirus_key">
+                    <button type="button" class="scan-btn" onclick="avviaScanner('antivirus_key')">📷</button>
+                </div>
             </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-
-        <div class="form-group">
-            <label for="ms_email">EMAIL ACCOUNT MICROSOFT</label>
-            <input type="email" id="ms_email" placeholder="Es: mario.rossi@outlook.it">
+        <div class="form-section">
+            <h3 class="section-title">Account Microsoft</h3>
+            
+            <div class="form-group">
+                <label>EMAIL</label>
+                <input type="email" id="ms_email">
+            </div>
+            <div class="form-group">
+                <label>PASSWORD</label>
+                <input type="text" id="ms_password">
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label style="display: flex; align-items: center; font-weight: normal;">
+                    <input type="checkbox" id="win_update" style="width: 20px; margin-right: 10px;"> Windows Update completati?
+                </label>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label for="ms_password">PASSWORD ACCOUNT MICROSOFT</label>
-            <input type="text" id="ms_password" placeholder="Inserisci Password">
-        </div>
-
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="win_update" style="width: auto; margin-right: 10px;"> Windows Update completati?
-            </label>
-        </div>
-
-        <button type="submit" class="submit-btn">INVIA DATI E STAMPA</button>
-        
-        <button type="button" class="reprint-btn" onclick="requestReprint()">🔄 Ristampa Pratica da S/N</button>
+        <button type="submit" class="submit-btn">INVIA DATI</button>
+        <button type="button" class="reprint-btn" onclick="richiediRistampa()">🔄 Ristampa Pratica da S/N</button>
     </form>
 </div>
 
 <script>
-    // Google Apps Script Web App URL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec";
     
-    // Application State Management
     let appState = {
         currentOp: null,
         operators: []
     };
 
-    // 1. Initialization: Fetch operators and prompt for PIN on page load
     window.onload = async () => {
-        showLoader("Caricamento operatori...");
+        showLoader("Caricamento...");
         try {
             const res = await fetch(GAS_URL);
             const json = await res.json();
             if(json.status === "success") {
                 appState.operators = json.data;
                 hideLoader();
-                promptOperatorLogin();
+                chiediPin();
             }
-        } catch(e) { 
-            alert("Network Error: " + e); 
-            hideLoader();
-        }
+        } catch(e) { alert("Errore di rete"); hideLoader(); }
     };
 
-    // Prompt user for PIN and validate against the fetched operators list
-    function promptOperatorLogin() {
-        const pin = prompt("Inserisci il tuo PIN Operatore:");
-        if(!pin) return promptOperatorLogin();
+    function chiediPin() {
+        const pin = prompt("Inserisci il PIN Operatore:");
+        if(!pin) return chiediPin();
 
-        // Generate SHA-256 hash using CryptoJS to match backend
         const hash = CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex);
-        
-        // Find operator with matching PIN hash
         const op = appState.operators.find(o => o.pinHash === hash);
 
         if(op) {
@@ -283,15 +286,30 @@
             document.getElementById('op-display').innerText = `${op.firstName} @ ${op.storeId}`;
         } else {
             alert("PIN Errato!");
-            promptOperatorLogin();
+            chiediPin();
         }
     }
 
-    // 2. Submit New Data payload to GAS
+    function cambiaOperatore() {
+        if(confirm("Vuoi cambiare operatore?")) {
+            appState.currentOp = null;
+            document.getElementById('op-display').innerText = "Login...";
+            chiediPin();
+        }
+    }
+
+    // Funzione segnaposto per la tua logica della fotocamera
+    function avviaScanner(idCampo) {
+        // Qui andrà inserita la tua logica originale per l'acquisizione tramite fotocamera.
+        // Esempio:
+        // alert("Apertura scanner per: " + idCampo);
+    }
+
     document.getElementById('pcForm').onsubmit = async (e) => {
         e.preventDefault();
-        showLoader("Invio in corso...");
-
+        if(!appState.currentOp) { alert("Devi fare il login!"); return; }
+        
+        showLoader("Invio...");
         const payload = {
             action: "new",
             timestamp: new Date().toLocaleString(),
@@ -309,60 +327,38 @@
         };
 
         try {
-            const res = await fetch(GAS_URL, { 
-                method: 'POST', 
-                body: JSON.stringify(payload) 
-            });
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
             const result = await res.json();
             if(result.status === "success") {
-                alert("✅ Dati acquisiti! La stampa uscirà tra pochi secondi.");
+                alert("Dati acquisiti con successo!");
                 document.getElementById('pcForm').reset();
             } else {
-                alert("Server Error: " + result.message);
+                alert("Errore Server: " + result.message);
             }
-        } catch(e) { 
-            alert("Submission Error: " + e); 
-        }
+        } catch(e) { alert("Errore invio"); }
         hideLoader();
     };
 
-    // 3. Request Reprint by updating the status of an existing Serial Number
-    async function requestReprint() {
+    async function richiediRistampa() {
         const sn = document.getElementById('pc_serial').value.trim();
-        if(!sn) { 
-            alert("Inserisci il Serial Number per la ristampa."); 
-            return; 
-        }
+        if(!sn) { alert("Inserisci il Serial Number per la ristampa."); return; }
 
-        showLoader("Ricerca pratica...");
-        const payload = {
-            action: "reprint",
-            store_id: appState.currentOp.storeId,
-            pc_serial: sn
-        };
+        showLoader("Ricerca...");
+        const payload = { action: "reprint", store_id: appState.currentOp.storeId, pc_serial: sn };
 
         try {
-            const res = await fetch(GAS_URL, { 
-                method: 'POST', 
-                body: JSON.stringify(payload) 
-            });
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
             const result = await res.json();
-            alert(result.status === "success" ? "✅ " + result.message : "❌ " + result.message);
-        } catch(e) { 
-            alert("Reprint Error: " + e); 
-        }
+            alert(result.message);
+        } catch(e) { alert("Errore di rete"); }
         hideLoader();
     }
 
-    // Utility Functions for UI state management
     function showLoader(txt) { 
         document.getElementById('loader-text').innerText = txt;
         document.getElementById('loader').style.display = 'flex'; 
     }
-    
-    function hideLoader() { 
-        document.getElementById('loader').style.display = 'none'; 
-    }
+    function hideLoader() { document.getElementById('loader').style.display = 'none'; }
 </script>
 
 </body>
