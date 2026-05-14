@@ -136,6 +136,48 @@
         .btn-save { background: var(--header-bg); color: white; }
 
         #hidden-canvas { display: none; }
+
+        /* =====================================================================
+           NUOVO SPLASH SCREEN OVERLAY DI CARICAMENTO 
+           ===================================================================== */
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.85); /* Semi-trasparente */
+            z-index: 2000; /* Sopra a tutto il resto */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(2px);
+        }
+        #loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .spinner {
+            width: 70px;
+            height: 70px;
+            border: 6px solid var(--disabled-bg);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            margin-bottom: 20px;
+        }
+        .loading-text {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--header-bg);
+            font-family: 'Barlow', sans-serif;
+            text-align: center;
+            padding: 0 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -214,8 +256,8 @@
 
         <!-- Microsoft Account Credentials Context -->
         <div class="form-group">
-            <div class="section-title" id="lbl-ms-title">Microsoft Account</div>
-            <label class="form-label" id="lbl-ms-username">Username</label>
+            <div class="section-title" id="lbl-ms-title">Account Microsoft</div>
+            <label class="form-label" id="lbl-ms-username">Nome Utente</label>
             <div class="email-group">
                 <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
                 <span>@</span>
@@ -231,33 +273,31 @@
 
         <!-- System Updates Context -->
         <div class="form-group">
-            <div class="section-title" id="lbl-winupd-title">Windows Update</div>
+            <div class="section-title" id="lbl-winupd-title">Aggiornamenti di sistema</div>
             <label class="checkbox-group">
                 <input type="checkbox" id="run-updates" checked>
-                <span id="lbl-winupd-check">Execute Windows Update on first boot</span>
+                <span id="lbl-winupd-check">Eseguire Windows Update al primo avvio</span>
             </label>
         </div>
 
         <!-- Submission Actions -->
         <div class="submit-container">
-            <button id="submit-btn" disabled>Submit Data</button>
-            <button id="reprint-btn" onclick="handleReprint()">RISTAMPA DA S/N</button>
+            <button id="submit-btn" disabled>Caricamento dati</button>
+            <button id="reprint-btn" onclick="handleReprint()">Ristampa dati</button>
         </div>
     </main>
 
     <!-- Operator Authentication Modal -->
     <div id="operator-modal" class="fullscreen-modal">
         <div class="operator-dialog">
-            <h3 id="lbl-modal-op-title">Seleziona Operatore</h3>
+            <h3 id="lbl-modal-op-title">Autenticazione</h3>
             
-            <!-- Store Selection Dropdown -->
             <select id="store-dropdown" class="operator-select" onchange="onStoreSelectionChange()">
-                <option value="000" id="lbl-modal-store-default">-- Caricamento Negozi... --</option>
+                <option value="000" id="lbl-modal-store-default">-- Seleziona Negozio --</option>
             </select>
 
-            <!-- Operator Selection Dropdown (Dependent on Store) -->
             <select id="operator-dropdown" class="operator-select" disabled>
-                <option value="00000" id="lbl-modal-op-default">-- Prima seleziona un negozio --</option>
+                <option value="00000" id="lbl-modal-op-default">-- Seleziona Operatore --</option>
             </select>
             
             <input type="password" id="operator-pin" class="standard-input" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
@@ -280,9 +320,15 @@
         </div>
         <div class="modal-footer">
             <div id="scan-animation" class="scan-animation"></div>
-            <button id="capture-btn">CAPTURE CODE</button>
-            <div id="modal-status">Initializing...</div>
+            <button id="capture-btn">CATTURA CODICE</button>
+            <div id="modal-status">Apertura fotocamera...</div>
         </div>
+    </div>
+
+    <!-- Splash Screen per il Caricamento Rete -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="lbl-loading-overlay">Salvataggio in corso...</div>
     </div>
 
     <canvas id="hidden-canvas"></canvas>
@@ -294,16 +340,16 @@
     const DICTIONARY = {
         appTitle: "AvvioPC 2",
         operatorBadge: "Operatore",
-        serialLabel: "Numero di Serie Dispositivo (S/N)",
-        serialPlaceholder: "Es. 5CD1234567",
-        localAccountLabel: "Nome Account Locale (Windows)",
-        localAccountPlaceholder: "Es. Mario Rossi",
-        officeTitle: "Suite Office",
+        serialLabel: "Serial number del prodotto",
+        serialPlaceholder: "...",
+        localAccountLabel: "Account locale",
+        localAccountPlaceholder: "Nome di chi userà il PC",
+        officeTitle: "Suite da ufficio",
         officeOptMs: "MS-Office",
         officeOptLibre: "Libre Office",
         officeKeyLabel: "Product Key Office",
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
-        avTitle: "Protezione Antivirus",
+        avTitle: "Protezione antivirus",
         avOptNorton: "Norton",
         avOptMcafee: "McAfee",
         avOptNone: "Nessuno",
@@ -315,11 +361,11 @@
         msUserLabel: "Nome Utente",
         msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
-        msPassPlaceholder: "Digita password...",
-        winUpdTitle: "Aggiornamenti Sistema",
-        winUpdCheck: "Esegui Windows Update al primo avvio",
-        btnSubmit: "Invia Dati Form",
-        btnReprint: "RISTAMPA DA S/N",
+        msPassPlaceholder: "password",
+        winUpdTitle: "Aggiornamenti di sistema",
+        winUpdCheck: "Eseguire Windows Update al primo avvio",
+        btnSubmit: "Caricamento dati",
+        btnReprint: "Ristampa dati",
         opModalTitle: "Autenticazione",
         storeModalDefault: "-- Seleziona Negozio --",
         opModalDefault: "-- Seleziona Operatore --",
@@ -331,22 +377,23 @@
         scanTitleOcr: "Scansione Product Key",
         btnCaptureOcr: "CATTURA CODICE",
         statusInit: "Apertura fotocamera...",
-        statusOcrLoading: "Download del motore IA in corso (Attendi)...",
-        statusOcrReady: "Motore OCR Caricato e Pronto.",
+        statusOcrLoading: "Download del motore IA in corso (attendere)...",
+        statusOcrReady: "Motore OCR caricato e pronto.",
         statusBarcodeSearch: "Ricerca del codice a barre in corso...",
-        statusOcrAlign: "Allinea il codice nel riquadro verde e premi CATTURA",
+        statusOcrAlign: "Allineare il codice nel riquadro verde e premere CATTURA",
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
-        statusOcrFailed: "❌ Nessun codice rilevato. Riprova.",
-        alertOcrCritical: "CRITICO: Impossibile scaricare il motore OCR. Controlla la connessione a Internet.",
+        statusOcrFailed: "❌ Nessun codice rilevato. Riprovare.",
+        alertOcrCritical: "CRITICO: Impossibile scaricare il motore OCR. Controllare la connessione a Internet.",
         alertPinLength: "Il PIN deve essere di 4 cifre esatte.",
-        alertPinInvalid: "PIN errato. Riprova.",
-        alertOcrNotReady: "Attendi, il motore di intelligenza artificiale si sta ancora avviando.",
+        alertPinInvalid: "PIN errato. Riprovare.",
+        alertOcrNotReady: "Attendere, il motore di intelligenza artificiale si sta ancora avviando.",
         alertOcrSystemError: "Errore di memoria durante la decodifica dell'immagine.",
         alertUploadSuccess: "Dati inviati al server con successo!",
         alertUploadError: "Impossibile inviare i dati: ",
-        alertCameraError: "Errore Fotocamera: ",
-        alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi."
+        alertCameraError: "Errore fotocamera: ",
+        alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi.",
+        overlayLoadingText: "Salvataggio dati in corso..." /* NUOVO TESTO OVERLAY */
     };
 
     // --- PRODUCTION ENDPOINT ---
@@ -395,7 +442,8 @@
         scanAnimation: document.getElementById('scan-animation'),
         captureBtn: document.getElementById('capture-btn'),
         overlay: document.getElementById('scanner-overlay'),
-        canvas: document.getElementById('hidden-canvas')
+        canvas: document.getElementById('hidden-canvas'),
+        loadingOverlay: document.getElementById('loading-overlay') // NUOVO NODO DOM
     };
 
     // =========================================================================
@@ -434,6 +482,7 @@
         document.getElementById('btn-cancel').innerText = DICTIONARY.btnCancel;
         document.getElementById('btn-save').innerText = DICTIONARY.btnSave;
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
+        document.getElementById('lbl-loading-overlay').innerText = DICTIONARY.overlayLoadingText;
     }
 
     async function fetchOperatorsFromServer() {
@@ -525,17 +574,11 @@
     // CASCADING DROPDOWNS & OPERATOR LOGIC
     // =========================================================================
 
-    /**
-     * Extracts unique store IDs, sorts them progressively, and populates the first dropdown.
-     */
     function initializeStoreDropdown() {
-        // Extract unique store IDs
         const uniqueStores = [...new Set(OPERATOR_DB.map(op => String(op.storeId).trim()))];
         
-        // Sort numerically/progressively (handles string formats like '001', '002', '10')
         uniqueStores.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
-        // Build Store Dropdown
         elements.storeDropdown.innerHTML = `<option value="000">${DICTIONARY.storeModalDefault}</option>`;
         uniqueStores.forEach(store => {
             if(store) {
@@ -546,11 +589,10 @@
             }
         });
 
-        // Restore previously saved state if available
         const savedStoreId = localStorage.getItem('store_id');
         if (savedStoreId && uniqueStores.includes(savedStoreId)) {
             elements.storeDropdown.value = savedStoreId;
-            onStoreSelectionChange(); // Trigger cascade
+            onStoreSelectionChange(); 
             
             const savedOpId = localStorage.getItem('operator_id');
             if (savedOpId && OPERATOR_DB.find(o => String(o.id) === String(savedOpId))) {
@@ -560,14 +602,9 @@
         }
     }
 
-    /**
-     * Event triggered when the Store dropdown changes. 
-     * Filters and sorts the Operators dropdown based on the selected store.
-     */
     function onStoreSelectionChange() {
         const selectedStore = elements.storeDropdown.value;
         
-        // Reset Operator Dropdown
         elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalDefault}</option>`;
         
         if (selectedStore === "000") {
@@ -575,17 +612,14 @@
             return;
         }
 
-        // Filter operators belonging to the selected store
         let storeOperators = OPERATOR_DB.filter(op => String(op.storeId).trim() === selectedStore);
 
-        // Sort alphabetically by Last Name, then First Name
         storeOperators.sort((a, b) => {
             const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
             const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
             return nameA.localeCompare(nameB);
         });
 
-        // Populate Operator Dropdown
         storeOperators.forEach(op => {
             const opt = document.createElement('option');
             opt.value = op.id; 
@@ -619,7 +653,6 @@
 
         const op = OPERATOR_DB.find(o => o.id === opId);
         
-        // Compute SHA-256 hash using Web Crypto API
         const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
         const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         
@@ -789,11 +822,14 @@
     };
 
     // =========================================================================
-    // CLOUD COMMUNICATION (Submit & Reprint)
+    // CLOUD COMMUNICATION (Submit & Reprint) CON SPLASH SCREEN OVERLAY
     // =========================================================================
 
     elements.submitBtn.onclick = async () => {
         elements.submitBtn.disabled = true;
+        // Mostra lo splash screen
+        elements.loadingOverlay.classList.add('active');
+
         const payload = {
             action: "new",
             operator_id: currentOperatorId,
@@ -818,9 +854,14 @@
             });
             const data = await res.json();
             if (data.status === "error") throw new Error(data.message);
+            
+            // Nascondo lo splash screen
+            elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadSuccess);
             location.reload();
         } catch (e) {
+            // In caso di errore nascondo lo splash screen e mostro l'alert
+            elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadError + e.message);
             elements.submitBtn.disabled = false;
         }
@@ -832,6 +873,8 @@
         if (currentOperatorId === "00000") { alert("Effettua il login operatore"); return; }
         
         elements.reprintBtn.disabled = true;
+        // Mostra lo splash screen anche per la ristampa
+        elements.loadingOverlay.classList.add('active');
         
         const payload = { 
             action: "reprint", 
@@ -846,8 +889,11 @@
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
             const result = await res.json();
+            
+            elements.loadingOverlay.classList.remove('active');
             alert(result.message);
         } catch(e) { 
+            elements.loadingOverlay.classList.remove('active');
             alert("Errore rete"); 
         }
         elements.reprintBtn.disabled = false;
