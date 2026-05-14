@@ -32,6 +32,10 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
+        /* Placeholders Style (Grigio Chiaro) */
+        ::placeholder { color: #a0a0a0; opacity: 1; }
+        ::-ms-input-placeholder { color: #a0a0a0; }
+
         /* Application Header Bar */
         .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
         .header-logo { height: 40px; width: auto; object-fit: contain; border-radius: 4px; }
@@ -91,7 +95,8 @@
         #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
         #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
-        #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
+        /* Aggiornato a 20px per combaciare con submit-btn */
+        #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
 
         /* Fullscreen Modal Viewports */
         .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -128,8 +133,11 @@
         .operator-dialog { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; }
         #operator-modal.active .operator-dialog { transform: translateY(0); }
         .operator-dialog h3 { color: var(--header-bg); margin: 0; font-size: 20px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
-        .operator-select { padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; background: #fff; cursor: pointer; }
+        
+        /* Font Monospazio per i Select */
+        .operator-select { font-family: 'Courier New', Courier, monospace; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; background: #fff; cursor: pointer; }
         .operator-select:disabled { background: var(--disabled-bg); cursor: not-allowed; }
+        
         .dialog-actions { display: flex; gap: 10px; margin-top: 10px; }
         .dialog-btn { flex: 1; padding: 14px; border: none; border-radius: var(--border-radius); font-weight: bold; cursor: pointer; font-size: 17px; transition: background 0.2s; }
         .btn-cancel { background: var(--disabled-bg); color: var(--text-main); }
@@ -137,47 +145,21 @@
 
         #hidden-canvas { display: none; }
 
-        /* =====================================================================
-           NUOVO SPLASH SCREEN OVERLAY DI CARICAMENTO 
-           ===================================================================== */
+        /* Splash Screen Overlay di Caricamento */
         #loading-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.85); /* Semi-trasparente */
-            z-index: 2000; /* Sopra a tutto il resto */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            backdrop-filter: blur(2px);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.85); z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px);
         }
-        #loading-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        #loading-overlay.active { opacity: 1; pointer-events: auto; }
         .spinner {
-            width: 70px;
-            height: 70px;
-            border: 6px solid var(--disabled-bg);
-            border-top-color: var(--accent-color);
-            border-radius: 50%;
-            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-            margin-bottom: 20px;
+            width: 70px; height: 70px; border: 6px solid var(--disabled-bg);
+            border-top-color: var(--accent-color); border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; margin-bottom: 20px;
         }
-        .loading-text {
-            font-size: 22px;
-            font-weight: 600;
-            color: var(--header-bg);
-            font-family: 'Barlow', sans-serif;
-            text-align: center;
-            padding: 0 20px;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .loading-text { font-size: 22px; font-weight: 600; color: var(--header-bg); font-family: 'Barlow', sans-serif; text-align: center; padding: 0 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -197,7 +179,7 @@
 
         <!-- Serial Number Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-serial">Serial Number</label>
+            <div class="section-title" id="lbl-serial">Serial number del prodotto</div>
             <div class="input-with-icon">
                 <input type="text" id="pc-serial" style="text-transform: none;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'barcode')">
@@ -208,13 +190,13 @@
 
         <!-- Local Account Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-local-account">Local Account (Windows)</label>
+            <div class="section-title" id="lbl-local-account">Account locale</div>
             <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
         <!-- Office Suite Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-office-suite">Office Suite</label>
+            <div class="section-title" id="lbl-office-suite">Suite da ufficio</div>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms-office" onchange="toggleFields(); validateForm();">
                 <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
@@ -222,7 +204,7 @@
                 <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
             </div>
             <div id="ms-office-field" class="conditional-field">
-                <label class="form-label" id="lbl-office-key" style="font-size: 14px;">Product Key</label>
+                <label class="form-label" id="lbl-office-key" style="font-size: 14px;">Product Key Office</label>
                 <div class="input-with-icon">
                     <input type="text" id="office-key" oninput="formatProductKey(this, '-')">
                     <button type="button" class="camera-btn" onclick="openScanner('office-key', 'ocr')">
@@ -234,17 +216,17 @@
 
         <!-- Antivirus Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-av-protection">Antivirus Protection</label>
+            <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
                 <label for="av-norton" id="lbl-opt-norton">Norton</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
                 <label for="av-mcafee" id="lbl-opt-mcafee">McAfee</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
-                <label for="av-none" id="lbl-opt-none">None</label>
+                <label for="av-none" id="lbl-opt-none">Nessuno</label>
             </div>
             <div id="av-field" class="conditional-field">
-                <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key</label>
+                <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key Antivirus</label>
                 <div class="input-with-icon">
                     <input type="text" id="av-key" oninput="formatAvKey(this)">
                     <button type="button" class="camera-btn" onclick="openScanner('av-key', 'ocr')">
@@ -275,7 +257,8 @@
         <div class="form-group">
             <div class="section-title" id="lbl-winupd-title">Aggiornamenti di sistema</div>
             <label class="checkbox-group">
-                <input type="checkbox" id="run-updates" checked>
+                <!-- Rimosso l'attributo "checked" per renderlo disattivato di default -->
+                <input type="checkbox" id="run-updates">
                 <span id="lbl-winupd-check">Eseguire Windows Update al primo avvio</span>
             </label>
         </div>
@@ -393,10 +376,9 @@
         alertUploadError: "Impossibile inviare i dati: ",
         alertCameraError: "Errore fotocamera: ",
         alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi.",
-        overlayLoadingText: "Salvataggio dati in corso..." /* NUOVO TESTO OVERLAY */
+        overlayLoadingText: "Salvataggio dati in corso..." 
     };
 
-    // --- PRODUCTION ENDPOINT ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec';
 
     // =========================================================================
@@ -443,7 +425,7 @@
         captureBtn: document.getElementById('capture-btn'),
         overlay: document.getElementById('scanner-overlay'),
         canvas: document.getElementById('hidden-canvas'),
-        loadingOverlay: document.getElementById('loading-overlay') // NUOVO NODO DOM
+        loadingOverlay: document.getElementById('loading-overlay') 
     };
 
     // =========================================================================
@@ -571,12 +553,11 @@
     }
 
     // =========================================================================
-    // CASCADING DROPDOWNS & OPERATOR LOGIC
+    // CASCADING DROPDOWNS & ALIGNMENT LOGIC
     // =========================================================================
 
     function initializeStoreDropdown() {
         const uniqueStores = [...new Set(OPERATOR_DB.map(op => String(op.storeId).trim()))];
-        
         uniqueStores.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
         elements.storeDropdown.innerHTML = `<option value="000">${DICTIONARY.storeModalDefault}</option>`;
@@ -620,10 +601,20 @@
             return nameA.localeCompare(nameB);
         });
 
+        // Calcolo lunghezza massima per incolonnare perfettamente gli ID a destra
+        let maxLength = 0;
         storeOperators.forEach(op => {
+            const len = `${op.lastName} ${op.firstName}`.length;
+            if (len > maxLength) maxLength = len;
+        });
+
+        storeOperators.forEach(op => {
+            const nameStr = `${op.lastName} ${op.firstName}`;
+            // Uso gli spazi unificatori (\xa0) per il font monospazio. +4 spazi extra di margine.
+            const padding = '\xa0'.repeat(maxLength - nameStr.length + 4);
             const opt = document.createElement('option');
             opt.value = op.id; 
-            opt.textContent = `${op.lastName} ${op.firstName} (${op.id})`;
+            opt.textContent = `${nameStr}${padding}[${op.id}]`;
             elements.operatorDropdown.appendChild(opt);
         });
 
@@ -827,7 +818,6 @@
 
     elements.submitBtn.onclick = async () => {
         elements.submitBtn.disabled = true;
-        // Mostra lo splash screen
         elements.loadingOverlay.classList.add('active');
 
         const payload = {
@@ -855,12 +845,10 @@
             const data = await res.json();
             if (data.status === "error") throw new Error(data.message);
             
-            // Nascondo lo splash screen
             elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadSuccess);
             location.reload();
         } catch (e) {
-            // In caso di errore nascondo lo splash screen e mostro l'alert
             elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadError + e.message);
             elements.submitBtn.disabled = false;
@@ -873,7 +861,6 @@
         if (currentOperatorId === "00000") { alert("Effettua il login operatore"); return; }
         
         elements.reprintBtn.disabled = true;
-        // Mostra lo splash screen anche per la ristampa
         elements.loadingOverlay.classList.add('active');
         
         const payload = { 
