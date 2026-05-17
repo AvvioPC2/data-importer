@@ -558,7 +558,7 @@
         validateForm();
     }
 
-    /* --- GESTIONE MICROSOFT ASSISTANT (Nuovo) --- */
+    /* --- GESTIONE MICROSOFT ASSISTANT --- */
     function openMicrosoftSignup() {
         const w = 550;
         const h = 750;
@@ -568,15 +568,33 @@
     }
 
     function generatePassword() {
-        // Genera pwd compatibile MS (minimo 8 char, include maiuscole, minuscole, numeri e simboli)
-        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        // Garantisce 1 Maiuscola, 1 Minuscola, 1 Numero e 1 Carattere Speciale
+        const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const lower = "abcdefghijklmnopqrstuvwxyz";
         const nums = "0123456789";
-        const special = "!@#$*%";
-        let pass = "Uni-"; // Base fissa per garantire regole
-        for(let i=0; i<4; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
-        pass += nums.charAt(Math.floor(Math.random() * nums.length));
-        pass += special.charAt(Math.floor(Math.random() * special.length));
-        
+        const special = "!@#$*%_+-=";
+        const allChars = upper + lower + nums + special;
+
+        // Inserimento forzato di un carattere per tipo
+        let passArr = [
+            upper.charAt(Math.floor(Math.random() * upper.length)),
+            lower.charAt(Math.floor(Math.random() * lower.length)),
+            nums.charAt(Math.floor(Math.random() * nums.length)),
+            special.charAt(Math.floor(Math.random() * special.length))
+        ];
+
+        // Riempimento random per arrivare a 10 caratteri
+        for(let i=0; i<6; i++) {
+            passArr.push(allChars.charAt(Math.floor(Math.random() * allChars.length)));
+        }
+
+        // Shuffle Array (Mescola l'ordine dei caratteri)
+        for (let i = passArr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [passArr[i], passArr[j]] = [passArr[j], passArr[i]];
+        }
+
+        const pass = passArr.join('');
         elements.msPassword.value = pass;
         validateForm();
         copyTextToClipboard(pass);
@@ -597,7 +615,6 @@
         navigator.clipboard.writeText(text).then(() => {
             showToast(DICTIONARY.msgCopied);
         }).catch(err => {
-            // Fallback per dispositivi vecchi
             const temp = document.createElement("input");
             document.body.appendChild(temp);
             temp.value = text;
@@ -612,7 +629,7 @@
         const toast = document.getElementById('sys-toast');
         toast.innerText = msg;
         toast.classList.add('show');
-        if ("vibrate" in navigator) navigator.vibrate([30]); // feedback tattile leggerissimo
+        if ("vibrate" in navigator) navigator.vibrate([30]);
         setTimeout(() => toast.classList.remove('show'), 2000);
     }
     /* ------------------------------------------- */
