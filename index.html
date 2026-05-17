@@ -67,21 +67,17 @@
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
-        .email-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: #fff; margin-bottom: 15px; padding-right: 0; transition: border-color 0.2s; overflow: hidden;}
-        .email-group:focus-within { border-color: var(--accent-color); }
-        .email-group input { flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none; }
-        .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
-        .email-group select { flex: 0 0 auto; border: none; outline: none; font-size: 16px; background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; margin-right: 5px;}
-
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
+        
+        /* Checkbox */
         .checkbox-group { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 0; }
         .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
         .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; }
 
         /* Microsoft Account Panel Additions */
-        .ms-launch-btn { width: 100%; padding: 12px; background: var(--ms-color); color: white; border: none; border-radius: var(--border-radius); font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,164,239,0.3); }
-        .ms-launch-btn:hover { background: #008ac9; }
+        .ms-launch-btn { width: 100%; padding: 18px; background: var(--ms-color); color: white; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0,164,239,0.3); }
+        .ms-launch-btn:hover { background: #008ac9; transform: translateY(-2px); }
         
         .toast-notification { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-20px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 2000; }
         .toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -210,29 +206,31 @@
         <div class="form-group">
             <div class="section-title" id="lbl-ms-title">Microsoft Account</div>
             
-            <button type="button" class="ms-launch-btn" onclick="openMicrosoftSignup()" title="Apri Creazione Account">
-                <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zm12.6 0H12.6V0H24v11.4z"/></svg>
-                <span id="lbl-ms-launch">Apri Registrazione Microsoft</span>
-            </button>
-
             <label class="form-label" id="lbl-ms-username">Username</label>
-            <div class="email-group">
+            
+            <div class="input-with-icon" style="margin-bottom: 10px;">
                 <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
-                <span>@</span>
-                <select id="ms-domain">
-                    <option value="outlook.it">outlook.it</option>
-                    <option value="outlook.com">outlook.com</option>
-                    <option value="hotmail.com">hotmail.com</option>
-                </select>
                 <button type="button" class="camera-btn" onclick="copyEmail()" title="Copia Email Completa">📋</button>
             </div>
 
+            <select id="ms-domain" class="standard-input" style="margin-bottom: 20px;">
+                <option value="outlook.it">@ outlook.it</option>
+                <option value="outlook.com">@ outlook.com</option>
+                <option value="hotmail.com">@ hotmail.com</option>
+            </select>
+
             <label class="form-label" id="lbl-ms-password">Password</label>
-            <div class="input-with-icon">
+            
+            <div class="input-with-icon" style="margin-bottom: 5px;">
+                <button type="button" class="camera-btn" onclick="generatePassword()" title="Genera Password Sicura" style="border-right: 1px solid var(--border-color); border-left: none;">🎲</button>
                 <input type="text" id="ms-password" style="text-transform: none; font-family: monospace;" oninput="validateForm()">
-                <button type="button" class="camera-btn" onclick="generatePassword()" title="Genera Password Sicura" style="border-left: 1px solid var(--border-color);">🎲</button>
                 <button type="button" class="camera-btn" onclick="copyPassword()" title="Copia Password">📋</button>
             </div>
+
+            <button type="button" class="ms-launch-btn" onclick="openMicrosoftSignup()" title="Apri Creazione Account">
+                <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor;"><path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zm12.6 0H12.6V0H24v11.4z"/></svg>
+                <span id="lbl-ms-launch">Apri Registrazione Microsoft</span>
+            </button>
         </div>
 
         <div class="form-group">
@@ -306,7 +304,7 @@
         msUserLabel: "Nome Utente",
         msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
-        msPassPlaceholder: "Digita o Genera (🎲)",
+        msPassPlaceholder: "Genera (🎲) o Digita",
         winUpdTitle: "Aggiornamenti Sistema",
         winUpdCheck: "Esegui Windows Update al primo avvio",
         btnSubmit: "Invia Dati Form",
@@ -575,7 +573,6 @@
         const special = "!@#$*%_+-=";
         const allChars = upper + lower + nums + special;
 
-        // Inserimento forzato di un carattere per tipo
         let passArr = [
             upper.charAt(Math.floor(Math.random() * upper.length)),
             lower.charAt(Math.floor(Math.random() * lower.length)),
@@ -583,12 +580,11 @@
             special.charAt(Math.floor(Math.random() * special.length))
         ];
 
-        // Riempimento random per arrivare a 10 caratteri
         for(let i=0; i<6; i++) {
             passArr.push(allChars.charAt(Math.floor(Math.random() * allChars.length)));
         }
 
-        // Shuffle Array (Mescola l'ordine dei caratteri)
+        // Mescola Array
         for (let i = passArr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [passArr[i], passArr[j]] = [passArr[j], passArr[i]];
