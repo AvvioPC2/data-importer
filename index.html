@@ -51,6 +51,7 @@
         /* Input Layouts */
         .input-with-icon { display: flex; align-items: stretch; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background: #fff; transition: border-color 0.2s; }
         .input-with-icon:focus-within { border-color: var(--accent-color); }
+        /* NOTE: Default uppercase for serials/keys. Overridden inline for specific fields (like email). */
         .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
 
         #office-key, #av-key { font-size: 13px; letter-spacing: -0.5px; }
@@ -209,7 +210,7 @@
             <label class="form-label" id="lbl-ms-username">Username</label>
             
             <div class="input-with-icon" style="margin-bottom: 10px;">
-                <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
+                <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)" style="text-transform: lowercase;">
                 <button type="button" class="camera-btn" onclick="copyEmail()" title="Copia Email Completa">📋</button>
             </div>
 
@@ -243,7 +244,7 @@
 
         <div class="submit-container">
             <button id="submit-btn" disabled>Submit Data</button>
-            <button id="reprint-btn" onclick="handleReprint()">RISTAMPA DA S/N</button>
+            <button id="reprint-btn" onclick="handleReprint()">Ristampa report</button>
         </div>
     </main>
 
@@ -280,13 +281,16 @@
     <canvas id="hidden-canvas"></canvas>
 
 <script>
+    // =====================================================================
+    // 1. DICTIONARY & LOCALIZATION
+    // =====================================================================
     const DICTIONARY = {
         appTitle: "AvvioPC 2",
         operatorBadge: "Operatore",
         serialLabel: "Numero di Serie Dispositivo (S/N)",
         serialPlaceholder: "Es. 5CD1234567",
         localAccountLabel: "Nome Account Locale (Windows)",
-        localAccountPlaceholder: "Es. Mario Rossi",
+        localAccountPlaceholder: "Es: Enrico",
         officeTitle: "Suite Office",
         officeOptMs: "MS-Office",
         officeOptLibre: "Libre Office",
@@ -308,7 +312,7 @@
         winUpdTitle: "Aggiornamenti Sistema",
         winUpdCheck: "Esegui Windows Update al primo avvio",
         btnSubmit: "Invia Dati Form",
-        btnReprint: "RISTAMPA DA S/N",
+        btnReprint: "Ristampa report",
         btnMsLaunch: "Apri Registrazione Microsoft",
         msgCopied: "Copiato negli appunti! 📋",
         opModalTitle: "Seleziona Operatore",
@@ -339,6 +343,9 @@
         alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi."
     };
 
+    // =====================================================================
+    // 2. SYSTEM CONFIGURATION & GLOBAL VARIABLES
+    // =====================================================================
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec';
 
 	let OPERATOR_DB = [];
@@ -348,10 +355,12 @@
     let nativeBarcodeDetector = null;
     const zxingReader = new ZXing.BrowserMultiFormatReader();
 
+    // Check for native BarcodeDetector API support
     if ('BarcodeDetector' in window) {
         nativeBarcodeDetector = new BarcodeDetector({ formats: ['code_128', 'qr_code', 'ean_13', 'code_39'] });
     }
 
+    // Cache DOM Elements for quick access
     const elements = {
         pcSerial: document.getElementById('pc-serial'),
         localAccount: document.getElementById('local-account'),
@@ -383,6 +392,9 @@
         canvas: document.getElementById('hidden-canvas')
     };
 
+    // =====================================================================
+    // 3. UI INITIALIZATION & EVENT BINDINGS
+    // =====================================================================
     function initializeUIStrings() {
         document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
         document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
@@ -417,9 +429,11 @@
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
     }
 
+    // Fetch operators list from GAS endpoint
     async function fetchOperatorsFromServer() {
         try {
             elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalLoading}</option>`;
+            // Cache-buster to bypass Google's aggressive caching on GET requests
             const safeUrl = `${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`;
             const response = await fetch(safeUrl);
             const result = await response.json();
@@ -434,11 +448,13 @@
         }
     }
 
+    // Initialize Tesseract.js Web Worker
     async function initializeOCRWorker() {
         try {
             tesseractWorker = await Tesseract.createWorker();
             await tesseractWorker.loadLanguage('eng');
             await tesseractWorker.initialize('eng');
+            // Optimize OCR for product keys (Uppercase, Numbers, Hyphens)
             await tesseractWorker.setParameters({
                 tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
                 tessedit_pageseg_mode: '6', 
@@ -449,6 +465,7 @@
         }
     }
 
+    // On App Load Sequence
 	window.addEventListener('load', () => {
         initializeUIStrings();
         updateOperatorUI();
@@ -456,6 +473,10 @@
         initializeOCRWorker();
     });
 
+    // =====================================================================
+    // 4. DATA FORMATTING & VALIDATION
+    // =====================================================================
+    // Formats string into groups of 5 separated by a specific character
     function formatProductKey(input, sep) {
         let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
         let res = "";
@@ -467,18 +488,22 @@
         validateForm();
     }
 
+    // Handles Antivirus key masking based on active radio selection
     function formatAvKey(input) {
         formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
     }
 
+    // Forces lowercase and removes invalid email characters
     function formatUsername(input) {
         input.value = input.value.toLowerCase().replace(/[^a-z0-9.\-_]/g, '');
         validateForm();
     }
 
+    // Toggles visibility of conditional fields (Office/AV Keys)
     function toggleFields() {
         elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
         elements.avField.classList.toggle('visible', !elements.avNone.checked);
+        
         if (!elements.avNone.checked) {
             elements.avKeyLabel.innerText = elements.avNorton.checked ? DICTIONARY.avNortonKeyLabel : DICTIONARY.avMcafeeKeyLabel;
             elements.avKey.placeholder = elements.avNorton.checked ? DICTIONARY.avKeyPlaceholderNorton : DICTIONARY.avKeyPlaceholderMcafee;
@@ -487,17 +512,23 @@
         validateForm();
     }
 
+    // Master Form Validator - enables/disables the Submit button
     function validateForm() {
         let ok = currentOperatorId !== "00000" && 
                  elements.pcSerial.value.trim() !== "" && 
                  elements.localAccount.value.trim() !== "" && 
                  elements.msUsername.value.trim() !== "" &&
                  elements.msPassword.value.trim() !== "";
+                 
         if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
         if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
+        
         elements.submitBtn.disabled = !ok;
     }
 
+    // =====================================================================
+    // 5. OPERATOR AUTHENTICATION MODULE
+    // =====================================================================
 	function populateOperatorDropdown() {
         elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalDefault}</option>`;
         OPERATOR_DB.forEach(op => {
@@ -506,6 +537,8 @@
             opt.textContent = `${op.id} - ${op.lastName} ${op.firstName}`;
             elements.operatorDropdown.appendChild(opt);
         });
+        
+        // Restore operator from LocalStorage if valid
         const savedId = localStorage.getItem('operator_id');
         if (savedId && OPERATOR_DB.find(o => String(o.id) === String(savedId))) {
             currentOperatorId = savedId;
@@ -527,26 +560,34 @@
         elements.operatorModal.classList.remove('active'); 
     }
 
+    // Validates PIN against SHA-256 hash stored in DB
     async function saveOperatorSelection() {
         const id = elements.operatorDropdown.value;
         const pin = elements.operatorPin.value;
+        
         if (id === "00000") return;
         if (!/^\d{4}$/.test(pin)) { 
             alert(DICTIONARY.alertPinLength); 
             return; 
         }
+        
         const op = OPERATOR_DB.find(o => o.id === id);
+        
+        // Native browser Crypto API for SHA-256 Hashing
         const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
         const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        
         if (hash !== op.pinHash.trim().toLowerCase()) { 
             alert(DICTIONARY.alertPinInvalid); 
             elements.operatorPin.value = ''; 
             return; 
         }
+        
         currentOperatorId = id;
         localStorage.setItem('operator_id', id);
         localStorage.setItem('store_id', op.storeId); 
         elements.operatorPin.value = ''; 
+        
         updateOperatorUI();
         closeOperatorModal();
     }
@@ -556,7 +597,11 @@
         validateForm();
     }
 
-    /* --- GESTIONE MICROSOFT ASSISTANT --- */
+    // =====================================================================
+    // 6. MICROSOFT ACCOUNT ASSISTANT MODULE
+    // =====================================================================
+    // Opens a small popup window for account creation (Desktop behavior)
+    // Mobile browsers will force this into a new full-screen tab natively.
     function openMicrosoftSignup() {
         const w = 550;
         const h = 750;
@@ -565,14 +610,15 @@
         window.open('https://signup.live.com/', 'MSSignup', `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=no, width=${w}, height=${h}, top=${top}, left=${left}`);
     }
 
+    // Generates a fully randomized secure password matching Microsoft rules
     function generatePassword() {
-        // Garantisce 1 Maiuscola, 1 Minuscola, 1 Numero e 1 Carattere Speciale
         const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const lower = "abcdefghijklmnopqrstuvwxyz";
         const nums = "0123456789";
         const special = "!@#$*%_+-=";
         const allChars = upper + lower + nums + special;
 
+        // Force at least one character from each required category
         let passArr = [
             upper.charAt(Math.floor(Math.random() * upper.length)),
             lower.charAt(Math.floor(Math.random() * lower.length)),
@@ -580,11 +626,12 @@
             special.charAt(Math.floor(Math.random() * special.length))
         ];
 
+        // Fill remaining 6 characters randomly
         for(let i=0; i<6; i++) {
             passArr.push(allChars.charAt(Math.floor(Math.random() * allChars.length)));
         }
 
-        // Mescola Array
+        // Fisher-Yates Shuffle to randomize the order
         for (let i = passArr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [passArr[i], passArr[j]] = [passArr[j], passArr[i]];
@@ -596,6 +643,7 @@
         copyTextToClipboard(pass);
     }
 
+    // Combines Username + Domain and copies to clipboard
     function copyEmail() {
         if(!elements.msUsername.value) return;
         const fullEmail = `${elements.msUsername.value}@${elements.msDomain.value}`;
@@ -607,20 +655,28 @@
         copyTextToClipboard(elements.msPassword.value);
     }
 
+    // Clipboard API handler with fallback for older browsers
     function copyTextToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast(DICTIONARY.msgCopied);
-        }).catch(err => {
-            const temp = document.createElement("input");
-            document.body.appendChild(temp);
-            temp.value = text;
-            temp.select();
-            document.execCommand("copy");
-            document.body.removeChild(temp);
-            showToast(DICTIONARY.msgCopied);
-        });
+        if(navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(DICTIONARY.msgCopied);
+            }).catch(err => clipboardFallback(text));
+        } else {
+            clipboardFallback(text);
+        }
+    }
+    
+    function clipboardFallback(text) {
+        const temp = document.createElement("input");
+        document.body.appendChild(temp);
+        temp.value = text;
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        showToast(DICTIONARY.msgCopied);
     }
 
+    // Triggers the visual notification
     function showToast(msg) {
         const toast = document.getElementById('sys-toast');
         toast.innerText = msg;
@@ -628,18 +684,23 @@
         if ("vibrate" in navigator) navigator.vibrate([30]);
         setTimeout(() => toast.classList.remove('show'), 2000);
     }
-    /* ------------------------------------------- */
 
+    // =====================================================================
+    // 7. CAMERA, OCR & BARCODE SCANNER MODULE
+    // =====================================================================
     let currentInputId = null;
     let currentMode = null;
     let streamTrack = null;
     let barcodeInterval = null;
 
+    // Initializes the camera stream and sets up the modal UI
     async function openScanner(targetId, mode) {
         currentInputId = targetId;
         currentMode = mode;
         document.getElementById('scanner-title').innerText = mode === 'barcode' ? DICTIONARY.scanTitleBarcode : DICTIONARY.scanTitleOcr;
         elements.scannerModal.classList.add('active');
+        
+        // Setup UI based on scan mode
         if (mode === 'barcode') {
             elements.overlay.classList.add('barcode-mode');
             elements.captureBtn.style.display = 'none';
@@ -652,14 +713,18 @@
             elements.scanAnimation.style.display = 'none';
             elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
         }
+        
         try {
+            // Request rear camera at highest available resolution
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } }
             });
             elements.video.srcObject = stream;
             streamTrack = stream.getVideoTracks()[0];
+            
             elements.video.onloadedmetadata = () => {
                 const capabilities = streamTrack.getCapabilities();
+                // Apply slight zoom if available to aid macro focus on labels
                 if (capabilities.zoom) streamTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
                 if (mode === 'barcode') startBarcodeAutoScan();
             };
@@ -668,6 +733,7 @@
         }
     }
 
+    // Cleanup and stop camera
     function closeScanner() {
         currentMode = null;
         elements.scannerModal.classList.remove('active');
@@ -676,19 +742,27 @@
         if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
     }
 
+    // Continuous frame-by-frame analysis for Barcodes
     function startBarcodeAutoScan() {
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         barcodeInterval = setInterval(async () => {
             if (currentMode !== 'barcode' || !elements.video.videoWidth) return;
+            
+            // Downscale frame for performance
             elements.canvas.width = elements.video.videoWidth / 2;
             elements.canvas.height = elements.video.videoHeight / 2;
             ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
+            
             try {
                 let detectedValue = null;
+                
+                // Attempt native API first (Faster, available on modern Androids)
                 if (nativeBarcodeDetector) {
                     const barcodes = await nativeBarcodeDetector.detect(elements.canvas);
                     if (barcodes.length > 0) detectedValue = barcodes[0].rawValue;
                 }
+                
+                // Fallback to ZXing WebAssembly if Native API fails/unsupported (iOS/Old Android)
                 if (!detectedValue) {
                     const imgUrl = elements.canvas.toDataURL("image/jpeg", 0.6);
                     const img = new Image();
@@ -703,6 +777,8 @@
                         };
                     });
                 }
+                
+                // Success Handler
                 if (detectedValue) {
                     clearInterval(barcodeInterval);
                     barcodeInterval = null;
@@ -712,17 +788,22 @@
                     validateForm();
                 }
             } catch (err) {}
-        }, 300); 
+        }, 300); // 300ms interval between frames
     }
 
+    // Manual capture and OCR analysis for Product Keys
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
         if (!isOcrReady) { alert(DICTIONARY.alertOcrNotReady); return; }
+        
         elements.video.pause(); 
         elements.captureBtn.disabled = true;
         elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
+        
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         const v = elements.video;
+        
+        // Calculate crop area based on the visual green overlay
         const overlay = elements.overlay.getBoundingClientRect();
         const wrapper = v.parentElement.getBoundingClientRect();
         const scaleX = v.videoWidth / wrapper.width;
@@ -731,16 +812,24 @@
         const ch = overlay.height * scaleY;
         const cx = (overlay.left - wrapper.left) * scaleX;
         const cy = (overlay.top - wrapper.top) * scaleY;
+        
         elements.canvas.width = cw;
         elements.canvas.height = ch;
+        
+        // Apply image filters to enhance OCR readability (Contrast + Grayscale)
         ctx.filter = "contrast(1.5) grayscale(1)";
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
         ctx.filter = "none";
+        
         try {
+            // Run Tesseract OCR on the cropped frame
             const res = await tesseractWorker.recognize(elements.canvas);
             const rawText = res.data.text.toUpperCase();
+            
+            // Regex strictly looking for 5 groups of 5 alphanumeric characters
             const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
             const match = rawText.match(regex);
+            
             if (match) {
                 const finalKey = `${match[1]}${match[2]}${match[3]}${match[4]}${match[5]}`;
                 const target = document.getElementById(currentInputId);
@@ -760,6 +849,11 @@
         }
     };
 
+    // =====================================================================
+    // 8. DATA TRANSMISSION (POST REQUESTS)
+    // =====================================================================
+    
+    // Submits new PC Provisioning task
     elements.submitBtn.onclick = async () => {
         elements.submitBtn.disabled = true;
         const payload = {
@@ -777,10 +871,12 @@
             windows_update: elements.runUpdates.checked ? "Yes" : "No",
             timestamp: new Date().toISOString()
         };
+        
         try {
             const res = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload),
+                // text/plain bypasses CORS preflight checks in Google Apps Script
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
             const data = await res.json();
@@ -793,6 +889,7 @@
         }
     };
 
+    // Triggers reprint sequence for an existing serial number
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
         if (!sn) { alert("Inserisci il S/N per ristampare"); return; }
@@ -813,7 +910,9 @@
             });
             const result = await res.json();
             alert(result.message);
-        } catch(e) { alert("Errore rete"); }
+        } catch(e) { 
+            alert("Errore rete"); 
+        }
         elements.reprintBtn.disabled = false;
     }
 </script>
