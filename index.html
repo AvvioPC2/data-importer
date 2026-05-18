@@ -7,7 +7,6 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
 
-    <!-- Third-party Libraries for OCR and Barcode Scanning -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
 
@@ -32,7 +31,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
-        /* Placeholders Style (Grigio Chiaro) */
+        /* Placeholder Styles (Light Gray) */
         ::placeholder { color: #a0a0a0; opacity: 1; }
         ::-ms-input-placeholder { color: #a0a0a0; }
 
@@ -75,6 +74,10 @@
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
+        /* Microsoft Account External Link Button */
+        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 18px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
+        #btn-create-ms:hover { background: #0056b3; }
+
         /* Microsoft Account Email Input Group */
         .email-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: #fff; margin-bottom: 15px; padding-right: 8px; transition: border-color 0.2s; }
         .email-group:focus-within { border-color: var(--accent-color); }
@@ -95,9 +98,8 @@
         #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
         #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
-        #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
-        /* Aggiornato a 20px per combaciare con submit-btn */
         #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
+        #reprint-btn:hover { opacity: 0.9; }
 
         /* Fullscreen Modal Viewports */
         .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -134,9 +136,8 @@
         .operator-dialog { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; }
         #operator-modal.active .operator-dialog { transform: translateY(0); }
         .operator-dialog h3 { color: var(--header-bg); margin: 0; font-size: 20px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
-        .operator-select { padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; background: #fff; cursor: pointer; }
         
-        /* Font Monospazio per i Select */
+        /* Monospace Font for Select Inputs */
         .operator-select { font-family: 'Courier New', Courier, monospace; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; background: #fff; cursor: pointer; }
         .operator-select:disabled { background: var(--disabled-bg); cursor: not-allowed; }
         
@@ -148,14 +149,13 @@
         #hidden-canvas { display: none; }
 
         /* =====================================================================
-           NUOVO SPLASH SCREEN OVERLAY DI CARICAMENTO 
+           NEW LOADING SPLASH SCREEN OVERLAY
            ===================================================================== */
-        /* Splash Screen Overlay di Caricamento */
         #loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.85); /* Semi-trasparente */
-            z-index: 2000; /* Sopra a tutto il resto */
+            background: rgba(255, 255, 255, 0.85); 
+            z-index: 2000; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -165,15 +165,11 @@
             transition: opacity 0.3s ease;
             backdrop-filter: blur(2px);
         }
-        #loading-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.85); z-index: 2000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px);
+        #loading-overlay.active { 
+            opacity: 1; 
+            pointer-events: auto; 
         }
-        #loading-overlay.active { opacity: 1; pointer-events: auto; }
+        
         .spinner {
             width: 70px;
             height: 70px;
@@ -183,6 +179,7 @@
             animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
             margin-bottom: 20px;
         }
+        
         .loading-text {
             font-size: 22px;
             font-weight: 600;
@@ -191,19 +188,14 @@
             text-align: center;
             padding: 0 20px;
         }
+        
         @keyframes spin {
             to { transform: rotate(360deg); }
-            width: 70px; height: 70px; border: 6px solid var(--disabled-bg);
-            border-top-color: var(--accent-color); border-radius: 50%;
-            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; margin-bottom: 20px;
         }
-        .loading-text { font-size: 22px; font-weight: 600; color: var(--header-bg); font-family: 'Barlow', sans-serif; text-align: center; padding: 0 20px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- Header Navigation -->
     <header class="app-header">
         <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
         <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
@@ -213,12 +205,9 @@
         </div>
     </header>
 
-    <!-- Main Data Entry Form -->
     <main class="form-container">
 
-        <!-- Serial Number Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-serial">Serial Number</label>
             <div class="section-title" id="lbl-serial">Serial number del prodotto</div>
             <div class="input-with-icon">
                 <input type="text" id="pc-serial" style="text-transform: none;" oninput="validateForm()">
@@ -228,16 +217,12 @@
             </div>
         </div>
 
-        <!-- Local Account Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-local-account">Local Account (Windows)</label>
             <div class="section-title" id="lbl-local-account">Account locale</div>
             <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
-        <!-- Office Suite Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-office-suite">Office Suite</label>
             <div class="section-title" id="lbl-office-suite">Suite da ufficio</div>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms-office" onchange="toggleFields(); validateForm();">
@@ -246,7 +231,6 @@
                 <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
             </div>
             <div id="ms-office-field" class="conditional-field">
-                <label class="form-label" id="lbl-office-key" style="font-size: 14px;">Product Key</label>
                 <label class="form-label" id="lbl-office-key" style="font-size: 14px;">Product Key Office</label>
                 <div class="input-with-icon">
                     <input type="text" id="office-key" oninput="formatProductKey(this, '-')">
@@ -257,9 +241,7 @@
             </div>
         </div>
 
-        <!-- Antivirus Context -->
         <div class="form-group">
-            <label class="form-label" id="lbl-av-protection">Antivirus Protection</label>
             <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
@@ -267,11 +249,9 @@
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
                 <label for="av-mcafee" id="lbl-opt-mcafee">McAfee</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
-                <label for="av-none" id="lbl-opt-none">None</label>
                 <label for="av-none" id="lbl-opt-none">Nessuno</label>
             </div>
             <div id="av-field" class="conditional-field">
-                <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key</label>
                 <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key Antivirus</label>
                 <div class="input-with-icon">
                     <input type="text" id="av-key" oninput="formatAvKey(this)">
@@ -282,9 +262,13 @@
             </div>
         </div>
 
-        <!-- Microsoft Account Credentials Context -->
         <div class="form-group">
             <div class="section-title" id="lbl-ms-title">Account Microsoft</div>
+            
+            <button type="button" id="btn-create-ms" onclick="window.open('https://signup.live.com/', '_blank')">
+                Crea nuovo account Microsoft
+            </button>
+            
             <label class="form-label" id="lbl-ms-username">Nome Utente</label>
             <div class="email-group">
                 <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
@@ -299,25 +283,20 @@
             <input type="text" id="ms-password" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
-        <!-- System Updates Context -->
         <div class="form-group">
             <div class="section-title" id="lbl-winupd-title">Aggiornamenti di sistema</div>
             <label class="checkbox-group">
-                <input type="checkbox" id="run-updates" checked>
-                <!-- Rimosso l'attributo "checked" per renderlo disattivato di default -->
                 <input type="checkbox" id="run-updates">
                 <span id="lbl-winupd-check">Eseguire Windows Update al primo avvio</span>
             </label>
         </div>
 
-        <!-- Submission Actions -->
         <div class="submit-container">
             <button id="submit-btn" disabled>Caricamento dati</button>
             <button id="reprint-btn" onclick="handleReprint()">Ristampa dati</button>
         </div>
     </main>
 
-    <!-- Operator Authentication Modal -->
     <div id="operator-modal" class="fullscreen-modal">
         <div class="operator-dialog">
             <h3 id="lbl-modal-op-title">Autenticazione</h3>
@@ -338,7 +317,6 @@
         </div>
     </div>
 
-    <!-- Scanner Modal Viewport -->
     <div id="scanner-modal" class="fullscreen-modal">
         <div class="modal-header">
             <div class="modal-title" id="scanner-title">Scanning</div>
@@ -355,7 +333,6 @@
         </div>
     </div>
 
-    <!-- Splash Screen per il Caricamento Rete -->
     <div id="loading-overlay">
         <div class="spinner"></div>
         <div class="loading-text" id="lbl-loading-overlay">Salvataggio in corso...</div>
@@ -370,9 +347,7 @@
     const DICTIONARY = {
         appTitle: "AvvioPC 2",
         operatorBadge: "Operatore",
-        serialLabel: "Serial number del prodotto",
         serialPlaceholder: "...",
-        localAccountLabel: "Account locale",
         localAccountPlaceholder: "Nome di chi userà il PC",
         officeTitle: "Suite da ufficio",
         officeOptMs: "MS-Office",
@@ -388,6 +363,7 @@
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         msTitle: "Account Microsoft",
+        btnCreateMs: "Crea nuovo account Microsoft",
         msUserLabel: "Nome Utente",
         msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
@@ -423,7 +399,7 @@
         alertUploadError: "Impossibile inviare i dati: ",
         alertCameraError: "Errore fotocamera: ",
         alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi.",
-        overlayLoadingText: "Salvataggio dati in corso..." /* NUOVO TESTO OVERLAY */
+        overlayLoadingText: "Salvataggio dati in corso..." 
     };
 
     // --- PRODUCTION ENDPOINT ---
@@ -455,6 +431,7 @@
         avKey: document.getElementById('av-key'),
         avField: document.getElementById('av-field'),
         avKeyLabel: document.getElementById('av-key-label'),
+        btnCreateMs: document.getElementById('btn-create-ms'),
         msUsername: document.getElementById('ms-username'),
         msDomain: document.getElementById('ms-domain'),
         msPassword: document.getElementById('ms-password'),
@@ -473,7 +450,6 @@
         captureBtn: document.getElementById('capture-btn'),
         overlay: document.getElementById('scanner-overlay'),
         canvas: document.getElementById('hidden-canvas'),
-        loadingOverlay: document.getElementById('loading-overlay') // NUOVO NODO DOM
         loadingOverlay: document.getElementById('loading-overlay') 
     };
 
@@ -484,9 +460,7 @@
     function initializeUIStrings() {
         document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
         document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
-        document.getElementById('lbl-serial').innerText = DICTIONARY.serialLabel;
         elements.pcSerial.placeholder = DICTIONARY.serialPlaceholder;
-        document.getElementById('lbl-local-account').innerText = DICTIONARY.localAccountLabel;
         elements.localAccount.placeholder = DICTIONARY.localAccountPlaceholder;
         document.getElementById('lbl-office-suite').innerText = DICTIONARY.officeTitle;
         document.getElementById('lbl-opt-ms').innerText = DICTIONARY.officeOptMs;
@@ -498,6 +472,7 @@
         document.getElementById('lbl-opt-mcafee').innerText = DICTIONARY.avOptMcafee;
         document.getElementById('lbl-opt-none').innerText = DICTIONARY.avOptNone;
         document.getElementById('lbl-ms-title').innerText = DICTIONARY.msTitle;
+        elements.btnCreateMs.innerText = DICTIONARY.btnCreateMs;
         document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
         elements.msUsername.placeholder = DICTIONARY.msUserPlaceholder;
         document.getElementById('lbl-ms-password').innerText = DICTIONARY.msPassLabel;
@@ -582,6 +557,7 @@
     function toggleFields() {
         elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
         elements.avField.classList.toggle('visible', !elements.avNone.checked);
+        
         if (!elements.avNone.checked) {
             elements.avKeyLabel.innerText = elements.avNorton.checked ? DICTIONARY.avNortonKeyLabel : DICTIONARY.avMcafeeKeyLabel;
             elements.avKey.placeholder = elements.avNorton.checked ? DICTIONARY.avKeyPlaceholderNorton : DICTIONARY.avKeyPlaceholderMcafee;
@@ -596,13 +572,13 @@
                  elements.localAccount.value.trim() !== "" && 
                  elements.msUsername.value.trim() !== "" &&
                  elements.msPassword.value.trim() !== "";
+                 
         if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
         if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
         elements.submitBtn.disabled = !ok;
     }
 
     // =========================================================================
-    // CASCADING DROPDOWNS & OPERATOR LOGIC
     // CASCADING DROPDOWNS & ALIGNMENT LOGIC
     // =========================================================================
 
@@ -652,7 +628,7 @@
             return nameA.localeCompare(nameB);
         });
 
-        // Calcolo lunghezza massima per incolonnare perfettamente gli ID a destra
+        // Maximum length calculation for perfect right-side ID alignment
         let maxLength = 0;
         storeOperators.forEach(op => {
             const len = `${op.lastName} ${op.firstName}`.length;
@@ -661,11 +637,10 @@
 
         storeOperators.forEach(op => {
             const nameStr = `${op.lastName} ${op.firstName}`;
-            // Uso gli spazi unificatori (\xa0) per il font monospazio. +4 spazi extra di margine.
+            // Unified spacing (\xa0) required for proper HTML rendering in select nodes
             const padding = '\xa0'.repeat(maxLength - nameStr.length + 4);
             const opt = document.createElement('option');
             opt.value = op.id; 
-            opt.textContent = `${op.lastName} ${op.firstName} (${op.id})`;
             opt.textContent = `${nameStr}${padding}[${op.id}]`;
             elements.operatorDropdown.appendChild(opt);
         });
@@ -865,12 +840,13 @@
     };
 
     // =========================================================================
-    // CLOUD COMMUNICATION (Submit & Reprint) CON SPLASH SCREEN OVERLAY
+    // CLOUD COMMUNICATION (Submit & Reprint) WITH SPLASH SCREEN OVERLAY
     // =========================================================================
 
     elements.submitBtn.onclick = async () => {
         elements.submitBtn.disabled = true;
-        // Mostra lo splash screen
+        
+        // Display the loading splash screen
         elements.loadingOverlay.classList.add('active');
 
         const payload = {
@@ -898,12 +874,12 @@
             const data = await res.json();
             if (data.status === "error") throw new Error(data.message);
 
-            // Nascondo lo splash screen
+            // Hide the loading splash screen
             elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadSuccess);
             location.reload();
         } catch (e) {
-            // In caso di errore nascondo lo splash screen e mostro l'alert
+            // Error handling: hide overlay and display exception alert
             elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadError + e.message);
             elements.submitBtn.disabled = false;
@@ -916,7 +892,8 @@
         if (currentOperatorId === "00000") { alert("Effettua il login operatore"); return; }
 
         elements.reprintBtn.disabled = true;
-        // Mostra lo splash screen anche per la ristampa
+        
+        // Display the loading splash screen
         elements.loadingOverlay.classList.add('active');
 
         const payload = { 
@@ -943,3 +920,4 @@
     }
 </script>
 </body>
+</html>
