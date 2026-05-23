@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -69,6 +69,16 @@
         .segmented-control label { flex: 1; text-align: center; padding: 12px 5px; font-size: 16px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: all 0.2s; }
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+
+        /* Specific overrides for multi-line Antivirus labels to maintain standard button dimensions */
+        #lbl-opt-norton, #lbl-opt-mcafee, #lbl-opt-none {
+            font-size: 13px; 
+            line-height: 1.1; 
+            padding: 6px 2px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
 
         /* Conditional Rendering Fields */
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
@@ -245,11 +255,11 @@
             <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
-                <label for="av-norton" id="lbl-opt-norton">Norton</label>
+                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 DeLuxe</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
-                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee</label>
+                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Sec.</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
-                <label for="av-none" id="lbl-opt-none">Defender</label>
+                <label for="av-none" id="lbl-opt-none">Windows<br>Defender</label>
             </div>
             <div id="av-field" class="conditional-field">
                 <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key Antivirus</label>
@@ -355,9 +365,10 @@
         officeKeyLabel: "Product Key Office",
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         avTitle: "Protezione antivirus",
-        avOptNorton: "Norton",
-        avOptMcafee: "McAfee",
-        avOptNone: "Defender",
+        // Multi-line values updated with <br> tags
+        avOptNorton: "Norton<br>360 DeLuxe",
+        avOptMcafee: "McAfee<br>Total Sec.",
+        avOptNone: "Windows<br>Defender",
         avNortonKeyLabel: "Product Key Norton Antivirus",
         avMcafeeKeyLabel: "Product Key McAfee",
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
@@ -468,9 +479,12 @@
         document.getElementById('lbl-office-key').innerText = DICTIONARY.officeKeyLabel;
         elements.officeKey.placeholder = DICTIONARY.officeKeyPlaceholder;
         document.getElementById('lbl-av-protection').innerText = DICTIONARY.avTitle;
-        document.getElementById('lbl-opt-norton').innerText = DICTIONARY.avOptNorton;
-        document.getElementById('lbl-opt-mcafee').innerText = DICTIONARY.avOptMcafee;
-        document.getElementById('lbl-opt-none').innerText = DICTIONARY.avOptNone;
+        
+        // Changed to innerHTML to process the <br> tags properly!
+        document.getElementById('lbl-opt-norton').innerHTML = DICTIONARY.avOptNorton;
+        document.getElementById('lbl-opt-mcafee').innerHTML = DICTIONARY.avOptMcafee;
+        document.getElementById('lbl-opt-none').innerHTML = DICTIONARY.avOptNone;
+        
         document.getElementById('lbl-ms-title').innerText = DICTIONARY.msTitle;
         elements.btnCreateMs.innerText = DICTIONARY.btnCreateMs;
         document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
