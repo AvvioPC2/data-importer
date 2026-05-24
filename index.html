@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -98,15 +98,21 @@
         /* Standard Inputs & Checkboxes */
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
-        .checkbox-group { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 0; }
+        
+        /* Centered Checkbox Group Layout Override */
+        .checkbox-group { display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; padding: 5px 0; text-align: center; }
         .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
         .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; }
+
+        /* Bottom helper annotation style */
+        .form-note { font-size: 13px; color: var(--text-muted); margin-top: -12px; margin-bottom: 5px; padding-left: 5px; font-weight: 500; }
 
         /* Form Action Buttons Container */
         .submit-container { padding: 30px 0; background: transparent; text-align: center; display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
 
+        /* Custom validation-based interactive disabled state (allows click handling) */
         #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
-        #submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
+        #submit-btn.is-disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
         #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
         #reprint-btn:hover { opacity: 0.9; }
@@ -158,9 +164,7 @@
 
         #hidden-canvas { display: none; }
 
-        /* =====================================================================
-           NEW LOADING SPLASH SCREEN OVERLAY
-           ===================================================================== */
+        /* Loading splash overlay */
         #loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -218,7 +222,7 @@
     <main class="form-container">
 
         <div class="form-group">
-            <div class="section-title" id="lbl-serial">Serial number del prodotto</div>
+            <div class="section-title" id="lbl-serial">Serial number del prodotto *</div>
             <div class="input-with-icon">
                 <input type="text" id="pc-serial" style="text-transform: none;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'barcode')">
@@ -228,7 +232,7 @@
         </div>
 
         <div class="form-group">
-            <div class="section-title" id="lbl-local-account">Account locale</div>
+            <div class="section-title" id="lbl-local-account">Account locale *</div>
             <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
@@ -236,7 +240,7 @@
             <div class="section-title" id="lbl-office-suite">Suite da ufficio</div>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms_office" onchange="toggleFields(); validateForm();">
-                <label for="office-ms" id="lbl-opt-ms">Office 365</label>
+                <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
                 <input type="radio" id="office-libre" name="office_type" value="libre_office" onchange="toggleFields(); validateForm();" checked>
                 <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
             </div>
@@ -246,7 +250,7 @@
                     <input type="text" id="office-key" oninput="formatProductKey(this, '-')">
                     <button type="button" class="camera-btn" onclick="openScanner('office-key', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-                    </button>
+                </button>
                 </div>
             </div>
         </div>
@@ -255,9 +259,9 @@
             <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
-                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 Deluxe</label>
+                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 DeLuxe</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
-                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Protection</label>
+                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Sec.</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
                 <label for="av-none" id="lbl-opt-none">Windows<br>Defender</label>
             </div>
@@ -300,9 +304,10 @@
                 <span id="lbl-winupd-check">Eseguire Windows Update<br>a fine installazione</span>
             </label>
         </div>
+        <div class="form-note">* = campo obbligatorio</div>
 
         <div class="submit-container">
-            <button id="submit-btn" disabled>Caricamento dati</button>
+            <button id="submit-btn" class="is-disabled">Caricamento dati</button>
             <button id="reprint-btn" onclick="handleReprint()">Ristampa dati</button>
         </div>
     </main>
@@ -360,20 +365,20 @@
         serialPlaceholder: "...",
         localAccountPlaceholder: "Nome di chi userà il PC",
         officeTitle: "Suite da ufficio",
-        officeOptMs: "Office 365",
+        officeOptMs: "MS-Office",
         officeOptLibre: "Libre Office",
         officeKeyLabel: "Product Key Office",
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         avTitle: "Protezione antivirus",
-        // Multi-line values updated with <br> tags
-        avOptNorton: "Norton<br>360 Deluxe",
-        avOptMcafee: "McAfee<br>Total Protection",
+        avOptNorton: "Norton<br>360 DeLuxe",
+        avOptMcafee: "McAfee<br>Total Sec.",
         avOptNone: "Windows<br>Defender",
-        avNortonKeyLabel: "Product Key Norton",
+        avNortonKeyLabel: "Product Key Norton Antivirus",
         avMcafeeKeyLabel: "Product Key McAfee",
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
-        msTitle: "Account Microsoft",
+        // Added the asterisk identifier to the dynamic Microsoft section header string
+        msTitle: "Account Microsoft *",
         btnCreateMs: "Crea nuovo account Microsoft",
         msUserLabel: "Nome Utente",
         msUserPlaceholder: "nome.cognome",
@@ -480,7 +485,6 @@
         elements.officeKey.placeholder = DICTIONARY.officeKeyPlaceholder;
         document.getElementById('lbl-av-protection').innerText = DICTIONARY.avTitle;
         
-        // Changed to innerHTML to process the <br> tags properly!
         document.getElementById('lbl-opt-norton').innerHTML = DICTIONARY.avOptNorton;
         document.getElementById('lbl-opt-mcafee').innerHTML = DICTIONARY.avOptMcafee;
         document.getElementById('lbl-opt-none').innerHTML = DICTIONARY.avOptNone;
@@ -503,6 +507,9 @@
         document.getElementById('btn-save').innerText = DICTIONARY.btnSave;
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
         document.getElementById('lbl-loading-overlay').innerText = DICTIONARY.overlayLoadingText;
+        
+        // Populate initial validation status class matching early load values
+        validateForm();
     }
 
     async function fetchOperatorsFromServer() {
@@ -580,7 +587,8 @@
         validateForm();
     }
 
-    function validateForm() {
+    // Isolated structural conditional check to test current global input model completeness
+    function isFormValidCheck() {
         let ok = currentOperatorId !== "00000" && 
                  elements.pcSerial.value.trim() !== "" && 
                  elements.localAccount.value.trim() !== "" && 
@@ -589,7 +597,16 @@
                  
         if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
         if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
-        elements.submitBtn.disabled = !ok;
+        return ok;
+    }
+
+    // Toggle stylesheet classes rather than applying physical component disabling properties
+    function validateForm() {
+        if (isFormValidCheck()) {
+            elements.submitBtn.classList.remove('is-disabled');
+        } else {
+            elements.submitBtn.classList.add('is-disabled');
+        }
     }
 
     // =========================================================================
@@ -642,7 +659,6 @@
             return nameA.localeCompare(nameB);
         });
 
-        // Maximum length calculation for perfect right-side ID alignment
         let maxLength = 0;
         storeOperators.forEach(op => {
             const len = `${op.lastName} ${op.firstName}`.length;
@@ -651,7 +667,6 @@
 
         storeOperators.forEach(op => {
             const nameStr = `${op.lastName} ${op.firstName}`;
-            // Unified spacing (\xa0) required for proper HTML rendering in select nodes
             const padding = '\xa0'.repeat(maxLength - nameStr.length + 4);
             const opt = document.createElement('option');
             opt.value = op.id; 
@@ -858,6 +873,13 @@
     // =========================================================================
 
     elements.submitBtn.onclick = async () => {
+        // Evaluate input integrity. Halt progression and alert operator if fields remain unfulfilled
+        if (!isFormValidCheck()) {
+            alert("Compilare tutti i campi obbligatori prima di caricare i dati");
+            return;
+        }
+
+        // Apply temporary disabling layer exclusively to avoid multi-click execution races
         elements.submitBtn.disabled = true;
         
         // Display the loading splash screen
@@ -893,16 +915,17 @@
             alert(DICTIONARY.alertUploadSuccess);
             location.reload();
         } catch (e) {
-            // Error handling: hide overlay and display exception alert
+            // Reset temporary interface states upon cloud tracking faults
             elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadError + e.message);
             elements.submitBtn.disabled = false;
+            validateForm();
         }
     };
 
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
-        if (!sn) { alert("Inserisci il serial number del prodotto per ristampare il report"); return; }
+        if (!sn) { alert("Inserisci il S/N per ristampare"); return; }
         if (currentOperatorId === "00000") { alert("Effettua il login operatore"); return; }
 
         elements.reprintBtn.disabled = true;
