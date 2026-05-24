@@ -255,9 +255,9 @@
             <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
-                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 DeLuxe</label>
+                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 Deluxe</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
-                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Sec.</label>
+                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Protection</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
                 <label for="av-none" id="lbl-opt-none">Windows<br>Defender</label>
             </div>
@@ -366,10 +366,10 @@
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         avTitle: "Protezione antivirus",
         // Multi-line values updated with <br> tags
-        avOptNorton: "Norton<br>360 DeLuxe",
-        avOptMcafee: "McAfee<br>Total Sec.",
+        avOptNorton: "Norton<br>360 Deluxe",
+        avOptMcafee: "McAfee<br>Total Protection",
         avOptNone: "Windows<br>Defender",
-        avNortonKeyLabel: "Product Key Norton Antivirus",
+        avNortonKeyLabel: "Product Key Norton",
         avMcafeeKeyLabel: "Product Key McAfee",
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
@@ -902,7 +902,7 @@
 
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
-        if (!sn) { alert("Inserisci il S/N per ristampare"); return; }
+        if (!sn) { alert("Inserisci il serial number<br>del prodotto per ristampare"); return; }
         if (currentOperatorId === "00000") { alert("Effettua il login operatore"); return; }
 
         elements.reprintBtn.disabled = true;
