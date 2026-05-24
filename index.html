@@ -236,7 +236,7 @@
             <div class="section-title" id="lbl-office-suite">Suite da ufficio</div>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms_office" onchange="toggleFields(); validateForm();">
-                <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
+                <label for="office-ms" id="lbl-opt-ms">Office 365</label>
                 <input type="radio" id="office-libre" name="office_type" value="libre_office" onchange="toggleFields(); validateForm();" checked>
                 <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
             </div>
@@ -360,7 +360,7 @@
         serialPlaceholder: "...",
         localAccountPlaceholder: "Nome di chi userà il PC",
         officeTitle: "Suite da ufficio",
-        officeOptMs: "MS-Office",
+        officeOptMs: "Office 365",
         officeOptLibre: "Libre Office",
         officeKeyLabel: "Product Key Office",
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
@@ -902,7 +902,7 @@
 
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
-        if (!sn) { alert("Inserisci il serial number<br>del prodotto per ristampare"); return; }
+        if (!sn) { alert("Inserisci il serial number del prodotto per ristampare il report"); return; }
         if (currentOperatorId === "00000") { alert("Effettua il login operatore"); return; }
 
         elements.reprintBtn.disabled = true;
