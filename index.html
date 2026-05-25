@@ -99,10 +99,10 @@
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
         
-        /* Centered Checkbox Group Layout Override */
-        .checkbox-group { display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; padding: 5px 0; text-align: center; }
-        .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
-        .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; }
+        /* Centered Checkbox Group Layout Override - Fixed alignment */
+        .checkbox-group { display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; padding: 5px 0; }
+        .checkbox-group input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; cursor: pointer; }
+        .checkbox-group span, .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; text-align: left; line-height: 1.3; }
 
         /* Bottom helper annotation style */
         .form-note { font-size: 13px; color: var(--text-muted); margin-top: -12px; margin-bottom: 5px; padding-left: 5px; font-weight: 500; }
@@ -240,7 +240,7 @@
             <div class="section-title" id="lbl-office-suite">Suite da ufficio</div>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms_office" onchange="toggleFields(); validateForm();">
-                <label for="office-ms" id="lbl-opt-ms">Office 365</label>
+                <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
                 <input type="radio" id="office-libre" name="office_type" value="libre_office" onchange="toggleFields(); validateForm();" checked>
                 <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
             </div>
@@ -259,9 +259,9 @@
             <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
-                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 Deluxe</label>
+                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 DeLuxe</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
-                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Protection</label>
+                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Sec.</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
                 <label for="av-none" id="lbl-opt-none">Windows<br>Defender</label>
             </div>
@@ -365,15 +365,15 @@
         serialPlaceholder: "...",
         localAccountPlaceholder: "Nome di chi userà il PC",
         officeTitle: "Suite da ufficio",
-        officeOptMs: "Office 365",
+        officeOptMs: "MS-Office",
         officeOptLibre: "Libre Office",
         officeKeyLabel: "Product Key Office",
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         avTitle: "Protezione antivirus",
-        avOptNorton: "Norton<br>360 Deluxe",
-        avOptMcafee: "McAfee<br>Total Protection",
+        avOptNorton: "Norton<br>360 DeLuxe",
+        avOptMcafee: "McAfee<br>Total Sec.",
         avOptNone: "Windows<br>Defender",
-        avNortonKeyLabel: "Product Key Norton",
+        avNortonKeyLabel: "Product Key Norton Antivirus",
         avMcafeeKeyLabel: "Product Key McAfee",
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
