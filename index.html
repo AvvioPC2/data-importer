@@ -153,8 +153,21 @@
         #operator-modal.active .operator-dialog { transform: translateY(0); }
         .operator-dialog h3 { color: var(--header-bg); margin: 0; font-size: 20px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
         
-        /* Monospace Font for Select Inputs */
-        .operator-select { font-family: 'Courier New', Courier, monospace; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; background: #fff; cursor: pointer; }
+        /* Monospace Font strict override for Dropdowns */
+        .operator-select { 
+            font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace !important; 
+            padding: 14px; 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--border-radius); 
+            font-size: 16px; 
+            outline: none; 
+            width: 100%; 
+            background: #fff; 
+            cursor: pointer; 
+        }
+        .operator-select option {
+            font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace !important; 
+        }
         .operator-select:disabled { background: var(--disabled-bg); cursor: not-allowed; }
         
         .dialog-actions { display: flex; gap: 10px; margin-top: 10px; }
@@ -240,7 +253,7 @@
             <div class="section-title" id="lbl-office-suite">Suite da ufficio</div>
             <div class="segmented-control">
                 <input type="radio" id="office-ms" name="office_type" value="ms_office" onchange="toggleFields(); validateForm();">
-                <label for="office-ms" id="lbl-opt-ms">MS-Office</label>
+                <label for="office-ms" id="lbl-opt-ms">Office 365</label>
                 <input type="radio" id="office-libre" name="office_type" value="libre_office" onchange="toggleFields(); validateForm();" checked>
                 <label for="office-libre" id="lbl-opt-libre">Libre Office</label>
             </div>
@@ -259,9 +272,9 @@
             <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
             <div class="segmented-control">
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
-                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 DeLuxe</label>
+                <label for="av-norton" id="lbl-opt-norton">Norton<br>360 Deluxe</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
-                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Sec.</label>
+                <label for="av-mcafee" id="lbl-opt-mcafee">McAfee<br>Total Protection</label>
                 <input type="radio" id="av-none" name="av_type" value="none" onchange="toggleFields(); validateForm();" checked>
                 <label for="av-none" id="lbl-opt-none">Windows<br>Defender</label>
             </div>
@@ -277,13 +290,13 @@
         </div>
 
         <div class="form-group">
-            <div class="section-title" id="lbl-ms-title">Account Microsoft</div>
+            <div class="section-title" id="lbl-ms-title">Account Microsoft *</div>
             
             <button type="button" id="btn-create-ms" onclick="window.open('https://signup.live.com/', '_blank')">
                 Crea nuovo account Microsoft
             </button>
             
-            <label class="form-label" id="lbl-ms-username">Nome Utente</label>
+            <label class="form-label" id="lbl-ms-username">Nome utente</label>
             <div class="email-group">
                 <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
                 <span>@</span>
@@ -365,22 +378,21 @@
         serialPlaceholder: "...",
         localAccountPlaceholder: "Nome di chi userà il PC",
         officeTitle: "Suite da ufficio",
-        officeOptMs: "MS-Office",
+        officeOptMs: "Office 365",
         officeOptLibre: "Libre Office",
         officeKeyLabel: "Product Key Office",
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         avTitle: "Protezione antivirus",
-        avOptNorton: "Norton<br>360 DeLuxe",
-        avOptMcafee: "McAfee<br>Total Sec.",
+        avOptNorton: "Norton<br>360 Deluxe",
+        avOptMcafee: "McAfee<br>Total Protection",
         avOptNone: "Windows<br>Defender",
-        avNortonKeyLabel: "Product Key Norton Antivirus",
+        avNortonKeyLabel: "Product Key Norton",
         avMcafeeKeyLabel: "Product Key McAfee",
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
-        // Added the asterisk identifier to the dynamic Microsoft section header string
         msTitle: "Account Microsoft *",
         btnCreateMs: "Crea nuovo account Microsoft",
-        msUserLabel: "Nome Utente",
+        msUserLabel: "Nome utente",
         msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
         msPassPlaceholder: "password",
@@ -508,7 +520,6 @@
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
         document.getElementById('lbl-loading-overlay').innerText = DICTIONARY.overlayLoadingText;
         
-        // Populate initial validation status class matching early load values
         validateForm();
     }
 
@@ -587,7 +598,6 @@
         validateForm();
     }
 
-    // Isolated structural conditional check to test current global input model completeness
     function isFormValidCheck() {
         let ok = currentOperatorId !== "00000" && 
                  elements.pcSerial.value.trim() !== "" && 
@@ -600,7 +610,6 @@
         return ok;
     }
 
-    // Toggle stylesheet classes rather than applying physical component disabling properties
     function validateForm() {
         if (isFormValidCheck()) {
             elements.submitBtn.classList.remove('is-disabled');
@@ -667,7 +676,8 @@
 
         storeOperators.forEach(op => {
             const nameStr = `${op.lastName} ${op.firstName}`;
-            const padding = '\xa0'.repeat(maxLength - nameStr.length + 4);
+            // Removed +4 padding margin to fit strict mobile width constraints
+            const padding = '\xa0'.repeat(maxLength - nameStr.length + 1);
             const opt = document.createElement('option');
             opt.value = op.id; 
             opt.textContent = `${nameStr}${padding}[${op.id}]`;
@@ -873,16 +883,12 @@
     // =========================================================================
 
     elements.submitBtn.onclick = async () => {
-        // Evaluate input integrity. Halt progression and alert operator if fields remain unfulfilled
         if (!isFormValidCheck()) {
             alert("Compilare tutti i campi obbligatori prima di caricare i dati");
             return;
         }
 
-        // Apply temporary disabling layer exclusively to avoid multi-click execution races
         elements.submitBtn.disabled = true;
-        
-        // Display the loading splash screen
         elements.loadingOverlay.classList.add('active');
 
         const payload = {
@@ -910,12 +916,10 @@
             const data = await res.json();
             if (data.status === "error") throw new Error(data.message);
 
-            // Hide the loading splash screen
             elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadSuccess);
             location.reload();
         } catch (e) {
-            // Reset temporary interface states upon cloud tracking faults
             elements.loadingOverlay.classList.remove('active');
             alert(DICTIONARY.alertUploadError + e.message);
             elements.submitBtn.disabled = false;
@@ -925,12 +929,16 @@
 
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
-        if (!sn) { alert("Inserisci il S/N per ristampare"); return; }
-        if (currentOperatorId === "00000") { alert("Effettua il login operatore"); return; }
+        if (!sn) { 
+            alert("Inserisci il serial number del prodotto per poter ristampare il suo report"); 
+            return; 
+        }
+        if (currentOperatorId === "00000") { 
+            alert("Effettua il login operatore"); 
+            return; 
+        }
 
         elements.reprintBtn.disabled = true;
-        
-        // Display the loading splash screen
         elements.loadingOverlay.classList.add('active');
 
         const payload = { 
