@@ -290,6 +290,14 @@
         </div>
 
         <div class="form-group">
+            <div class="section-title" id="lbl-cyber-title">Unieuro Cyber Protection</div>
+            <label class="checkbox-group">
+                <input type="checkbox" id="run-cyber">
+                <span id="lbl-cyber-check">Installa icona di attivazione del servizio</span>
+            </label>
+        </div>
+
+        <div class="form-group">
             <div class="section-title" id="lbl-ms-title">Account Microsoft *</div>
             
             <button type="button" id="btn-create-ms" onclick="window.open('https://signup.live.com/', '_blank')">
@@ -390,6 +398,8 @@
         avMcafeeKeyLabel: "Product Key McAfee",
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+        cyberTitle: "Unieuro Cyber Protection",
+        cyberCheck: "Installa icona di attivazione del servizio",
         msTitle: "Account Microsoft *",
         btnCreateMs: "Crea nuovo account Microsoft",
         msUserLabel: "Nome utente",
@@ -459,6 +469,7 @@
         avKey: document.getElementById('av-key'),
         avField: document.getElementById('av-field'),
         avKeyLabel: document.getElementById('av-key-label'),
+        runCyber: document.getElementById('run-cyber'),
         btnCreateMs: document.getElementById('btn-create-ms'),
         msUsername: document.getElementById('ms-username'),
         msDomain: document.getElementById('ms-domain'),
@@ -501,6 +512,9 @@
         document.getElementById('lbl-opt-mcafee').innerHTML = DICTIONARY.avOptMcafee;
         document.getElementById('lbl-opt-none').innerHTML = DICTIONARY.avOptNone;
         
+        document.getElementById('lbl-cyber-title').innerText = DICTIONARY.cyberTitle;
+        document.getElementById('lbl-cyber-check').innerText = DICTIONARY.cyberCheck;
+
         document.getElementById('lbl-ms-title').innerText = DICTIONARY.msTitle;
         elements.btnCreateMs.innerText = DICTIONARY.btnCreateMs;
         document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
@@ -901,6 +915,7 @@
             office_key: elements.officeKey.value,
             antivirus: document.querySelector('input[name="av_type"]:checked').value,
             antivirus_key: elements.avKey.value,
+            cyber: elements.runCyber.checked ? "Yes" : "No", // NEW FIELD CAPTURE
             microsoft_account: `${elements.msUsername.value}@${elements.msDomain.value}`,
             microsoft_password: elements.msPassword.value,
             windows_update: elements.runUpdates.checked ? "Yes" : "No",
