@@ -31,9 +31,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
-        /* Placeholder Styles (Light Gray) */
+        /* Placeholder Styles */
         ::placeholder { color: #a0a0a0; opacity: 1; }
         ::-ms-input-placeholder { color: #a0a0a0; }
+        
+        /* Distinct placeholder style for auto-generated password */
+        #ms-password::placeholder { color: #888888; font-weight: bold; font-family: monospace; letter-spacing: 1px; }
 
         /* Application Header Bar */
         .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
@@ -58,14 +61,11 @@
         .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
 
         #office-key, #av-key { font-size: 13px; letter-spacing: -0.5px; }
-        
-        /* Auto-generated password styling */
-        #ms-password { color: var(--text-muted); font-weight: bold; }
 
         /* Camera & Action Buttons inside inputs */
         .camera-btn { background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .camera-btn:hover { background: #e2e6ea; }
-        .camera-btn svg { width: 26px; height: 26px; fill: var(--header-bg); }
+        .camera-btn svg:not(.colored-svg) { width: 26px; height: 26px; fill: var(--header-bg); }
 
         /* Segmented Controls (Radio Button Alternatives) */
         .segmented-control { display: flex; gap: 5px; background: var(--disabled-bg); padding: 4px; border-radius: var(--border-radius); margin-bottom: 10px; }
@@ -325,7 +325,23 @@
             <div class="input-with-icon">
                 <input type="text" id="ms-password" style="text-transform: none;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="generateRandomPassword()" title="Rigenera Password">
-                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18c-.83 0-1.5-.67-1.5-1.5S6.67 15 7.5 15s1.5.67 1.5 1.5S8.33 18 7.5 18zm0-9c-.83 0-1.5-.67-1.5-1.5S6.67 6 7.5 6s1.5.67 1.5 1.5S8.33 9 7.5 9zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5 4.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-9c-.83 0-1.5-.67-1.5-1.5S15.67 6 16.5 6s1.5.67 1.5 1.5S17.33 9 16.5 9z"/></svg>
+                    <svg class="colored-svg" viewBox="0 0 64 64" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 16 10 C 26 2, 38 2, 48 10" fill="none" stroke="#28a745" stroke-width="4" stroke-linecap="round" />
+                        <polygon points="45,5 52,12 43,15" fill="#28a745" />
+                        <path d="M 10 48 C 2 38, 2 26, 10 16" fill="none" stroke="#ffc107" stroke-width="4" stroke-linecap="round" />
+                        <polygon points="15,22 8,15 5,24" fill="#ffc107" />
+                        <g transform="translate(32, 36)">
+                            <polygon points="0,-16 16,-8 0,0 -16,-8" fill="#ff5e5e" />
+                            <polygon points="-16,-8 0,0 0,16 -16,8" fill="#ffbd55" />
+                            <polygon points="0,0 16,-8 16,8 0,16" fill="#007bff" />
+                            <circle cx="0" cy="-8" r="2.5" fill="#fff" />
+                            <circle cx="-8" cy="0" r="2" fill="#fff" />
+                            <circle cx="-8" cy="8" r="2" fill="#fff" />
+                            <circle cx="8" cy="-2" r="2" fill="#fff" />
+                            <circle cx="8" cy="4" r="2" fill="#fff" />
+                            <circle cx="8" cy="10" r="2" fill="#fff" />
+                        </g>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -420,7 +436,8 @@
         msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
         msPassPlaceholder: "password",
-        toastPwdClipboard: "Password casuale caricata in clipboard",
+        toastPwdRandomClipboard: "Password casuale<br>copiata negli appunti",
+        toastPwdCustomClipboard: "Password personalizzata<br>copiata negli appunti",
         winUpdTitle: "Aggiornamenti di sistema",
         winUpdCheck: "Eseguire Windows Update<br>a fine installazione",
         btnSubmit: "Caricamento dati",
@@ -536,7 +553,7 @@
         document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
         elements.msUsername.placeholder = DICTIONARY.msUserPlaceholder;
         document.getElementById('lbl-ms-password').innerText = DICTIONARY.msPassLabel;
-        elements.msPassword.placeholder = DICTIONARY.msPassPlaceholder;
+        
         document.getElementById('lbl-winupd-title').innerText = DICTIONARY.winUpdTitle;
         document.getElementById('lbl-winupd-check').innerHTML = DICTIONARY.winUpdCheck;
         elements.submitBtn.innerText = DICTIONARY.btnSubmit;
@@ -576,12 +593,14 @@
         // Shuffle the string
         pwd = pwd.split('').sort(() => 0.5 - Math.random()).join('');
         
-        elements.msPassword.value = pwd;
+        // Set as placeholder instead of value
+        elements.msPassword.placeholder = pwd;
+        elements.msPassword.value = "";
         validateForm();
     }
 
     function showToast(msg) {
-        elements.toastContainer.innerText = msg;
+        elements.toastContainer.innerHTML = msg;
         elements.toastContainer.classList.add('show');
         setTimeout(() => {
             elements.toastContainer.classList.remove('show');
@@ -623,7 +642,7 @@
     window.addEventListener('load', () => {
         initializeUIStrings();
         updateOperatorUI();
-        generateRandomPassword(); // Pre-fill password on load
+        generateRandomPassword(); // Generate placeholder password on load
         fetchOperatorsFromServer();
         initializeOCRWorker();
     });
@@ -665,11 +684,14 @@
     }
 
     function isFormValidCheck() {
+        // Consider password valid if value is typed OR if placeholder is present (which it always will be)
+        let pwdValid = elements.msPassword.value.trim() !== "" || elements.msPassword.placeholder.length >= 8;
+        
         let ok = currentOperatorId !== "00000" && 
                  elements.pcSerial.value.trim() !== "" && 
                  elements.localAccount.value.trim() !== "" && 
                  elements.msUsername.value.trim() !== "" &&
-                 elements.msPassword.value.trim() !== "";
+                 pwdValid;
                  
         if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
         if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
@@ -689,21 +711,24 @@
     // =========================================================================
 
     elements.btnCreateMs.onclick = () => {
-        const pwd = elements.msPassword.value;
-        if(pwd) {
+        const isCustom = elements.msPassword.value.trim() !== "";
+        const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
+        const toastMsg = isCustom ? DICTIONARY.toastPwdCustomClipboard : DICTIONARY.toastPwdRandomClipboard;
+
+        if(pwdToCopy) {
             // Modern Clipboard API fallback handler
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(pwd).then(() => {
-                    showToast(DICTIONARY.toastPwdClipboard);
+                navigator.clipboard.writeText(pwdToCopy).then(() => {
+                    showToast(toastMsg);
                 });
             } else {
                 const el = document.createElement('textarea');
-                el.value = pwd;
+                el.value = pwdToCopy;
                 document.body.appendChild(el);
                 el.select();
                 try {
                     document.execCommand('copy');
-                    showToast(DICTIONARY.toastPwdClipboard);
+                    showToast(toastMsg);
                 } catch (err) {}
                 document.body.removeChild(el);
             }
@@ -982,6 +1007,9 @@
 
         elements.submitBtn.disabled = true;
         elements.loadingOverlay.classList.add('active');
+        
+        // Grab either the typed password or the auto-generated placeholder
+        const finalPassword = elements.msPassword.value.trim() !== "" ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
 
         const payload = {
             action: "new",
@@ -995,7 +1023,7 @@
             antivirus_key: elements.avKey.value,
             cyber: elements.runCyber.checked ? "Yes" : "No",
             microsoft_account: `${elements.msUsername.value}@${elements.msDomain.value}`,
-            microsoft_password: elements.msPassword.value,
+            microsoft_password: finalPassword,
             windows_update: elements.runUpdates.checked ? "Yes" : "No",
             timestamp: new Date().toISOString()
         };
