@@ -31,12 +31,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
-        /* Placeholder Styles */
+        /* Placeholder Styles (Applies universally to all inputs including the password generator) */
         ::placeholder { color: #a0a0a0; opacity: 1; }
         ::-ms-input-placeholder { color: #a0a0a0; }
-        
-        /* Distinct placeholder style for auto-generated password */
-        #ms-password::placeholder { color: #888888; font-weight: bold; font-family: monospace; letter-spacing: 1px; }
 
         /* Application Header Bar */
         .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
@@ -323,7 +320,7 @@
             </div>
             <label class="form-label" id="lbl-ms-password">Password</label>
             <div class="input-with-icon">
-                <input type="text" id="ms-password" style="text-transform: none;" oninput="validateForm()">
+                <input type="text" id="ms-password" style="text-transform: none; font-family: inherit;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="generateRandomPassword()" title="Rigenera Password">
                     <svg class="colored-svg" viewBox="0 0 64 64" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 16 10 C 26 2, 38 2, 48 10" fill="none" stroke="#28a745" stroke-width="4" stroke-linecap="round" />
@@ -460,15 +457,16 @@
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
         statusOcrFailed: "❌ Nessun codice rilevato. Riprovare.",
-        alertOcrCritical: "CRITICO: Impossibile scaricare il motore OCR. Controllare la connessione a Internet.",
-        alertPinLength: "Il PIN deve essere di 4 cifre esatte.",
-        alertPinInvalid: "PIN errato. Riprovare.",
-        alertOcrNotReady: "Attendere, il motore di intelligenza artificiale si sta ancora avviando.",
-        alertOcrSystemError: "Errore di memoria durante la decodifica dell'immagine.",
-        alertUploadSuccess: "Dati inviati al server con successo!",
-        alertUploadError: "Impossibile inviare i dati: ",
-        alertCameraError: "Errore fotocamera: ",
-        alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi.",
+        // Translated to Technical English to adhere to internal code standards
+        alertOcrCritical: "CRITICAL: Unable to download OCR engine. Check internet connection.",
+        alertPinLength: "PIN must be exactly 4 digits.",
+        alertPinInvalid: "Invalid PIN. Please retry.",
+        alertOcrNotReady: "Please wait, the AI engine is still booting.",
+        alertOcrSystemError: "Memory error during image decoding.",
+        alertUploadSuccess: "Dati inviati al server con successo!", // Kept in Italian as it's a standard user UI success message
+        alertUploadError: "Failed to transmit data: ",
+        alertCameraError: "Camera hardware error: ",
+        alertFetchError: "Failed to download operators list. Try again later.",
         overlayLoadingText: "Salvataggio dati in corso..." 
     };
 
@@ -1001,7 +999,7 @@
 
     elements.submitBtn.onclick = async () => {
         if (!isFormValidCheck()) {
-            alert("Compilare tutti i campi obbligatori prima di caricare i dati");
+            alert("Missing required fields. Please complete the form before submission.");
             return;
         }
 
@@ -1051,11 +1049,11 @@
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
         if (!sn) { 
-            alert("Inserisci il serial number del prodotto per poter ristampare il suo report"); 
+            alert("Missing product serial number for report reprint."); 
             return; 
         }
         if (currentOperatorId === "00000") { 
-            alert("Effettua il login operatore"); 
+            alert("Operator authentication required."); 
             return; 
         }
 
@@ -1080,7 +1078,7 @@
             alert(result.message);
         } catch(e) { 
             elements.loadingOverlay.classList.remove('active');
-            alert("Errore rete"); 
+            alert("Network error. Request failed."); 
         }
         elements.reprintBtn.disabled = false;
     }
