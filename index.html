@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/@zxing/library@latest"></script>
 
     <style>
-        /* CSS Variables */
+        /* CSS Variables for consistent application theming */
         :root {
             --primary-bg: #f4f7f6;
             --header-bg: #003366;
@@ -27,95 +27,94 @@
             --border-radius: 8px;
         }
 
+        /* Base Reset & Typography */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
 
+        /* Placeholder Styles (Applies universally to all inputs including the password generator) */
         ::placeholder { color: #a0a0a0; opacity: 1; }
         ::-ms-input-placeholder { color: #a0a0a0; }
 
+        /* Application Header Bar */
         .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
         .header-logo { height: 40px; width: auto; object-fit: contain; border-radius: 4px; }
         .app-title { flex: 1; text-align: center; padding: 0 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; }
 
+        /* Operator Authentication Badge */
         .operator-badge { display: flex; flex-direction: column; align-items: flex-end; cursor: pointer; transition: opacity 0.2s; }
         .operator-badge:hover { opacity: 0.8; }
         .operator-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 4px; }
         .operator-id-display { font-size: 18px; font-weight: bold; font-family: monospace; letter-spacing: 1px; background: rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.3); }
 
+        /* Main Form Container */
         .form-container { max-width: 600px; margin: 20px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
         .form-group { background: #fff; padding: 15px; border-radius: var(--border-radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .form-label { display: block; font-weight: 600; font-size: 16px; margin-bottom: 8px; color: var(--text-main); }
         .section-title { font-size: 18px; font-weight: bold; border-bottom: 2px solid var(--primary-bg); padding-bottom: 8px; margin-bottom: 15px; margin-top: 10px; color: var(--header-bg); }
 
+        /* Input Fields with Embedded Buttons */
         .input-with-icon { display: flex; align-items: stretch; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background: #fff; transition: border-color 0.2s; }
         .input-with-icon:focus-within { border-color: var(--accent-color); }
         .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
 
         #office-key, #av-key { font-size: 13px; letter-spacing: -0.5px; }
 
-        /* Icone riportate alla dimensione corretta di 26px */
+        /* Camera & Action Buttons inside inputs */
         .camera-btn { background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; color: var(--header-bg); }
         .camera-btn:hover { background: #e2e6ea; }
         .camera-btn svg { width: 26px; height: 26px; fill: var(--header-bg); }
 
+        /* Segmented Controls (Radio Button Alternatives) */
         .segmented-control { display: flex; gap: 5px; background: var(--disabled-bg); padding: 4px; border-radius: var(--border-radius); margin-bottom: 10px; }
         .segmented-control label { flex: 1; text-align: center; padding: 12px 5px; font-size: 16px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: all 0.2s; }
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
 
+        /* Specific overrides for multi-line Antivirus labels to maintain standard button dimensions */
         #lbl-opt-norton, #lbl-opt-mcafee, #lbl-opt-none { font-size: 13px; line-height: 1.1; padding: 6px 2px; display: flex; align-items: center; justify-content: center; }
 
+        /* Conditional Rendering Fields */
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
+        /* Microsoft Account External Link Button */
         #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 18px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
-        #btn-create-ms:hover { background: #0056b3; }
+        #btn-create-ms:hover:not(:disabled) { background: #0056b3; }
 
+        /* Microsoft Account Email Input Group */
         .email-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: #fff; margin-bottom: 15px; padding-right: 8px; transition: border-color 0.2s; }
         .email-group:focus-within { border-color: var(--accent-color); }
         .email-group input { flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none; }
         .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
         .email-group select { flex: 0 0 auto; border: none; outline: none; font-size: 16px; background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; }
 
+        /* Standard Inputs & Checkboxes */
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
         
+        /* Left-Aligned Checkbox Group Layout */
         .checkbox-group { display: flex; align-items: center; justify-content: flex-start; gap: 10px; cursor: pointer; padding: 5px 0; }
         .checkbox-group input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; cursor: pointer; }
         .checkbox-group span, .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; text-align: left; line-height: 1.3; }
 
+        /* Bottom helper annotation style */
         .form-note { font-size: 13px; color: var(--text-muted); margin-top: -12px; margin-bottom: 5px; padding-left: 5px; font-weight: 500; }
 
+        /* Form Action Buttons Container */
         .submit-container { padding: 30px 0; background: transparent; text-align: center; display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
 
+        /* Custom validation-based interactive disabled state */
         #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
         #submit-btn.is-disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
         #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
         #reprint-btn:hover { opacity: 0.9; }
 
-        /* Nuova Notifica Inline (sostituisce il vecchio Toast) */
-        .inline-feedback {
-            max-height: 0;
-            overflow: hidden;
-            color: var(--success-color);
-            font-weight: 700;
-            font-size: 14px;
-            text-align: right;
-            padding-right: 5px;
-            opacity: 0;
-            transition: max-height 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease;
-        }
-        .inline-feedback.show {
-            max-height: 30px;
-            margin-top: 8px;
-            opacity: 1;
-        }
-
-        /* Fullscreen Modals */
+        /* Fullscreen Modal Viewports */
         .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .fullscreen-modal.active { opacity: 1; pointer-events: auto; }
 
+        /* Camera Scanner Modal Layout */
         #scanner-modal { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
         #scanner-modal.active { transform: translateY(0); }
         .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: #000; z-index: 10; }
@@ -136,15 +135,18 @@
 
         #modal-status { color: white; font-size: 15px; min-height: 20px; font-weight: 500; }
 
+        /* Barcode Scanning Animation CSS */
         .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-bottom: 10px; }
         .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
         @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
 
+        /* Operator Selection Modal Dialog */
         #operator-modal { justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .operator-dialog { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; }
         #operator-modal.active .operator-dialog { transform: translateY(0); }
         .operator-dialog h3 { color: var(--header-bg); margin: 0; font-size: 20px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
         
+        /* Monospace Font strict override for Dropdowns */
         .operator-select { font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace !important; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; background: #fff; cursor: pointer; }
         .operator-select option { font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace !important; }
         .operator-select:disabled { background: var(--disabled-bg); cursor: not-allowed; }
@@ -156,6 +158,7 @@
 
         #hidden-canvas { display: none; }
 
+        /* Loading splash overlay */
         #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.85); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
         #loading-overlay.active { opacity: 1; pointer-events: auto; }
         
@@ -263,7 +266,6 @@
                     </svg>
                 </button>
             </div>
-            <div id="pwd-inline-feedback" class="inline-feedback"></div>
         </div>
 
         <div class="form-group">
@@ -322,6 +324,9 @@
     <canvas id="hidden-canvas"></canvas>
 
 <script>
+    // =========================================================================
+    // I18N DICTIONARY & CONFIGURATION
+    // =========================================================================
     const DICTIONARY = {
         appTitle: "AvvioPC 2",
         operatorBadge: "Operatore",
@@ -348,9 +353,9 @@
         msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
         msPassPlaceholder: "password",
-        // Testi per feedback inline
-        toastPwdRandomClipboard: "Password casuale copiata! &#10003;",
-        toastPwdCustomClipboard: "Password personalizzata copiata! &#10003;",
+        // Button dynamic feedback texts
+        btnFeedbackRandom: "✅ Casuale Copiata!",
+        btnFeedbackCustom: "✅ Personalizzata Copiata!",
         winUpdTitle: "Aggiornamenti di sistema",
         winUpdCheck: "Eseguire Windows Update<br>a fine installazione",
         btnSubmit: "Caricamento dati",
@@ -389,8 +394,12 @@
         overlayLoadingText: "Salvataggio dati in corso..." 
     };
 
+    // --- PRODUCTION ENDPOINT ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec';
 
+    // =========================================================================
+    // STATE MANAGEMENT & DOM CACHING
+    // =========================================================================
     let OPERATOR_DB = [];
     let currentOperatorId = localStorage.getItem('operator_id') || "00000";
     let isOcrReady = false;
@@ -434,10 +443,12 @@
         captureBtn: document.getElementById('capture-btn'),
         overlay: document.getElementById('scanner-overlay'),
         canvas: document.getElementById('hidden-canvas'),
-        loadingOverlay: document.getElementById('loading-overlay'),
-        pwdInlineFeedback: document.getElementById('pwd-inline-feedback')
+        loadingOverlay: document.getElementById('loading-overlay')
     };
 
+    // =========================================================================
+    // INITIALIZATION ROUTINES & PASSWORD GENERATOR
+    // =========================================================================
     function initializeUIStrings() {
         document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
         document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
@@ -494,15 +505,6 @@
         validateForm();
     }
 
-    // Nuova logica per il feedback testuale in-line
-    function showInlineFeedback(msg) {
-        elements.pwdInlineFeedback.innerHTML = msg;
-        elements.pwdInlineFeedback.classList.add('show');
-        setTimeout(() => {
-            elements.pwdInlineFeedback.classList.remove('show');
-        }, 3500);
-    }
-
     async function fetchOperatorsFromServer() {
         try {
             elements.storeDropdown.innerHTML = `<option value="000">${DICTIONARY.opModalLoading}</option>`;
@@ -543,6 +545,9 @@
         initializeOCRWorker();
     });
 
+    // =========================================================================
+    // FORM FORMATTING & VALIDATION ENGINE
+    // =========================================================================
     function formatProductKey(input, sep) {
         let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
         let res = "";
@@ -602,35 +607,52 @@
         }
     }
 
+    // =========================================================================
+    // UI EVENT BINDINGS
+    // =========================================================================
     elements.btnCreateMs.onclick = () => {
+        // Native OS haptic vibration
         if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+        
         const isCustom = elements.msPassword.value.trim() !== "";
         const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
-        const feedbackMsg = isCustom ? DICTIONARY.toastPwdCustomClipboard : DICTIONARY.toastPwdRandomClipboard;
-        
-        // Attiviamo il feedback integrato nella pagina (ignora eventuali pop-up di sistema)
-        showInlineFeedback(feedbackMsg);
+        const feedbackMsg = isCustom ? DICTIONARY.btnFeedbackCustom : DICTIONARY.btnFeedbackRandom;
     
-        const executeCopy = () => {
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(pwdToCopy);
-            } else {
-                const el = document.createElement('textarea');
-                el.value = pwdToCopy;
-                document.body.appendChild(el);
-                el.select();
-                try { document.execCommand('copy'); } catch (err) {}
-                document.body.removeChild(el);
-            }
+        // Execute clipboard copy with fallback
+        const fallbackCopy = () => {
+            const el = document.createElement('textarea');
+            el.value = pwdToCopy;
+            document.body.appendChild(el);
+            el.select();
+            try { document.execCommand('copy'); } catch (err) {}
+            document.body.removeChild(el);
         };
-        executeCopy();
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(pwdToCopy).catch(() => fallbackCopy());
+        } else {
+            fallbackCopy();
+        }
+
+        // Temporary UI morphing for immediate user feedback
+        const originalText = elements.btnCreateMs.innerText;
         
-        // Leggero ritardo per assicurarci che l'utente veda l'animazione di conferma
+        elements.btnCreateMs.innerText = feedbackMsg;
+        elements.btnCreateMs.style.background = "var(--success-color)";
+        elements.btnCreateMs.disabled = true;
+        
+        // Wait 2000ms before firing redirect to ensure feedback is perceived
         setTimeout(() => {
+            elements.btnCreateMs.innerText = originalText;
+            elements.btnCreateMs.style.background = ""; // Clears inline style, defaults back to CSS
+            elements.btnCreateMs.disabled = false;
             window.open('https://signup.live.com/', '_blank');
-        }, 800);
+        }, 2000);
     };
 
+    // =========================================================================
+    // CASCADING DROPDOWNS & ALIGNMENT LOGIC
+    // =========================================================================
     function initializeStoreDropdown() {
         const uniqueStores = [...new Set(OPERATOR_DB.map(op => String(op.storeId).trim()))];
         uniqueStores.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
@@ -707,6 +729,9 @@
 
     function updateOperatorUI() { elements.operatorBadge.innerText = currentOperatorId; validateForm(); }
 
+    // =========================================================================
+    // CAMERA & SCANNER ENGINE (Barcode + OCR)
+    // =========================================================================
     async function openScanner(targetId, mode) {
         currentInputId = targetId; currentMode = mode;
         document.getElementById('scanner-title').innerText = mode === 'barcode' ? DICTIONARY.scanTitleBarcode : DICTIONARY.scanTitleOcr;
@@ -794,6 +819,9 @@
         } catch(e) { elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError; elements.captureBtn.disabled = false; elements.video.play(); }
     };
 
+    // =========================================================================
+    // CLOUD COMMUNICATION (Submit & Reprint) WITH SPLASH SCREEN OVERLAY
+    // =========================================================================
     elements.submitBtn.onclick = async () => {
         if (!isFormValidCheck()) { alert("Campi obbligatori mancanti. Completare il modulo prima di procedere."); return; }
         elements.submitBtn.disabled = true; elements.loadingOverlay.classList.add('active');
