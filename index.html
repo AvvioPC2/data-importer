@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,9 +117,32 @@
         #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
         #reprint-btn:hover { opacity: 0.9; }
 
-        /* Toast Message Container */
-        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.85); color: #fff; padding: 12px 24px; border-radius: 50px; font-size: 15px; font-weight: 500; z-index: 3000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        #toast-container.show { opacity: 1; }
+        /* Toast Message Container - COPIA ESATTA DEL SISTEMA ANDROID */
+        #toast-container { 
+            position: fixed; 
+            bottom: 50px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background-color: #323232; 
+            color: #ffffff; 
+            padding: 12px 24px; 
+            border-radius: 50px; 
+            font-size: 14px; 
+            font-weight: 400; 
+            z-index: 9999; 
+            opacity: 0; 
+            visibility: hidden;
+            transition: opacity 0.3s ease; 
+            pointer-events: none; 
+            text-align: center; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+            max-width: 90%;
+            white-space: nowrap;
+        }
+        #toast-container.show { 
+            opacity: 1; 
+            visibility: visible;
+        }
 
         /* Fullscreen Modal Viewports */
         .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -322,7 +345,21 @@
             <div class="input-with-icon">
                 <input type="text" id="ms-password" style="text-transform: none; font-family: inherit;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="generateRandomPassword()" title="Rigenera Password">
-                    &#x1F3B2;&#xFE0E;
+                    <svg viewBox="0 0 24 24" width="26" height="26">
+                        <rect x="10" y="2" width="12" height="12" rx="2" fill="var(--header-bg)"/>
+                        <rect x="0" y="8" width="16" height="16" rx="3" fill="var(--primary-bg)"/>
+                        <rect x="2" y="10" width="12" height="12" rx="2" fill="var(--header-bg)"/>
+                        
+                        <circle cx="13" cy="5" r="1.2" fill="#fff"/>
+                        <circle cx="16" cy="8" r="1.2" fill="#fff"/>
+                        <circle cx="19" cy="11" r="1.2" fill="#fff"/>
+                        
+                        <circle cx="5" cy="13" r="1.2" fill="#fff"/>
+                        <circle cx="11" cy="13" r="1.2" fill="#fff"/>
+                        <circle cx="8" cy="16" r="1.2" fill="#fff"/>
+                        <circle cx="5" cy="19" r="1.2" fill="#fff"/>
+                        <circle cx="11" cy="19" r="1.2" fill="#fff"/>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -417,8 +454,9 @@
         msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
         msPassPlaceholder: "password",
-        toastPwdRandomClipboard: "Password casuale<br>copiata negli appunti",
-        toastPwdCustomClipboard: "Password personalizzata<br>copiata negli appunti",
+        // Testi modificati per essere identici allo standard Toast di sistema
+        toastPwdRandomClipboard: "Password casuale copiata negli appunti",
+        toastPwdCustomClipboard: "Password personalizzata copiata negli appunti",
         winUpdTitle: "Aggiornamenti di sistema",
         winUpdCheck: "Eseguire Windows Update<br>a fine installazione",
         btnSubmit: "Caricamento dati",
@@ -441,13 +479,12 @@
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
         statusOcrFailed: "❌ Nessun codice rilevato. Riprovare.",
-        // Translated to Technical English to adhere to internal code standards
         alertOcrCritical: "CRITICAL: Unable to download OCR engine. Check internet connection.",
         alertPinLength: "PIN must be exactly 4 digits.",
         alertPinInvalid: "Invalid PIN. Please retry.",
         alertOcrNotReady: "Please wait, the AI engine is still booting.",
         alertOcrSystemError: "Memory error during image decoding.",
-        alertUploadSuccess: "Dati inviati al server con successo!", // Kept in Italian as it's a standard user UI success message
+        alertUploadSuccess: "Dati inviati al server con successo!", 
         alertUploadError: "Failed to transmit data: ",
         alertCameraError: "Camera hardware error: ",
         alertFetchError: "Failed to download operators list. Try again later.",
@@ -552,7 +589,6 @@
         validateForm();
     }
 
-    // Cryptographically secure-ish random password generator
     function generateRandomPassword() {
         const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const lowers = "abcdefghijklmnopqrstuvwxyz";
@@ -561,21 +597,17 @@
         const allChars = uppers + lowers + numbers + symbols;
         
         let pwd = "";
-        // Ensure at least one character from each pool
         pwd += uppers[Math.floor(Math.random() * uppers.length)];
         pwd += lowers[Math.floor(Math.random() * lowers.length)];
         pwd += numbers[Math.floor(Math.random() * numbers.length)];
         pwd += symbols[Math.floor(Math.random() * symbols.length)];
         
-        // Fill the rest to 12 characters
         for(let i = 0; i < 8; i++) {
             pwd += allChars[Math.floor(Math.random() * allChars.length)];
         }
         
-        // Shuffle the string
         pwd = pwd.split('').sort(() => 0.5 - Math.random()).join('');
         
-        // Set as placeholder instead of value
         elements.msPassword.placeholder = pwd;
         elements.msPassword.value = "";
         validateForm();
@@ -586,7 +618,7 @@
         elements.toastContainer.classList.add('show');
         setTimeout(() => {
             elements.toastContainer.classList.remove('show');
-        }, 3000);
+        }, 3500);
     }
 
     async function fetchOperatorsFromServer() {
@@ -624,7 +656,7 @@
     window.addEventListener('load', () => {
         initializeUIStrings();
         updateOperatorUI();
-        generateRandomPassword(); // Generate placeholder password on load
+        generateRandomPassword(); 
         fetchOperatorsFromServer();
         initializeOCRWorker();
     });
@@ -678,7 +710,6 @@
     }
 
     function isFormValidCheck() {
-        // Consider password valid if value is typed OR if placeholder is present (which it always will be)
         let pwdValid = elements.msPassword.value.trim() !== "" || elements.msPassword.placeholder.length >= 8;
         
         let ok = currentOperatorId !== "00000" && 
@@ -705,29 +736,38 @@
     // =========================================================================
 
     elements.btnCreateMs.onclick = () => {
+        // Vibrazione nativa
+        if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+    
         const isCustom = elements.msPassword.value.trim() !== "";
         const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
         const toastMsg = isCustom ? DICTIONARY.toastPwdCustomClipboard : DICTIONARY.toastPwdRandomClipboard;
-
-        if(pwdToCopy) {
-            // Modern Clipboard API fallback handler
+    
+        // Mostriamo il nostro Toast in stile di sistema ancor prima del redirect
+        showToast(toastMsg);
+    
+        const executeCopyFallback = () => {
+            const el = document.createElement('textarea');
+            el.value = pwdToCopy;
+            document.body.appendChild(el);
+            el.select();
+            try { document.execCommand('copy'); } catch (err) {}
+            document.body.removeChild(el);
+        };
+    
+        if (pwdToCopy) {
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(pwdToCopy).then(() => {
-                    showToast(toastMsg);
-                });
+                navigator.clipboard.writeText(pwdToCopy).catch(() => executeCopyFallback());
             } else {
-                const el = document.createElement('textarea');
-                el.value = pwdToCopy;
-                document.body.appendChild(el);
-                el.select();
-                try {
-                    document.execCommand('copy');
-                    showToast(toastMsg);
-                } catch (err) {}
-                document.body.removeChild(el);
+                executeCopyFallback();
             }
         }
-        window.open('https://signup.live.com/', '_blank');
+        
+        // Timeout vitale! Dà modo al Toast di disegnarsi a schermo e venire letto
+        // prima che la WebView metta in pausa la pagina per aprire il link.
+        setTimeout(() => {
+            window.open('https://signup.live.com/', '_blank');
+        }, 800);
     };
 
     // =========================================================================
@@ -1002,7 +1042,6 @@
         elements.submitBtn.disabled = true;
         elements.loadingOverlay.classList.add('active');
         
-        // Grab either the typed password or the auto-generated placeholder
         const finalPassword = elements.msPassword.value.trim() !== "" ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
 
         const payload = {
