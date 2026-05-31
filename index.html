@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,26 +117,32 @@
         #reprint-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: pointer; transition: all 0.3s; }
         #reprint-btn:hover { opacity: 0.9; }
 
-        /* Toast Message Container */
+        /* Toast Message Container - SPOSTATO E STILIZZATO PER SUPERARE ANDROID NATIVO */
         #toast-container { 
             position: fixed; 
-            top: 20px; 
+            top: 85px; /* Sotto l'header blu */
             left: 50%; 
             transform: translateX(-50%); 
-            background-color: rgba(0, 0, 0, 0.85); 
+            background-color: var(--accent-color); /* Sfondo blu elettrico ben visibile */
             color: #fff; 
-            padding: 12px 24px; 
-            border-radius: 50px; 
-            font-size: 15px; 
-            font-weight: 500; 
-            z-index: 3000; 
+            padding: 14px 28px; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            z-index: 9999; /* Z-Index massimo */
             opacity: 0; 
-            transition: opacity 0.3s ease; 
+            visibility: hidden;
+            transition: opacity 0.3s ease, transform 0.3s ease; 
             pointer-events: none; 
             text-align: center; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            max-width: 90%;
         }
-        #toast-container.show { opacity: 1; }
+        #toast-container.show { 
+            opacity: 1; 
+            visibility: visible;
+            transform: translateX(-50%) translateY(10px); /* Animazione di discesa */
+        }
 
         /* Fullscreen Modal Viewports */
         .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -339,11 +345,39 @@
             <div class="input-with-icon">
                 <input type="text" id="ms-password" style="text-transform: none; font-family: inherit;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="generateRandomPassword()" title="Rigenera Password">
-                    <svg viewBox="0 0 24 24" width="26" height="26" fill="var(--header-bg)">
-                        <path d="M19 5H17V3C17 1.9 16.1 1 15 1H3C1.9 1 1 1.9 1 3V15C1 16.1 1.9 17 3 17H5V19C5 20.1 5.9 21 7 21H19C20.1 21 21 20.1 21 19V7C21 5.9 20.1 5 19 5ZM3 15V3H15V15H3ZM19 19H7V17H15C16.1 17 17 16.1 17 15V7H19V19Z"/>
-                        <circle cx="6" cy="6" r="1.5"/>
-                        <circle cx="9" cy="9" r="1.5"/>
-                        <circle cx="12" cy="12" r="1.5"/>
+                    <svg viewBox="0 0 64 64" width="28" height="28">
+                        <g fill="var(--header-bg)" stroke="#fff" stroke-width="2" stroke-linejoin="round">
+                            <polygon points="26,12 38,2 58,2 46,12" />
+                            <polygon points="46,12 58,2 58,22 46,32" />
+                            <rect x="26" y="12" width="20" height="20" />
+                        </g>
+                        <g fill="#fff">
+                            <circle cx="42" cy="7" r="1.5" />
+                            <circle cx="32" cy="18" r="1.5" />
+                            <circle cx="40" cy="18" r="1.5" />
+                            <circle cx="32" cy="26" r="1.5" />
+                            <circle cx="40" cy="26" r="1.5" />
+                            <circle cx="52" cy="12" r="1.5" />
+                            <circle cx="52" cy="22" r="1.5" />
+                        </g>
+
+                        <g fill="var(--header-bg)" stroke="#fff" stroke-width="2" stroke-linejoin="round">
+                            <polygon points="10,32 24,18 48,18 34,32" />
+                            <polygon points="34,32 48,18 48,42 34,56" />
+                            <rect x="10" y="32" width="24" height="24" />
+                        </g>
+                        <g fill="#fff">
+                            <circle cx="22" cy="25" r="2" />
+                            <circle cx="29" cy="25" r="2" />
+                            <circle cx="36" cy="25" r="2" />
+                            <circle cx="17" cy="39" r="2" />
+                            <circle cx="27" cy="39" r="2" />
+                            <circle cx="22" cy="44" r="2" />
+                            <circle cx="17" cy="49" r="2" />
+                            <circle cx="27" cy="49" r="2" />
+                            <circle cx="41" cy="28" r="2" />
+                            <circle cx="41" cy="40" r="2" />
+                        </g>
                     </svg>
                 </button>
             </div>
@@ -463,13 +497,12 @@
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
         statusOcrFailed: "❌ Nessun codice rilevato. Riprovare.",
-        // Translated to Technical English to adhere to internal code standards
         alertOcrCritical: "CRITICAL: Unable to download OCR engine. Check internet connection.",
         alertPinLength: "PIN must be exactly 4 digits.",
         alertPinInvalid: "Invalid PIN. Please retry.",
         alertOcrNotReady: "Please wait, the AI engine is still booting.",
         alertOcrSystemError: "Memory error during image decoding.",
-        alertUploadSuccess: "Dati inviati al server con successo!", // Kept in Italian as it's a standard user UI success message
+        alertUploadSuccess: "Dati inviati al server con successo!", 
         alertUploadError: "Failed to transmit data: ",
         alertCameraError: "Camera hardware error: ",
         alertFetchError: "Failed to download operators list. Try again later.",
@@ -574,7 +607,6 @@
         validateForm();
     }
 
-    // Cryptographically secure-ish random password generator
     function generateRandomPassword() {
         const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const lowers = "abcdefghijklmnopqrstuvwxyz";
@@ -583,21 +615,17 @@
         const allChars = uppers + lowers + numbers + symbols;
         
         let pwd = "";
-        // Ensure at least one character from each pool
         pwd += uppers[Math.floor(Math.random() * uppers.length)];
         pwd += lowers[Math.floor(Math.random() * lowers.length)];
         pwd += numbers[Math.floor(Math.random() * numbers.length)];
         pwd += symbols[Math.floor(Math.random() * symbols.length)];
         
-        // Fill the rest to 12 characters
         for(let i = 0; i < 8; i++) {
             pwd += allChars[Math.floor(Math.random() * allChars.length)];
         }
         
-        // Shuffle the string
         pwd = pwd.split('').sort(() => 0.5 - Math.random()).join('');
         
-        // Set as placeholder instead of value
         elements.msPassword.placeholder = pwd;
         elements.msPassword.value = "";
         validateForm();
@@ -608,7 +636,7 @@
         elements.toastContainer.classList.add('show');
         setTimeout(() => {
             elements.toastContainer.classList.remove('show');
-        }, 3000);
+        }, 3500);
     }
 
     async function fetchOperatorsFromServer() {
@@ -646,7 +674,7 @@
     window.addEventListener('load', () => {
         initializeUIStrings();
         updateOperatorUI();
-        generateRandomPassword(); // Generate placeholder password on load
+        generateRandomPassword(); 
         fetchOperatorsFromServer();
         initializeOCRWorker();
     });
@@ -700,7 +728,6 @@
     }
 
     function isFormValidCheck() {
-        // Consider password valid if value is typed OR if placeholder is present (which it always will be)
         let pwdValid = elements.msPassword.value.trim() !== "" || elements.msPassword.placeholder.length >= 8;
         
         let ok = currentOperatorId !== "00000" && 
@@ -727,14 +754,17 @@
     // =========================================================================
 
     elements.btnCreateMs.onclick = () => {
-        // 1. Forza immediatamente la vibrazione (100ms vibrazione, 50ms pausa, 100ms vibrazione)
+        // Vibrazione immediata
         if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
     
         const isCustom = elements.msPassword.value.trim() !== "";
         const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
         const toastMsg = isCustom ? DICTIONARY.toastPwdCustomClipboard : DICTIONARY.toastPwdRandomClipboard;
     
-        // Funzione di fallback interna
+        // FORZIAMO la comparsa del nostro toast personalizzato prima di eseguire operazioni asincrone
+        showToast(toastMsg);
+    
+        // Funzione di fallback per vecchi dispositivi
         const executeCopyFallback = () => {
             const el = document.createElement('textarea');
             el.value = pwdToCopy;
@@ -742,19 +772,18 @@
             el.select();
             try { document.execCommand('copy'); } catch (err) {}
             document.body.removeChild(el);
-            showToast(toastMsg);
         };
     
         if (pwdToCopy) {
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(pwdToCopy).then(() => {
-                    showToast(toastMsg); // Mostra il nostro toast in alto
-                }).catch(() => executeCopyFallback());
+                // Esecuzione silenziosa: se fallisce usiamo il fallback
+                navigator.clipboard.writeText(pwdToCopy).catch(() => executeCopyFallback());
             } else {
                 executeCopyFallback();
             }
         }
         
+        // Apre la pagina in un nuovo tab
         window.open('https://signup.live.com/', '_blank');
     };
 
@@ -1030,7 +1059,6 @@
         elements.submitBtn.disabled = true;
         elements.loadingOverlay.classList.add('active');
         
-        // Grab either the typed password or the auto-generated placeholder
         const finalPassword = elements.msPassword.value.trim() !== "" ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
 
         const payload = {
