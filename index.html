@@ -410,4 +410,674 @@
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         cyberTitle: "Unieuro Cyber Protection",
-        cyberCheck: "Installa icona di attivazione
+        cyberCheck: "Installa icona di attivazione<br>del servizio",
+        msTitle: "Account Microsoft *",
+        btnCreateMs: "Crea nuovo account Microsoft",
+        msUserLabel: "Nome utente",
+        msUserPlaceholder: "nome.cognome",
+        msPassLabel: "Password",
+        msPassPlaceholder: "password",
+        toastPwdRandomClipboard: "Password casuale<br>copiata negli appunti",
+        toastPwdCustomClipboard: "Password personalizzata<br>copiata negli appunti",
+        winUpdTitle: "Aggiornamenti di sistema",
+        winUpdCheck: "Eseguire Windows Update<br>a fine installazione",
+        btnSubmit: "Caricamento dati",
+        btnReprint: "Ristampa report",
+        opModalTitle: "Autenticazione",
+        storeModalDefault: "-- Seleziona Negozio --",
+        opModalDefault: "-- Seleziona Operatore --",
+        opModalLoading: "Caricamento dati in corso...",
+        opModalPinPlaceholder: "PIN (4 Cifre)",
+        btnCancel: "Annulla",
+        btnSave: "Conferma",
+        scanTitleBarcode: "Scansione Codice a Barre",
+        scanTitleOcr: "Scansione Product Key",
+        btnCaptureOcr: "CATTURA CODICE",
+        statusInit: "Apertura fotocamera...",
+        statusOcrLoading: "Download del motore IA in corso (attendere)...",
+        statusOcrReady: "Motore OCR caricato e pronto.",
+        statusBarcodeSearch: "Ricerca del codice a barre in corso...",
+        statusOcrAlign: "Allineare il codice nel riquadro verde e premere CATTURA",
+        statusOcrProcessing: "Elaborazione dell'immagine in corso...",
+        statusOcrSuccess: "✅ Product Key estratto con successo!",
+        statusOcrFailed: "❌ Nessun codice rilevato. Riprovare.",
+        // Translated to Technical English to adhere to internal code standards
+        alertOcrCritical: "CRITICAL: Unable to download OCR engine. Check internet connection.",
+        alertPinLength: "PIN must be exactly 4 digits.",
+        alertPinInvalid: "Invalid PIN. Please retry.",
+        alertOcrNotReady: "Please wait, the AI engine is still booting.",
+        alertOcrSystemError: "Memory error during image decoding.",
+        alertUploadSuccess: "Dati inviati al server con successo!", // Kept in Italian as it's a standard user UI success message
+        alertUploadError: "Failed to transmit data: ",
+        alertCameraError: "Camera hardware error: ",
+        alertFetchError: "Failed to download operators list. Try again later.",
+        overlayLoadingText: "Salvataggio dati in corso..." 
+    };
+
+    // --- PRODUCTION ENDPOINT ---
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec';
+
+    // =========================================================================
+    // STATE MANAGEMENT & DOM CACHING
+    // =========================================================================
+    let OPERATOR_DB = [];
+    let currentOperatorId = localStorage.getItem('operator_id') || "00000";
+    let isOcrReady = false;
+    let tesseractWorker = null;
+    let nativeBarcodeDetector = null;
+    const zxingReader = new ZXing.BrowserMultiFormatReader();
+
+    if ('BarcodeDetector' in window) {
+        nativeBarcodeDetector = new BarcodeDetector({ formats: ['code_128', 'qr_code', 'ean_13', 'code_39'] });
+    }
+
+    const elements = {
+        pcSerial: document.getElementById('pc-serial'),
+        localAccount: document.getElementById('local-account'),
+        officeMs: document.getElementById('office-ms'),
+        officeKey: document.getElementById('office-key'),
+        msOfficeField: document.getElementById('ms-office-field'),
+        avNorton: document.getElementById('av-norton'),
+        avMcafee: document.getElementById('av-mcafee'),
+        avNone: document.getElementById('av-none'),
+        avKey: document.getElementById('av-key'),
+        avField: document.getElementById('av-field'),
+        avKeyLabel: document.getElementById('av-key-label'),
+        runCyber: document.getElementById('run-cyber'),
+        btnCreateMs: document.getElementById('btn-create-ms'),
+        msUsername: document.getElementById('ms-username'),
+        msDomain: document.getElementById('ms-domain'),
+        msPassword: document.getElementById('ms-password'),
+        runUpdates: document.getElementById('run-updates'),
+        submitBtn: document.getElementById('submit-btn'),
+        reprintBtn: document.getElementById('reprint-btn'),
+        operatorBadge: document.getElementById('header-operator-id'),
+        operatorModal: document.getElementById('operator-modal'),
+        storeDropdown: document.getElementById('store-dropdown'),
+        operatorDropdown: document.getElementById('operator-dropdown'),
+        operatorPin: document.getElementById('operator-pin'),
+        scannerModal: document.getElementById('scanner-modal'),
+        video: document.getElementById('scanner-video'),
+        modalStatus: document.getElementById('modal-status'),
+        scanAnimation: document.getElementById('scan-animation'),
+        captureBtn: document.getElementById('capture-btn'),
+        overlay: document.getElementById('scanner-overlay'),
+        canvas: document.getElementById('hidden-canvas'),
+        loadingOverlay: document.getElementById('loading-overlay'),
+        toastContainer: document.getElementById('toast-container')
+    };
+
+    // =========================================================================
+    // INITIALIZATION ROUTINES & PASSWORD GENERATOR
+    // =========================================================================
+
+    function initializeUIStrings() {
+        document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
+        document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
+        elements.pcSerial.placeholder = DICTIONARY.serialPlaceholder;
+        elements.localAccount.placeholder = DICTIONARY.localAccountPlaceholder;
+        document.getElementById('lbl-office-suite').innerText = DICTIONARY.officeTitle;
+        document.getElementById('lbl-opt-ms').innerText = DICTIONARY.officeOptMs;
+        document.getElementById('lbl-opt-libre').innerText = DICTIONARY.officeOptLibre;
+        document.getElementById('lbl-office-key').innerText = DICTIONARY.officeKeyLabel;
+        elements.officeKey.placeholder = DICTIONARY.officeKeyPlaceholder;
+        document.getElementById('lbl-av-protection').innerText = DICTIONARY.avTitle;
+        
+        document.getElementById('lbl-opt-norton').innerHTML = DICTIONARY.avOptNorton;
+        document.getElementById('lbl-opt-mcafee').innerHTML = DICTIONARY.avOptMcafee;
+        document.getElementById('lbl-opt-none').innerHTML = DICTIONARY.avOptNone;
+        
+        document.getElementById('lbl-cyber-title').innerText = DICTIONARY.cyberTitle;
+        document.getElementById('lbl-cyber-check').innerHTML = DICTIONARY.cyberCheck;
+
+        document.getElementById('lbl-ms-title').innerText = DICTIONARY.msTitle;
+        elements.btnCreateMs.innerText = DICTIONARY.btnCreateMs;
+        document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
+        elements.msUsername.placeholder = DICTIONARY.msUserPlaceholder;
+        document.getElementById('lbl-ms-password').innerText = DICTIONARY.msPassLabel;
+        
+        document.getElementById('lbl-winupd-title').innerText = DICTIONARY.winUpdTitle;
+        document.getElementById('lbl-winupd-check').innerHTML = DICTIONARY.winUpdCheck;
+        elements.submitBtn.innerText = DICTIONARY.btnSubmit;
+        elements.reprintBtn.innerText = DICTIONARY.btnReprint;
+        document.getElementById('lbl-modal-op-title').innerText = DICTIONARY.opModalTitle;
+        document.getElementById('lbl-modal-store-default').innerText = DICTIONARY.storeModalDefault;
+        document.getElementById('lbl-modal-op-default').innerText = DICTIONARY.opModalDefault;
+        elements.operatorPin.placeholder = DICTIONARY.opModalPinPlaceholder;
+        document.getElementById('btn-cancel').innerText = DICTIONARY.btnCancel;
+        document.getElementById('btn-save').innerText = DICTIONARY.btnSave;
+        elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
+        document.getElementById('lbl-loading-overlay').innerText = DICTIONARY.overlayLoadingText;
+        
+        validateForm();
+    }
+
+    // Cryptographically secure-ish random password generator
+    function generateRandomPassword() {
+        const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const lowers = "abcdefghijklmnopqrstuvwxyz";
+        const numbers = "0123456789";
+        const symbols = "!@#$%^&*";
+        const allChars = uppers + lowers + numbers + symbols;
+        
+        let pwd = "";
+        // Ensure at least one character from each pool
+        pwd += uppers[Math.floor(Math.random() * uppers.length)];
+        pwd += lowers[Math.floor(Math.random() * lowers.length)];
+        pwd += numbers[Math.floor(Math.random() * numbers.length)];
+        pwd += symbols[Math.floor(Math.random() * symbols.length)];
+        
+        // Fill the rest to 12 characters
+        for(let i = 0; i < 8; i++) {
+            pwd += allChars[Math.floor(Math.random() * allChars.length)];
+        }
+        
+        // Shuffle the string
+        pwd = pwd.split('').sort(() => 0.5 - Math.random()).join('');
+        
+        // Set as placeholder instead of value
+        elements.msPassword.placeholder = pwd;
+        elements.msPassword.value = "";
+        validateForm();
+    }
+
+    function showToast(msg) {
+        elements.toastContainer.innerHTML = msg;
+        elements.toastContainer.classList.add('show');
+        setTimeout(() => {
+            elements.toastContainer.classList.remove('show');
+        }, 3000);
+    }
+
+    async function fetchOperatorsFromServer() {
+        try {
+            elements.storeDropdown.innerHTML = `<option value="000">${DICTIONARY.opModalLoading}</option>`;
+            const safeUrl = `${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`;
+            const response = await fetch(safeUrl);
+            const result = await response.json();
+            if (result.status === "success") {
+                OPERATOR_DB = result.data;
+                initializeStoreDropdown();
+            } else {
+                throw new Error("Server error: " + result.message);
+            }
+        } catch (err) {
+            elements.storeDropdown.innerHTML = `<option value="000">Errore Rete</option>`;
+        }
+    }
+
+    async function initializeOCRWorker() {
+        try {
+            tesseractWorker = await Tesseract.createWorker();
+            await tesseractWorker.loadLanguage('eng');
+            await tesseractWorker.initialize('eng');
+            await tesseractWorker.setParameters({
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
+                tessedit_pageseg_mode: '6', 
+            });
+            isOcrReady = true;
+        } catch (e) {
+            alert(DICTIONARY.alertOcrCritical);
+        }
+    }
+
+    window.addEventListener('load', () => {
+        initializeUIStrings();
+        updateOperatorUI();
+        generateRandomPassword(); // Generate placeholder password on load
+        fetchOperatorsFromServer();
+        initializeOCRWorker();
+    });
+
+    // =========================================================================
+    // FORM FORMATTING & VALIDATION ENGINE
+    // =========================================================================
+
+    function formatProductKey(input, sep) {
+        let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
+        let res = "";
+        for (let i = 0; i < val.length; i++) {
+            if (i > 0 && i % 5 === 0) res += sep;
+            res += val[i];
+        }
+        input.value = res;
+        validateForm();
+    }
+
+    function formatAvKey(input) {
+        formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
+    }
+
+    function formatUsername(input) {
+        input.value = input.value.toLowerCase().replace(/[^a-z0-9.\-_]/g, '');
+        validateForm();
+    }
+
+    function formatLocalAccount(input) {
+        let val = input.value;
+        let words = val.split(' ');
+        for (let i = 0; i < words.length; i++) {
+            if (words[i].length > 0) {
+                words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1).toLowerCase();
+            }
+        }
+        input.value = words.join(' ');
+        validateForm();
+    }
+
+    function toggleFields() {
+        elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
+        elements.avField.classList.toggle('visible', !elements.avNone.checked);
+        
+        if (!elements.avNone.checked) {
+            elements.avKeyLabel.innerText = elements.avNorton.checked ? DICTIONARY.avNortonKeyLabel : DICTIONARY.avMcafeeKeyLabel;
+            elements.avKey.placeholder = elements.avNorton.checked ? DICTIONARY.avKeyPlaceholderNorton : DICTIONARY.avKeyPlaceholderMcafee;
+            if (elements.avKey.value !== '') formatAvKey(elements.avKey);
+        }
+        validateForm();
+    }
+
+    function isFormValidCheck() {
+        // Consider password valid if value is typed OR if placeholder is present (which it always will be)
+        let pwdValid = elements.msPassword.value.trim() !== "" || elements.msPassword.placeholder.length >= 8;
+        
+        let ok = currentOperatorId !== "00000" && 
+                 elements.pcSerial.value.trim() !== "" && 
+                 elements.localAccount.value.trim() !== "" && 
+                 elements.msUsername.value.trim() !== "" &&
+                 pwdValid;
+                 
+        if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
+        if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
+        return ok;
+    }
+
+    function validateForm() {
+        if (isFormValidCheck()) {
+            elements.submitBtn.classList.remove('is-disabled');
+        } else {
+            elements.submitBtn.classList.add('is-disabled');
+        }
+    }
+
+    // =========================================================================
+    // UI EVENT BINDINGS
+    // =========================================================================
+
+    elements.btnCreateMs.onclick = () => {
+        const isCustom = elements.msPassword.value.trim() !== "";
+        const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
+        const toastMsg = isCustom ? DICTIONARY.toastPwdCustomClipboard : DICTIONARY.toastPwdRandomClipboard;
+
+        if(pwdToCopy) {
+            // Modern Clipboard API fallback handler
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(pwdToCopy).then(() => {
+                    showToast(toastMsg);
+                });
+            } else {
+                const el = document.createElement('textarea');
+                el.value = pwdToCopy;
+                document.body.appendChild(el);
+                el.select();
+                try {
+                    document.execCommand('copy');
+                    showToast(toastMsg);
+                } catch (err) {}
+                document.body.removeChild(el);
+            }
+        }
+        window.open('https://signup.live.com/', '_blank');
+    };
+
+    // =========================================================================
+    // CASCADING DROPDOWNS & ALIGNMENT LOGIC
+    // =========================================================================
+
+    function initializeStoreDropdown() {
+        const uniqueStores = [...new Set(OPERATOR_DB.map(op => String(op.storeId).trim()))];
+        
+        uniqueStores.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+        elements.storeDropdown.innerHTML = `<option value="000">${DICTIONARY.storeModalDefault}</option>`;
+        uniqueStores.forEach(store => {
+            if(store) {
+                const opt = document.createElement('option');
+                opt.value = store; 
+                opt.textContent = `Negozio ${store}`;
+                elements.storeDropdown.appendChild(opt);
+            }
+        });
+
+        const savedStoreId = localStorage.getItem('store_id');
+        if (savedStoreId && uniqueStores.includes(savedStoreId)) {
+            elements.storeDropdown.value = savedStoreId;
+            onStoreSelectionChange(); 
+
+            const savedOpId = localStorage.getItem('operator_id');
+            if (savedOpId && OPERATOR_DB.find(o => String(o.id) === String(savedOpId))) {
+                elements.operatorDropdown.value = savedOpId;
+                currentOperatorId = savedOpId;
+            }
+        }
+    }
+
+    function onStoreSelectionChange() {
+        const selectedStore = elements.storeDropdown.value;
+
+        elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalDefault}</option>`;
+
+        if (selectedStore === "000") {
+            elements.operatorDropdown.disabled = true;
+            return;
+        }
+
+        let storeOperators = OPERATOR_DB.filter(op => String(op.storeId).trim() === selectedStore);
+
+        storeOperators.sort((a, b) => {
+            const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
+            const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        let maxLength = 0;
+        storeOperators.forEach(op => {
+            const len = `${op.lastName} ${op.firstName}`.length;
+            if (len > maxLength) maxLength = len;
+        });
+
+        storeOperators.forEach(op => {
+            const nameStr = `${op.lastName} ${op.firstName}`;
+            const padding = '\xa0'.repeat(maxLength - nameStr.length + 1);
+            const opt = document.createElement('option');
+            opt.value = op.id; 
+            opt.textContent = `${nameStr}${padding}[${op.id}]`;
+            elements.operatorDropdown.appendChild(opt);
+        });
+
+        elements.operatorDropdown.disabled = false;
+    }
+
+    function openOperatorModal() { 
+        elements.operatorPin.value = ''; 
+        elements.operatorModal.classList.add('active'); 
+    }
+
+    function closeOperatorModal() { 
+        elements.operatorModal.classList.remove('active'); 
+    }
+
+    async function saveOperatorSelection() {
+        const storeId = elements.storeDropdown.value;
+        const opId = elements.operatorDropdown.value;
+        const pin = elements.operatorPin.value;
+
+        if (storeId === "000" || opId === "00000") return;
+
+        if (!/^\d{4}$/.test(pin)) { 
+            alert(DICTIONARY.alertPinLength); 
+            return; 
+        }
+
+        const op = OPERATOR_DB.find(o => o.id === opId);
+
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+        const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        if (hash !== op.pinHash.trim().toLowerCase()) { 
+            alert(DICTIONARY.alertPinInvalid); 
+            elements.operatorPin.value = ''; 
+            return; 
+        }
+
+        currentOperatorId = opId;
+        localStorage.setItem('operator_id', opId);
+        localStorage.setItem('store_id', storeId); 
+        elements.operatorPin.value = ''; 
+        updateOperatorUI();
+        closeOperatorModal();
+    }
+
+    function updateOperatorUI() {
+        elements.operatorBadge.innerText = currentOperatorId;
+        validateForm();
+    }
+
+    // =========================================================================
+    // CAMERA & SCANNER ENGINE (Barcode + OCR)
+    // =========================================================================
+
+    let currentInputId = null;
+    let currentMode = null;
+    let streamTrack = null;
+    let barcodeInterval = null;
+
+    async function openScanner(targetId, mode) {
+        currentInputId = targetId;
+        currentMode = mode;
+        document.getElementById('scanner-title').innerText = mode === 'barcode' ? DICTIONARY.scanTitleBarcode : DICTIONARY.scanTitleOcr;
+        elements.scannerModal.classList.add('active');
+
+        if (mode === 'barcode') {
+            elements.overlay.classList.add('barcode-mode');
+            elements.captureBtn.style.display = 'none';
+            elements.scanAnimation.style.display = 'block';
+            elements.modalStatus.innerText = DICTIONARY.statusBarcodeSearch;
+        } else {
+            elements.overlay.classList.remove('barcode-mode');
+            elements.captureBtn.style.display = 'block';
+            elements.captureBtn.disabled = false;
+            elements.scanAnimation.style.display = 'none';
+            elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } }
+            });
+            elements.video.srcObject = stream;
+            streamTrack = stream.getVideoTracks()[0];
+            elements.video.onloadedmetadata = () => {
+                const capabilities = streamTrack.getCapabilities();
+                if (capabilities.zoom) streamTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
+                if (mode === 'barcode') startBarcodeAutoScan();
+            };
+        } catch (e) { 
+            elements.modalStatus.innerText = DICTIONARY.alertCameraError + e.message; 
+        }
+    }
+
+    function closeScanner() {
+        currentMode = null;
+        elements.scannerModal.classList.remove('active');
+        if (streamTrack) streamTrack.stop();
+        elements.video.srcObject = null;
+        if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
+    }
+
+    function startBarcodeAutoScan() {
+        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        barcodeInterval = setInterval(async () => {
+            if (currentMode !== 'barcode' || !elements.video.videoWidth) return;
+            elements.canvas.width = elements.video.videoWidth / 2;
+            elements.canvas.height = elements.video.videoHeight / 2;
+            ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
+
+            try {
+                let detectedValue = null;
+
+                if (nativeBarcodeDetector) {
+                    const barcodes = await nativeBarcodeDetector.detect(elements.canvas);
+                    if (barcodes.length > 0) detectedValue = barcodes[0].rawValue;
+                }
+
+                if (!detectedValue) {
+                    const imgUrl = elements.canvas.toDataURL("image/jpeg", 0.6);
+                    const img = new Image();
+                    img.src = imgUrl;
+                    await new Promise((resolve) => {
+                        img.onload = async () => {
+                            try {
+                                const result = await zxingReader.decodeFromImageElement(img);
+                                detectedValue = result.text;
+                            } catch(e) {}
+                            resolve();
+                        };
+                    });
+                }
+
+                if (detectedValue) {
+                    clearInterval(barcodeInterval);
+                    barcodeInterval = null;
+                    document.getElementById(currentInputId).value = detectedValue;
+                    if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+                    closeScanner();
+                    validateForm();
+                }
+            } catch (err) {}
+        }, 300); 
+    }
+
+    elements.captureBtn.onclick = async () => {
+        if (!streamTrack || currentMode !== 'ocr') return;
+        if (!isOcrReady) { alert(DICTIONARY.alertOcrNotReady); return; }
+
+        elements.video.pause(); 
+        elements.captureBtn.disabled = true;
+        elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
+
+        const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
+        const v = elements.video;
+        const overlay = elements.overlay.getBoundingClientRect();
+        const wrapper = v.parentElement.getBoundingClientRect();
+
+        const scaleX = v.videoWidth / wrapper.width;
+        const scaleY = v.videoHeight / wrapper.height;
+        const cw = overlay.width * scaleX;
+        const ch = overlay.height * scaleY;
+        const cx = (overlay.left - wrapper.left) * scaleX;
+        const cy = (overlay.top - wrapper.top) * scaleY;
+
+        elements.canvas.width = cw;
+        elements.canvas.height = ch;
+        ctx.filter = "contrast(1.5) grayscale(1)";
+        ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
+        ctx.filter = "none";
+
+        try {
+            const res = await tesseractWorker.recognize(elements.canvas);
+            const rawText = res.data.text.toUpperCase();
+            const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
+            const match = rawText.match(regex);
+
+            if (match) {
+                const finalKey = `${match[1]}${match[2]}${match[3]}${match[4]}${match[5]}`;
+                const target = document.getElementById(currentInputId);
+                target.value = finalKey;
+                target.dispatchEvent(new Event('input')); 
+                elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
+                setTimeout(closeScanner, 800);
+            } else {
+                elements.modalStatus.innerText = DICTIONARY.statusOcrFailed;
+                elements.captureBtn.disabled = false;
+                elements.video.play(); 
+            }
+        } catch(e) {
+            elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError;
+            elements.captureBtn.disabled = false;
+            elements.video.play();
+        }
+    };
+
+    // =========================================================================
+    // CLOUD COMMUNICATION (Submit & Reprint) WITH SPLASH SCREEN OVERLAY
+    // =========================================================================
+
+    elements.submitBtn.onclick = async () => {
+        if (!isFormValidCheck()) {
+            alert("Missing required fields. Please complete the form before submission.");
+            return;
+        }
+
+        elements.submitBtn.disabled = true;
+        elements.loadingOverlay.classList.add('active');
+        
+        // Grab either the typed password or the auto-generated placeholder
+        const finalPassword = elements.msPassword.value.trim() !== "" ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
+
+        const payload = {
+            action: "new",
+            operator_id: currentOperatorId,
+            store_id: localStorage.getItem('store_id') || "UNKNOWN",
+            pc_serial: elements.pcSerial.value.trim(),
+            local_account: elements.localAccount.value.trim(),
+            office_suite: document.querySelector('input[name="office_type"]:checked').value,
+            office_key: elements.officeKey.value,
+            antivirus: document.querySelector('input[name="av_type"]:checked').value,
+            antivirus_key: elements.avKey.value,
+            cyber: elements.runCyber.checked ? "Yes" : "No",
+            microsoft_account: `${elements.msUsername.value}@${elements.msDomain.value}`,
+            microsoft_password: finalPassword,
+            windows_update: elements.runUpdates.checked ? "Yes" : "No",
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const data = await res.json();
+            if (data.status === "error") throw new Error(data.message);
+
+            elements.loadingOverlay.classList.remove('active');
+            alert(DICTIONARY.alertUploadSuccess);
+            location.reload();
+        } catch (e) {
+            elements.loadingOverlay.classList.remove('active');
+            alert(DICTIONARY.alertUploadError + e.message);
+            elements.submitBtn.disabled = false;
+            validateForm();
+        }
+    };
+
+    async function handleReprint() {
+        const sn = elements.pcSerial.value.trim();
+        if (!sn) { 
+            alert("Missing product serial number for report reprint."); 
+            return; 
+        }
+        if (currentOperatorId === "00000") { 
+            alert("Operator authentication required."); 
+            return; 
+        }
+
+        elements.reprintBtn.disabled = true;
+        elements.loadingOverlay.classList.add('active');
+
+        const payload = { 
+            action: "reprint", 
+            store_id: localStorage.getItem('store_id'), 
+            pc_serial: sn 
+        };
+
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await res.json();
+
+            elements.loadingOverlay.classList.remove('active');
+            alert(result.message);
+        } catch(e) { 
+            elements.loadingOverlay.classList.remove('active');
+            alert("Network error. Request failed."); 
+        }
+        elements.reprintBtn.disabled = false;
+    }
+</script>
+</body>
+</html>
