@@ -705,28 +705,48 @@
     // =========================================================================
 
     elements.btnCreateMs.onclick = () => {
+        // Verifica se c'è del testo reale nel campo (password personalizzata dell'operatore)
+        // altrimenti usa il testo in grigio (password casuale generata dal dado)
         const isCustom = elements.msPassword.value.trim() !== "";
         const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
+        
+        // Seleziona la stringa corretta dal DICTIONARY in base alla condizione
         const toastMsg = isCustom ? DICTIONARY.toastPwdCustomClipboard : DICTIONARY.toastPwdRandomClipboard;
 
-        if(pwdToCopy) {
-            // Modern Clipboard API fallback handler
+        // Helper per il feedback all'operatore
+        const triggerFeedback = () => {
+            // Feedback aptico: leggera vibrazione di 50ms se supportata dal dispositivo
+            if ("vibrate" in navigator) navigator.vibrate(50);
+            
+            // Mostra il toast con il testo dinamico
+            showToast(toastMsg);
+        };
+
+        if (pwdToCopy) {
+            // Tentativo con la moderna Clipboard API (richiede HTTPS)
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(pwdToCopy).then(() => {
-                    showToast(toastMsg);
+                    triggerFeedback();
+                }).catch(err => {
+                    console.error('Errore Clipboard API: ', err);
                 });
             } else {
+                // Metodo di fallback con execCommand per dispositivi meno recenti
                 const el = document.createElement('textarea');
                 el.value = pwdToCopy;
                 document.body.appendChild(el);
                 el.select();
                 try {
                     document.execCommand('copy');
-                    showToast(toastMsg);
-                } catch (err) {}
+                    triggerFeedback();
+                } catch (err) {
+                    console.error('Errore fallback execCommand: ', err);
+                }
                 document.body.removeChild(el);
             }
         }
+        
+        // In ogni caso, apre la pagina di signup in una nuova scheda
         window.open('https://signup.live.com/', '_blank');
     };
 
