@@ -118,7 +118,24 @@
         #reprint-btn:hover { opacity: 0.9; }
 
         /* Toast Message Container */
-        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.85); color: #fff; padding: 12px 24px; border-radius: 50px; font-size: 15px; font-weight: 500; z-index: 3000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #toast-container { 
+            position: fixed; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background-color: rgba(0, 0, 0, 0.85); 
+            color: #fff; 
+            padding: 12px 24px; 
+            border-radius: 50px; 
+            font-size: 15px; 
+            font-weight: 500; 
+            z-index: 3000; 
+            opacity: 0; 
+            transition: opacity 0.3s ease; 
+            pointer-events: none; 
+            text-align: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        }
         #toast-container.show { opacity: 1; }
 
         /* Fullscreen Modal Viewports */
@@ -322,7 +339,12 @@
             <div class="input-with-icon">
                 <input type="text" id="ms-password" style="text-transform: none; font-family: inherit;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="generateRandomPassword()" title="Rigenera Password">
-                    &#x1F3B2;&#xFE0E;
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="var(--header-bg)">
+                        <path d="M19 5H17V3C17 1.9 16.1 1 15 1H3C1.9 1 1 1.9 1 3V15C1 16.1 1.9 17 3 17H5V19C5 20.1 5.9 21 7 21H19C20.1 21 21 20.1 21 19V7C21 5.9 20.1 5 19 5ZM3 15V3H15V15H3ZM19 19H7V17H15C16.1 17 17 16.1 17 15V7H19V19Z"/>
+                        <circle cx="6" cy="6" r="1.5"/>
+                        <circle cx="9" cy="9" r="1.5"/>
+                        <circle cx="12" cy="12" r="1.5"/>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -705,48 +727,34 @@
     // =========================================================================
 
     elements.btnCreateMs.onclick = () => {
-        // Verifica se c'è del testo reale nel campo (password personalizzata dell'operatore)
-        // altrimenti usa il testo in grigio (password casuale generata dal dado)
+        // 1. Forza immediatamente la vibrazione (100ms vibrazione, 50ms pausa, 100ms vibrazione)
+        if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+    
         const isCustom = elements.msPassword.value.trim() !== "";
         const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
-        
-        // Seleziona la stringa corretta dal DICTIONARY in base alla condizione
         const toastMsg = isCustom ? DICTIONARY.toastPwdCustomClipboard : DICTIONARY.toastPwdRandomClipboard;
-
-        // Helper per il feedback all'operatore
-        const triggerFeedback = () => {
-            // Feedback aptico: leggera vibrazione di 50ms se supportata dal dispositivo
-            if ("vibrate" in navigator) navigator.vibrate(50);
-            
-            // Mostra il toast con il testo dinamico
+    
+        // Funzione di fallback interna
+        const executeCopyFallback = () => {
+            const el = document.createElement('textarea');
+            el.value = pwdToCopy;
+            document.body.appendChild(el);
+            el.select();
+            try { document.execCommand('copy'); } catch (err) {}
+            document.body.removeChild(el);
             showToast(toastMsg);
         };
-
+    
         if (pwdToCopy) {
-            // Tentativo con la moderna Clipboard API (richiede HTTPS)
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(pwdToCopy).then(() => {
-                    triggerFeedback();
-                }).catch(err => {
-                    console.error('Errore Clipboard API: ', err);
-                });
+                    showToast(toastMsg); // Mostra il nostro toast in alto
+                }).catch(() => executeCopyFallback());
             } else {
-                // Metodo di fallback con execCommand per dispositivi meno recenti
-                const el = document.createElement('textarea');
-                el.value = pwdToCopy;
-                document.body.appendChild(el);
-                el.select();
-                try {
-                    document.execCommand('copy');
-                    triggerFeedback();
-                } catch (err) {
-                    console.error('Errore fallback execCommand: ', err);
-                }
-                document.body.removeChild(el);
+                executeCopyFallback();
             }
         }
         
-        // In ogni caso, apre la pagina di signup in una nuova scheda
         window.open('https://signup.live.com/', '_blank');
     };
 
