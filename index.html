@@ -76,11 +76,10 @@
         #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 18px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
         #btn-create-ms:hover:not(:disabled) { background: #0056b3; }
 
-        .email-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: #fff; margin-bottom: 15px; padding-right: 8px; transition: border-color 0.2s; }
-        .email-group:focus-within { border-color: var(--accent-color); }
-        .email-group input { flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none; }
-        .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
-        .email-group select { flex: 0 0 auto; border: none; outline: none; font-size: 16px; background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; }
+        /* Custom Auth Button for OAuth Integration */
+        .auth-btn { background: #0078d4; color: white; border: none; border-radius: var(--border-radius); padding: 0 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        .auth-btn:hover:not(:disabled) { background: #005a9e; }
+        .auth-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
 
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
@@ -235,17 +234,14 @@
 
         <div class="form-group">
             <div class="section-title" id="lbl-ms-title">Account Microsoft *</div>
-            <button type="button" id="btn-create-ms">Crea nuovo account Microsoft</button>
-            <label class="form-label" id="lbl-ms-username">Nome utente</label>
-            <div class="email-group">
-                <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="formatUsername(this)">
-                <span>@</span>
-                <select id="ms-domain">
-                    <option value="outlook.it">outlook.it</option>
-                    <option value="outlook.com">outlook.com</option>
-                    <option value="hotmail.com">hotmail.com</option>
-                </select>
+            <button type="button" id="btn-create-ms">1. Crea nuovo account Microsoft</button>
+            
+            <label class="form-label" id="lbl-ms-username">2. Acquisizione Email Automatica</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button type="button" id="btnAuth" class="auth-btn" onclick="startMicrosoftAuth()">Link MSA</button>
+                <input type="text" id="ms-username" class="standard-input" readonly placeholder="In attesa dell'autorizzazione..." style="flex: 1; background: var(--disabled-bg); font-family: monospace; text-transform: lowercase;">
             </div>
+
             <label class="form-label" id="lbl-ms-password">Password</label>
             <div class="input-with-icon">
                 <input type="text" id="ms-password" style="text-transform: none; font-family: inherit;" oninput="validateForm()">
@@ -346,9 +342,9 @@
         cyberTitle: "Unieuro Cyber Protection",
         cyberCheck: "Installa icona di attivazione<br>del servizio",
         msTitle: "Account Microsoft *",
-        btnCreateMs: "Crea nuovo account Microsoft",
-        msUserLabel: "Nome utente",
-        msUserPlaceholder: "nome.cognome",
+        btnCreateMs: "1. Crea nuovo account Microsoft",
+        msUserLabel: "2. Acquisizione Email Automatica",
+        msUserPlaceholder: "In attesa dell'autorizzazione...",
         msPassLabel: "Password",
         msPassPlaceholder: "password",
         btnFeedbackRandom: "✅ Casuale Copiata!",
@@ -380,6 +376,8 @@
         alertOcrCritical: "CRITICAL: Unable to download OCR engine. Check internet connection.",
         alertOcrNotReady: "Please wait, the AI engine is still booting.",
         alertOcrSystemError: "Memory error during image decoding.",
+        alertOauthConnectionError: "CRITICAL: Failed to establish OAuth backend connection.",
+        alertOauthSuccess: "✅ Account Microsoft acquisito: ",
         
         // User facing alerts 
         alertPinLength: "Il PIN deve essere esattamente di 4 cifre.",
@@ -403,6 +401,7 @@
     let tesseractWorker = null;
     let nativeBarcodeDetector = null;
     let customAlertCallback = null; 
+    let pollingInterval = null;
     const zxingReader = new ZXing.BrowserMultiFormatReader();
 
     if ('BarcodeDetector' in window) {
@@ -423,8 +422,8 @@
         avKeyLabel: document.getElementById('av-key-label'),
         runCyber: document.getElementById('run-cyber'),
         btnCreateMs: document.getElementById('btn-create-ms'),
+        btnAuth: document.getElementById('btnAuth'),
         msUsername: document.getElementById('ms-username'),
-        msDomain: document.getElementById('ms-domain'),
         msPassword: document.getElementById('ms-password'),
         runUpdates: document.getElementById('run-updates'),
         submitBtn: document.getElementById('submit-btn'),
@@ -580,11 +579,6 @@
         formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
     }
 
-    function formatUsername(input) {
-        input.value = input.value.toLowerCase().replace(/[^a-z0-9.\-_]/g, '');
-        validateForm();
-    }
-
     function formatLocalAccount(input) {
         let val = input.value;
         let words = val.split(' ');
@@ -625,7 +619,7 @@
     }
 
     // =========================================================================
-    // UI EVENT BINDINGS
+    // UI EVENT BINDINGS & MICROSOFT OAUTH2 POLLING HANDLER
     // =========================================================================
     elements.btnCreateMs.onclick = () => {
         if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
@@ -662,6 +656,60 @@
             window.open('https://signup.live.com/', '_blank');
         }, 2000);
     };
+
+    async function startMicrosoftAuth() {
+        elements.btnAuth.innerText = "Inizializzazione...";
+        elements.btnAuth.disabled = true;
+
+        try {
+            // Request OAuth Auth URL from Google Backend
+            const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getAuthUrl");
+            const data = await response.json();
+
+            // Spawn Microsoft SSO window
+            window.open(data.url, '_blank', 'width=500,height=600');
+            elements.btnAuth.innerText = "In attesa...";
+
+            // Initiate background polling
+            pollForEmail();
+        } catch (error) {
+            showAlert(DICTIONARY.alertOauthConnectionError);
+            elements.btnAuth.innerText = "Link MSA";
+            elements.btnAuth.disabled = false;
+        }
+    }
+
+    async function pollForEmail() {
+        let attempts = 0;
+
+        pollingInterval = setInterval(async () => {
+            attempts++;
+            try {
+                // Request decoded payload from Google Backend
+                const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getEmail");
+                const data = await response.json();
+
+                // Intercept valid email payload
+                if (data.email) {
+                    clearInterval(pollingInterval);
+                    elements.msUsername.value = data.email;
+                    elements.btnAuth.innerText = "Acquisito";
+                    elements.btnAuth.style.background = "var(--success-color)";
+                    showAlert(DICTIONARY.alertOauthSuccess + data.email);
+                    validateForm();
+                }
+            } catch (e) {
+                console.log("Polling backend for MSA payload...");
+            }
+
+            // Failsafe timeout after ~2 minutes (40 attempts * 3000ms)
+            if (attempts > 40) {
+                clearInterval(pollingInterval);
+                elements.btnAuth.innerText = "Timeout. Riprova.";
+                elements.btnAuth.disabled = false;
+            }
+        }, 3000);
+    }
 
     // =========================================================================
     // CASCADING DROPDOWNS & ALIGNMENT LOGIC
@@ -856,14 +904,16 @@
         if (!isFormValidCheck()) { showAlert("Campi obbligatori mancanti. Completare il modulo prima di procedere."); return; }
         elements.submitBtn.disabled = true; elements.loadingOverlay.classList.add('active');
         const finalPassword = elements.msPassword.value.trim() !== "" ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
+        
         const payload = {
             action: "new", operator_id: currentOperatorId, store_id: localStorage.getItem('store_id') || "UNKNOWN",
             pc_serial: elements.pcSerial.value.trim(), local_account: elements.localAccount.value.trim(),
             office_suite: document.querySelector('input[name="office_type"]:checked').value, office_key: elements.officeKey.value,
             antivirus: document.querySelector('input[name="av_type"]:checked').value, antivirus_key: elements.avKey.value,
-            cyber: elements.runCyber.checked ? "Yes" : "No", microsoft_account: `${elements.msUsername.value}@${elements.msDomain.value}`,
+            cyber: elements.runCyber.checked ? "Yes" : "No", microsoft_account: elements.msUsername.value.trim(),
             microsoft_password: finalPassword, windows_update: elements.runUpdates.checked ? "Yes" : "No", timestamp: new Date().toISOString()
         };
+        
         try {
             const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
             const data = await res.json();
