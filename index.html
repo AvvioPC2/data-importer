@@ -626,53 +626,68 @@
         
         const isCustom = elements.msPassword.value.trim() !== "";
         const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
-        const feedbackMsg = isCustom ? DICTIONARY.btnFeedbackCustom : DICTIONARY.btnFeedbackRandom;
-    
+        
         const fallbackCopy = () => {
             const el = document.createElement('textarea');
             el.value = pwdToCopy;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
             document.body.appendChild(el);
             el.select();
             try { document.execCommand('copy'); } catch (err) {}
             document.body.removeChild(el);
         };
 
+        // Synchronous clipboard access immediately upon user interaction
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(pwdToCopy).catch(() => fallbackCopy());
         } else {
             fallbackCopy();
         }
 
+        // Instant popup spawning to bypass mobile browser security restrictions
+        window.open('https://signup.live.com/', '_blank');
+
+        // Non-blocking UI update (Delayed restoration)
         const originalText = elements.btnCreateMs.innerText;
-        
-        elements.btnCreateMs.innerText = feedbackMsg;
+        elements.btnCreateMs.innerText = isCustom ? DICTIONARY.btnFeedbackCustom : DICTIONARY.btnFeedbackRandom;
         elements.btnCreateMs.style.background = "var(--success-color)";
-        elements.btnCreateMs.disabled = true;
         
         setTimeout(() => {
             elements.btnCreateMs.innerText = originalText;
             elements.btnCreateMs.style.background = ""; 
-            elements.btnCreateMs.disabled = false;
-            window.open('https://signup.live.com/', '_blank');
-        }, 2000);
+        }, 3000);
     };
 
     async function startMicrosoftAuth() {
         elements.btnAuth.innerText = "Inizializzazione...";
         elements.btnAuth.disabled = true;
 
+        // Mobile Anti-Blocker Hack: Instantly open a blank tab synchronously
+        const popup = window.open('', '_blank');
+
         try {
             // Request OAuth Auth URL from Google Backend
             const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getAuthUrl");
             const data = await response.json();
 
-            // Spawn Microsoft SSO window
-            window.open(data.url, '_blank', 'width=500,height=600');
+            if (!data.url) {
+                popup.close();
+                showAlert("CRITICAL: Backend returned empty URL. Ensure Google Apps Script deployment is updated to a New Version.");
+                elements.btnAuth.innerText = "Link MSA";
+                elements.btnAuth.disabled = false;
+                return;
+            }
+
+            // Redirect the pre-opened blank tab to the valid Microsoft OAuth endpoint
+            popup.location.href = data.url;
             elements.btnAuth.innerText = "In attesa...";
 
             // Initiate background polling
             pollForEmail();
         } catch (error) {
+            popup.close();
             showAlert(DICTIONARY.alertOauthConnectionError);
             elements.btnAuth.innerText = "Link MSA";
             elements.btnAuth.disabled = false;
