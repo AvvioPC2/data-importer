@@ -402,6 +402,7 @@
     let nativeBarcodeDetector = null;
     let customAlertCallback = null; 
     let pollingInterval = null;
+    let currentAuthSession = ""; // Native OAuth2 Session Tracking Variable
     const zxingReader = new ZXing.BrowserMultiFormatReader();
 
     if ('BarcodeDetector' in window) {
@@ -619,7 +620,7 @@
     }
 
     // =========================================================================
-    // UI EVENT BINDINGS & MICROSOFT OAUTH2 POLLING HANDLER
+    // UI EVENT BINDINGS & NATIVE MICROSOFT OAUTH2 POLLING HANDLER
     // =========================================================================
     elements.btnCreateMs.onclick = () => {
         if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
@@ -664,17 +665,20 @@
         elements.btnAuth.innerText = "Inizializzazione...";
         elements.btnAuth.disabled = true;
 
+        // Isolated session ID for concurrent store deployments
+        currentAuthSession = "session_" + Math.random().toString(36).substring(2, 10);
+        
         // Mobile Anti-Blocker Hack: Instantly open a blank tab synchronously
         const popup = window.open('', '_blank');
 
         try {
-            // Request OAuth Auth URL from Google Backend
-            const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getAuthUrl");
+            // Request OAuth Auth URL from Google Backend with session binding
+            const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getAuthUrl&session_id=" + currentAuthSession);
             const data = await response.json();
 
             if (!data.url) {
                 popup.close();
-                showAlert("CRITICAL: Backend returned empty URL. Ensure Google Apps Script deployment is updated to a New Version.");
+                showAlert("CRITICAL: Backend returned empty URL. Ensure Google Apps Script deployment is updated.");
                 elements.btnAuth.innerText = "Link MSA";
                 elements.btnAuth.disabled = false;
                 return;
@@ -683,7 +687,7 @@
             // Redirect the pre-opened blank tab to the valid Microsoft OAuth endpoint
             popup.location.href = data.url;
             elements.btnAuth.innerText = "In attesa...";
-
+            
             // Initiate background polling
             pollForEmail();
         } catch (error) {
@@ -696,12 +700,11 @@
 
     async function pollForEmail() {
         let attempts = 0;
-
         pollingInterval = setInterval(async () => {
             attempts++;
             try {
-                // Request decoded payload from Google Backend
-                const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getEmail");
+                // Fetch email utilizing the explicit session binding
+                const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getEmail&session_id=" + currentAuthSession);
                 const data = await response.json();
 
                 // Intercept valid email payload
