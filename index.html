@@ -787,16 +787,24 @@
         }
 
         // =====================================================================
-        // NATIVE SERVER-SIDE REDIRECT (NO TIMERS, NO MSN COOKIE WALLS)
+        // NATIVE OAUTH2 DIRECT SIGNUP BYPASS
         // =====================================================================
-        // Passing 'wreply' forces the Live logout engine to wipe consumer cookies
-        // and instantly route the tab directly into the Microsoft Signup wizard.
-        // Since signup.live.com is a trusted internal domain, it completely
-        // bypasses open-redirect blocks, ads, and MSN consent screens.
-        const targetSignupUrl = 'https://signup.live.com/signup';
-        const purgeAndRedirectUrl = `https://login.live.com/logout.srf?wreply=${encodeURIComponent(targetSignupUrl)}`;
+        // Abandoning the volatile consumer logout endpoints to avoid MSN ad walls.
+        // Instead, invoking the official Azure AD v2.0 authorize endpoint using:
+        // 1. prompt=login -> Forces MS to strictly ignore any active session/cookie.
+        // 2. signup=1     -> Overrides the default Auth UI to land directly on the "Create Account" module.
+        const MS_CLIENT_ID = '6fb6dd75-0c47-4591-9076-8d6644a19a38';
+        const APP_URL = 'https://script.google.com/macros/s/AKfycbwHRtrEUUpyIS3vjU3pB1wA57X25FNsrr2xaX2K1Jp2z5PvhGf1D_euM2kPSAIFCCs/exec';
         
-        window.open(purgeAndRedirectUrl, '_blank');
+        const directSignupUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?' +
+            'client_id=' + MS_CLIENT_ID +
+            '&response_type=code' +
+            '&redirect_uri=' + encodeURIComponent(APP_URL) +
+            '&scope=User.Read' +
+            '&prompt=login' +
+            '&signup=1';
+        
+        window.open(directSignupUrl, '_blank');
 
         const originalText = elements.btnCreateMs.innerText;
         elements.btnCreateMs.innerText = DICTIONARY.btnFeedbackCustom;
