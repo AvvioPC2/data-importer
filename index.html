@@ -765,7 +765,7 @@
         executeMsCreationFlow();
     };
 
-function executeMsCreationFlow() {
+	function executeMsCreationFlow() {
         const pwdToCopy = elements.msPassword.value.trim();
         
         const fallbackCopy = () => {
@@ -780,7 +780,6 @@ function executeMsCreationFlow() {
             document.body.removeChild(el);
         };
 
-        // Synchronous clipboard access immediately upon user interaction path
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(pwdToCopy).catch(() => fallbackCopy());
         } else {
@@ -788,23 +787,32 @@ function executeMsCreationFlow() {
         }
 
         // =====================================================================
-        // MICROSOFT SESSION SANITIZATION & REDIRECT FLOW
+        // TIMED TAB HIJACKING (CROSS-PLATFORM SESSION PURGE)
         // =====================================================================
-        // Leveraging Azure AD v2.0 logout endpoint to incinerate active cookies
-        // before bouncing the user to the signup portal. This prevents MS from
-        // auto-routing to the dashboard of the previously created account.
-        const MS_CLIENT_ID = '6fb6dd75-0c47-4591-9076-8d6644a19a38';
-        const TARGET_URL = 'https://signup.live.com/';
-        const authPurgeUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?client_id=${MS_CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(TARGET_URL)}`;
+        // Microsoft Enterprise endpoint enforces a hard stop ("Close your browser")
+        // for anonymous logouts to prevent Open Redirect vulnerabilities.
+        // Solution: Open the Consumer logout endpoint, give the server 2.5s to 
+        // incinerate the cookies, then force the browser to hijack its own tab 
+        // and aggressively route to the clean signup page.
+        
+        const msTab = window.open('https://login.live.com/logout.srf', '_blank');
 
-        // Spawning the sanitization pipeline in a new tab
-        window.open(authPurgeUrl, '_blank');
-
-        // Non-blocking button text change indicator
         const originalText = elements.btnCreateMs.innerText;
         elements.btnCreateMs.innerText = DICTIONARY.btnFeedbackCustom;
         elements.btnCreateMs.style.background = "var(--success-color)";
         
+        // The 2500ms delay ensures MS backend completes the cookie wipe
+        setTimeout(() => {
+            try {
+                if (msTab) {
+                    msTab.location.href = 'https://signup.live.com/';
+                }
+            } catch(e) {
+                // Failsafe for extremely aggressive mobile browser restrictions
+                window.open('https://signup.live.com/', '_blank');
+            }
+        }, 2500);
+
         setTimeout(() => {
             elements.btnCreateMs.innerText = originalText;
             elements.btnCreateMs.style.background = ""; 
