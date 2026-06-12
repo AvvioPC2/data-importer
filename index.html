@@ -787,12 +787,12 @@
         }
 
         // =====================================================================
-        // NATIVE OAUTH2 DIRECT SIGNUP BYPASS
+        // NATIVE OAUTH2 DIRECT SIGNUP (OIDC STANDARD)
         // =====================================================================
-        // Abandoning the volatile consumer logout endpoints to avoid MSN ad walls.
-        // Instead, invoking the official Azure AD v2.0 authorize endpoint using:
-        // 1. prompt=login -> Forces MS to strictly ignore any active session/cookie.
-        // 2. signup=1     -> Overrides the default Auth UI to land directly on the "Create Account" module.
+        // The previous 'signup=1' parameter is often ignored by the /common endpoint.
+        // The modern OIDC standard to force the routing engine to bypass the login 
+        // screen and land directly on the account creation module is 'prompt=create'. 
+        // This explicitly ignores active cookies and deep-links to the signup form.
         const MS_CLIENT_ID = '6fb6dd75-0c47-4591-9076-8d6644a19a38';
         const APP_URL = 'https://script.google.com/macros/s/AKfycbwHRtrEUUpyIS3vjU3pB1wA57X25FNsrr2xaX2K1Jp2z5PvhGf1D_euM2kPSAIFCCs/exec';
         
@@ -801,8 +801,7 @@
             '&response_type=code' +
             '&redirect_uri=' + encodeURIComponent(APP_URL) +
             '&scope=User.Read' +
-            '&prompt=login' +
-            '&signup=1';
+            '&prompt=create';
         
         window.open(directSignupUrl, '_blank');
 
