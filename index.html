@@ -603,17 +603,52 @@
         initializeOCRWorker();
     });
 
-    // =========================================================================
+	// =========================================================================
     // FORM FORMATTING & VALIDATION ENGINE
     // =========================================================================
     function formatProductKey(input, sep) {
-        let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
-        let res = "";
-        for (let i = 0; i < val.length; i++) {
-            if (i > 0 && i % 5 === 0) res += sep;
-            res += val[i];
+        // Save current cursor baseline position
+        let start = input.selectionStart;
+        let originalValue = input.value;
+
+        // Clean array and rebuild formatted string
+        let rawValue = originalValue.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
+        let formattedValue = "";
+        for (let i = 0; i < rawValue.length; i++) {
+            if (i > 0 && i % 5 === 0) formattedValue += sep;
+            formattedValue += rawValue[i];
         }
-        input.value = res;
+
+        // Bypass DOM update if structure is already consistent
+        if (originalValue === formattedValue) return;
+
+        input.value = formattedValue;
+
+        // Calculate cursor relative offset based on alphanumeric payload
+        let alnumCountBeforeCursor = 0;
+        for (let i = 0; i < start && i < originalValue.length; i++) {
+            if (/[A-Za-z0-9]/.test(originalValue[i])) alnumCountBeforeCursor++;
+        }
+
+        let newCursorPos = 0;
+        let currentAlnumCount = 0;
+        for (let i = 0; i < formattedValue.length; i++) {
+            if (currentAlnumCount === alnumCountBeforeCursor) {
+                newCursorPos = i;
+                break;
+            }
+            if (/[A-Za-z0-9]/.test(formattedValue[i])) currentAlnumCount++;
+            
+            // Failsafe for trailing string appends
+            if (i === formattedValue.length - 1 && currentAlnumCount === alnumCountBeforeCursor) {
+                newCursorPos = formattedValue.length;
+            }
+        }
+
+        if (currentAlnumCount < alnumCountBeforeCursor) newCursorPos = formattedValue.length;
+
+        // Restore active UI pointer array
+        input.setSelectionRange(newCursorPos, newCursorPos);
         validateForm();
     }
 
@@ -730,7 +765,7 @@
         executeMsCreationFlow();
     };
 
-    function executeMsCreationFlow() {
+function executeMsCreationFlow() {
         const pwdToCopy = elements.msPassword.value.trim();
         
         const fallbackCopy = () => {
@@ -752,8 +787,18 @@
             fallbackCopy();
         }
 
-        // Instant popup spawning to bypass mobile browser security restrictions
-        window.open('https://signup.live.com/', '_blank');
+        // =====================================================================
+        // MICROSOFT SESSION SANITIZATION & REDIRECT FLOW
+        // =====================================================================
+        // Leveraging Azure AD v2.0 logout endpoint to incinerate active cookies
+        // before bouncing the user to the signup portal. This prevents MS from
+        // auto-routing to the dashboard of the previously created account.
+        const MS_CLIENT_ID = '6fb6dd75-0c47-4591-9076-8d6644a19a38';
+        const TARGET_URL = 'https://signup.live.com/';
+        const authPurgeUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/logout?client_id=${MS_CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(TARGET_URL)}`;
+
+        // Spawning the sanitization pipeline in a new tab
+        window.open(authPurgeUrl, '_blank');
 
         // Non-blocking button text change indicator
         const originalText = elements.btnCreateMs.innerText;
@@ -966,18 +1011,31 @@
 
     function updateOperatorUI() { elements.operatorBadge.innerText = currentOperatorId; validateForm(); }
 
-    // =========================================================================
+// =========================================================================
     // CAMERA & SCANNER ENGINE (Barcode + OCR)
     // =========================================================================
     async function openScanner(targetId, mode) {
         currentInputId = targetId; currentMode = mode;
         document.getElementById('scanner-title').innerText = mode === 'barcode' ? DICTIONARY.scanTitleBarcode : DICTIONARY.scanTitleOcr;
         elements.scannerModal.classList.add('active');
+        
         if (mode === 'barcode') {
             elements.overlay.classList.add('barcode-mode'); elements.captureBtn.style.display = 'none'; elements.scanAnimation.style.display = 'block'; elements.modalStatus.innerText = DICTIONARY.statusBarcodeSearch;
         } else {
             elements.overlay.classList.remove('barcode-mode'); elements.captureBtn.style.display = 'block'; elements.captureBtn.disabled = false; elements.scanAnimation.style.display = 'none'; elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
+            
+            // Dynamic Tesseract Engine Parameters Overrides
+            if (isOcrReady) {
+                if (targetId === 'office-key') {
+                    // Microsoft Base24 Standard Constraint (Excludes: A,E,I,O,U,L,N,S,Z,0,1,5)
+                    await tesseractWorker.setParameters({ tessedit_char_whitelist: 'BCDFGHJKMPQRTVWXY2346789- ' });
+                } else {
+                    // Fallback to Full Alphanumeric Array for standard 3rd Party AVs
+                    await tesseractWorker.setParameters({ tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ' });
+                }
+            }
         }
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } } });
             elements.video.srcObject = stream; streamTrack = stream.getVideoTracks()[0];
