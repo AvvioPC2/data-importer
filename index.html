@@ -787,32 +787,21 @@
         }
 
         // =====================================================================
-        // TIMED TAB HIJACKING (CROSS-PLATFORM SESSION PURGE)
+        // NATIVE SERVER-SIDE REDIRECT (NO TIMERS, NO MSN COOKIE WALLS)
         // =====================================================================
-        // Microsoft Enterprise endpoint enforces a hard stop ("Close your browser")
-        // for anonymous logouts to prevent Open Redirect vulnerabilities.
-        // Solution: Open the Consumer logout endpoint, give the server 2.5s to 
-        // incinerate the cookies, then force the browser to hijack its own tab 
-        // and aggressively route to the clean signup page.
+        // Passing 'wreply' forces the Live logout engine to wipe consumer cookies
+        // and instantly route the tab directly into the Microsoft Signup wizard.
+        // Since signup.live.com is a trusted internal domain, it completely
+        // bypasses open-redirect blocks, ads, and MSN consent screens.
+        const targetSignupUrl = 'https://signup.live.com/signup';
+        const purgeAndRedirectUrl = `https://login.live.com/logout.srf?wreply=${encodeURIComponent(targetSignupUrl)}`;
         
-        const msTab = window.open('https://login.live.com/logout.srf', '_blank');
+        window.open(purgeAndRedirectUrl, '_blank');
 
         const originalText = elements.btnCreateMs.innerText;
         elements.btnCreateMs.innerText = DICTIONARY.btnFeedbackCustom;
         elements.btnCreateMs.style.background = "var(--success-color)";
         
-        // The 2500ms delay ensures MS backend completes the cookie wipe
-        setTimeout(() => {
-            try {
-                if (msTab) {
-                    msTab.location.href = 'https://signup.live.com/';
-                }
-            } catch(e) {
-                // Failsafe for extremely aggressive mobile browser restrictions
-                window.open('https://signup.live.com/', '_blank');
-            }
-        }, 2500);
-
         setTimeout(() => {
             elements.btnCreateMs.innerText = originalText;
             elements.btnCreateMs.style.background = ""; 
