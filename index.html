@@ -18,6 +18,7 @@
             --header-text: #ffffff;
             --accent-color: #007bff;
             --success-color: #28a745;
+            --import-color: #17a2b8;
             --reprint-color: #6c757d; 
             --error-color: #dc3545;
             --border-color: #ced4da;
@@ -73,13 +74,13 @@
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
-        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 18px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
+        /* Unified Action Buttons */
+        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
         #btn-create-ms:hover:not(:disabled) { background: #0056b3; }
 
-        /* Custom Auth Button for OAuth Integration */
-        .auth-btn { background: #0078d4; color: white; border: none; border-radius: var(--border-radius); padding: 0 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
-        .auth-btn:hover:not(:disabled) { background: #005a9e; }
-        .auth-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+        #btnAuth { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--import-color); cursor: pointer; transition: all 0.3s; margin-bottom: 18px; box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2); }
+        #btnAuth:hover:not(:disabled) { background: #138496; }
+        #btnAuth:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; }
 
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
@@ -234,24 +235,15 @@
 
         <div class="form-group">
             <div class="section-title" id="lbl-ms-title">Account Microsoft *</div>
-            <button type="button" id="btn-create-ms">1. Crea nuovo account Microsoft</button>
             
-            <label class="form-label" id="lbl-ms-username">2. Acquisizione Email Automatica</label>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button type="button" id="btnAuth" class="auth-btn" onclick="startMicrosoftAuth()">Link MSA</button>
-                <input type="text" id="ms-username" class="standard-input" readonly placeholder="In attesa dell'autorizzazione..." style="flex: 1; background: var(--disabled-bg); font-family: monospace; text-transform: lowercase;">
-            </div>
+            <button type="button" id="btn-create-ms">Crea nuovo account Microsoft</button>
+            <button type="button" id="btnAuth" onclick="startMicrosoftAuth()">Importa account</button>
+            
+            <label class="form-label" id="lbl-ms-username">Email</label>
+            <input type="text" id="ms-username" class="standard-input" placeholder="nome.cognome@dominio" style="margin-bottom: 15px; text-transform: lowercase;" oninput="validateForm()">
 
             <label class="form-label" id="lbl-ms-password">Password</label>
-            <div class="input-with-icon">
-                <input type="text" id="ms-password" style="text-transform: none; font-family: inherit;" oninput="validateForm()">
-                <button type="button" class="camera-btn" onclick="generateRandomPassword()" title="Rigenera Password">
-                    <svg viewBox="0 0 512 512">
-                        <path d="M482.3 196.2L340.5 54.4c-11.7-11.7-30.6-11.7-42.3 0L156.4 196.2c-11.7 11.7-11.7 30.6 0 42.3L298.2 380.3c11.7 11.7 30.6 11.7 42.3 0l141.8-141.8c11.7-11.7 11.7-30.6 0-42.3zM250.6 220.8c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm66.1-66.1c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm66.1 132.3c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25zm0-132.3c-13.8 0-25-11.2-25-25s11.2-25 25-25 25 11.2 25 25-11.2 25-25 25z"/>
-                        <path d="M128 224H32c-17.7 0-32 14.3-32 32v192c0 17.7 14.3 32 32 32h192c17.7 0 32-14.3 32-32V256c0-17.7-14.3-32-32-32H128zM80 400c-13.3 0-24-10.7-24-24s10.7-24 24-24 24 10.7 24 24-10.7 24-24 24zm0-96c-13.3 0-24-10.7-24-24s10.7-24 24-24 24 10.7 24 24-10.7 24-24 24zm96 96c-13.3 0-24-10.7-24-24s10.7-24 24-24 24 10.7 24 24-10.7 24-24 24zm0-96c-13.3 0-24-10.7-24-24s10.7-24 24-24 24 10.7 24 24-10.7 24-24 24z"/>
-                    </svg>
-                </button>
-            </div>
+            <input type="text" id="ms-password" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
         <div class="form-group">
@@ -342,11 +334,10 @@
         cyberTitle: "Unieuro Cyber Protection",
         cyberCheck: "Installa icona di attivazione<br>del servizio",
         msTitle: "Account Microsoft *",
-        btnCreateMs: "1. Crea nuovo account Microsoft",
-        msUserLabel: "2. Acquisizione Email Automatica",
-        msUserPlaceholder: "In attesa dell'autorizzazione...",
+        btnCreateMs: "Crea nuovo account Microsoft",
+        msUserLabel: "Email",
+        msUserPlaceholder: "nome.cognome@dominio",
         msPassLabel: "Password",
-        msPassPlaceholder: "password",
         btnFeedbackRandom: "✅ Casuale Copiata!",
         btnFeedbackCustom: "✅ Personalizzata Copiata!",
         winUpdTitle: "Aggiornamenti di sistema",
@@ -517,8 +508,8 @@
             pwd += allChars[Math.floor(Math.random() * allChars.length)];
         }
         pwd = pwd.split('').sort(() => 0.5 - Math.random()).join('');
-        elements.msPassword.placeholder = pwd;
-        elements.msPassword.value = "";
+        // Injecting the generated password directly into the field value
+        elements.msPassword.value = pwd;
         validateForm();
     }
 
@@ -604,7 +595,7 @@
     }
 
     function isFormValidCheck() {
-        let pwdValid = elements.msPassword.value.trim() !== "" || elements.msPassword.placeholder.length >= 8;
+        let pwdValid = elements.msPassword.value.trim() !== "";
         let ok = currentOperatorId !== "00000" && elements.pcSerial.value.trim() !== "" && elements.localAccount.value.trim() !== "" && elements.msUsername.value.trim() !== "" && pwdValid;
         if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
         if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
@@ -625,8 +616,9 @@
     elements.btnCreateMs.onclick = () => {
         if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
         
-        const isCustom = elements.msPassword.value.trim() !== "";
-        const pwdToCopy = isCustom ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
+        // Directly utilizing the visible value instead of a background placeholder
+        const pwdToCopy = elements.msPassword.value.trim();
+        const feedbackMsg = DICTIONARY.btnFeedbackCustom;
         
         const fallbackCopy = () => {
             const el = document.createElement('textarea');
@@ -652,7 +644,7 @@
 
         // Non-blocking UI update (Delayed restoration)
         const originalText = elements.btnCreateMs.innerText;
-        elements.btnCreateMs.innerText = isCustom ? DICTIONARY.btnFeedbackCustom : DICTIONARY.btnFeedbackRandom;
+        elements.btnCreateMs.innerText = feedbackMsg;
         elements.btnCreateMs.style.background = "var(--success-color)";
         
         setTimeout(() => {
@@ -679,7 +671,7 @@
             if (!data.url) {
                 popup.close();
                 showAlert("CRITICAL: Backend returned empty URL. Ensure Google Apps Script deployment is updated.");
-                elements.btnAuth.innerText = "Link MSA";
+                elements.btnAuth.innerText = "Importa account";
                 elements.btnAuth.disabled = false;
                 return;
             }
@@ -693,7 +685,7 @@
         } catch (error) {
             popup.close();
             showAlert(DICTIONARY.alertOauthConnectionError);
-            elements.btnAuth.innerText = "Link MSA";
+            elements.btnAuth.innerText = "Importa account";
             elements.btnAuth.disabled = false;
         }
     }
@@ -921,7 +913,7 @@
     elements.submitBtn.onclick = async () => {
         if (!isFormValidCheck()) { showAlert("Campi obbligatori mancanti. Completare il modulo prima di procedere."); return; }
         elements.submitBtn.disabled = true; elements.loadingOverlay.classList.add('active');
-        const finalPassword = elements.msPassword.value.trim() !== "" ? elements.msPassword.value.trim() : elements.msPassword.placeholder;
+        const finalPassword = elements.msPassword.value.trim();
         
         const payload = {
             action: "new", operator_id: currentOperatorId, store_id: localStorage.getItem('store_id') || "UNKNOWN",
