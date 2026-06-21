@@ -1082,6 +1082,10 @@
         }, 300); 
     }
 
+    // =========================================================================
+    // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
+    // Sezione: elements.captureBtn.onclick (Sostituzione completa della funzione)
+    // =========================================================================
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
         if (!isOcrReady) { showAlert(DICTIONARY.alertOcrNotReady); return; }
@@ -1109,9 +1113,10 @@
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
         
         const thresholdValue = parseInt(elements.thresholdSlider.value, 10);
-
         const imgData = ctx.getImageData(0, 0, cw, ch);
         const data = imgData.data;
+
+        // Apply hardware binarization threshold
         for (let i = 0; i < data.length; i += 4) {
             const brightness = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
             const color = brightness > thresholdValue ? 255 : 0; 
@@ -1126,32 +1131,47 @@
             const res = await tesseractWorker.recognize(elements.canvas);
             let rawText = res.data.text.toUpperCase();
             
-            // --- BLOCCO CROSS-VALIDAZIONE CARTONCINI ---
+            // --- HEURISTICS AND CROSS-VALIDATION BLOCK ---
             const dashCount = (rawText.match(/-/g) || []).length;
             const spaceCount = (rawText.match(/ /g) || []).length;
 
             if (currentInputId === 'office-key') {
                 if (dashCount === 0 && spaceCount >= 3) {
-                    elements.modalStatus.innerText = "❌ Attenzione: Rilevato formato Norton (spazi). Inquadrare cartoncino Office."; 
+                    elements.modalStatus.innerText = "❌ Attenzione: rilevato product key Norton (con spazi). Inquadrare product key Office (con trattini)."; 
                     elements.captureBtn.disabled = false; 
                     elements.video.play(); 
                     return; 
                 }
                 
-                // Auto-Correttore base 24 per Office
-                rawText = rawText.replace(/[S5]/g, '6')
-                                 .replace(/[O0D]/g, 'Q')
-                                 .replace(/[Z]/g, '2');
+                // Strict Base24 Microsoft Product Key Normalization
+                // Microsoft keys NEVER use: A, E, I, O, U, L, N, S, Z, 0, 1, 5
+                const base24Corrections = {
+                    'S': '6', '5': '6',
+                    'O': 'Q', '0': 'Q', 'D': 'Q',
+                    'Z': '2',
+                    'I': 'T', '1': 'T', 'L': 'T',
+                    'A': '4',
+                    'R': 'K', // Frequent artifact collision
+                    'U': 'V',
+                    'B': '8', 
+                    'E': 'F'
+                };
+
+                // Map invalid characters to their closest valid Base24 visual equivalent
+                rawText = rawText.split('').map(char => base24Corrections[char] || char).join('');
+                
+                // Aggressive strip of any remaining characters outside the allowed Base24 scope
+                rawText = rawText.replace(/[^BCDFGHJKMPQRTVWXY2346789\- ]/g, '');
                                  
             } else if (currentInputId === 'av-key' && elements.avNorton.checked) {
                 if (dashCount >= 2) {
-                    elements.modalStatus.innerText = "❌ Attenzione: Rilevato formato Office/McAfee (trattini). Inquadrare cartoncino Norton."; 
+                    elements.modalStatus.innerText = "❌ Attenzione: rilevato product key Office o McAfee (con trattini). Inquadrare product key Norton (con spazi)."; 
                     elements.captureBtn.disabled = false; 
                     elements.video.play(); 
                     return; 
                 }
             }
-            // --- FINE BLOCCO CROSS-VALIDAZIONE ---
+            // --- END HEURISTICS BLOCK ---
 
             const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
             const match = rawText.match(regex);
