@@ -1082,10 +1082,7 @@
         }, 300); 
     }
 
-    // =========================================================================
-    // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
-    // Sezione: elements.captureBtn.onclick
-    // =========================================================================
+
     // =========================================================================
     // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
     // Section: elements.captureBtn.onclick
@@ -1150,7 +1147,6 @@
                 }
                 
                 // Strict Base24 Microsoft Product Key Normalization
-                // Note: 'Z' is explicitly removed from global correction to allow static suffix evaluation
                 const base24Corrections = {
                     'S': '6', '5': '6',
                     'O': 'Q', '0': 'Q', 'D': 'Q',
@@ -1188,16 +1184,23 @@
             if (matches && matches.length > 0) {
                 const bestMatch = matches[matches.length - 1];
                 let raw25 = `${bestMatch[1]}${bestMatch[2]}${bestMatch[3]}${bestMatch[4]}${bestMatch[5]}`;
-                
-                // Dynamic Z correction logic: Convert to '2' if inside the string, keep as 'Z' if at the very end
                 let finalArray = raw25.split('');
-                for (let i = 0; i < 24; i++) {
-                    if (finalArray[i] === 'Z') {
-                        finalArray[i] = '2';
+                
+                if (currentInputId === 'office-key') {
+                    // Check characters 1 to 24: Z becomes 2 if mistakenly read inside the string
+                    for (let i = 0; i < 24; i++) {
+                        if (finalArray[i] === 'Z') finalArray[i] = '2';
+                    }
+                    // BRUTE FORCE: The 25th character is unconditionally forced to 'Z' for Office Keys
+                    finalArray[24] = 'Z';
+                } else {
+                    // Norton/McAfee: Z is always an optical error for 2
+                    for (let i = 0; i < 25; i++) {
+                        if (finalArray[i] === 'Z') finalArray[i] = '2';
                     }
                 }
-                raw25 = finalArray.join('');
                 
+                raw25 = finalArray.join('');
                 const finalKey = `${raw25.substring(0,5)}-${raw25.substring(5,10)}-${raw25.substring(10,15)}-${raw25.substring(15,20)}-${raw25.substring(20,25)}`;
                 
                 const target = document.getElementById(currentInputId);
