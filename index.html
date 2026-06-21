@@ -606,23 +606,14 @@
                 throw new Error("Server error: " + result.message);
             }
         } catch (err) {
-            elements.storeDropdown.innerHTML = `<option value="000">Errore Rete</option>`;
+            elements.storeDropdown.innerHTML = `<option value="000">Network Error</option>`;
         }
     }
 
+    // Cloud Vision API is stateless. Bypassing local model initialization.
     async function initializeOCRWorker() {
-        try {
-            tesseractWorker = await Tesseract.createWorker();
-            await tesseractWorker.loadLanguage('eng');
-            await tesseractWorker.initialize('eng');
-            await tesseractWorker.setParameters({
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
-                tessedit_pageseg_mode: '6', 
-            });
-            isOcrReady = true;
-        } catch (e) {
-            showAlert(DICTIONARY.alertOcrCritical);
-        }
+        isOcrReady = true;
+        console.log("INFO: Cloud Vision API route configured. Local engine bypassed.");
     }
 
     window.addEventListener('load', () => {
@@ -985,7 +976,7 @@
     function updateOperatorUI() { elements.operatorBadge.innerText = currentOperatorId; validateForm(); }
 
     // =========================================================================
-    // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
+    // CAMERA & SCANNER ENGINE (Barcode + Cloud Vision API)
     // =========================================================================
     async function openScanner(targetId, mode) {
         currentInputId = targetId; currentMode = mode;
@@ -1003,16 +994,10 @@
             elements.captureBtn.style.display = 'block'; 
             elements.captureBtn.disabled = false; 
             elements.scanAnimation.style.display = 'none'; 
-            elements.ocrControls.style.display = 'block';
-            elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
             
-            if (isOcrReady) {
-                if (targetId === 'office-key') {
-                    await tesseractWorker.setParameters({ tessedit_char_whitelist: 'BCDFGHJKMPQRTVWXY2346789- ' });
-                } else {
-                    await tesseractWorker.setParameters({ tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ' });
-                }
-            }
+            // Hide the threshold slider as Cloud Vision processes full RGB images
+            elements.ocrControls.style.display = 'none'; 
+            elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
         }
         
         try {
@@ -1081,18 +1066,12 @@
         }, 300); 
     }
 
-
-    // =========================================================================
-    // CAMERA & SCANNER ENGINE (Cloud Vision API Integration)
-    // Section: elements.captureBtn.onclick
-    // =========================================================================
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
         
         elements.video.pause(); 
         elements.captureBtn.disabled = true; 
         
-        // UI Notification for Cloud API transmission
         elements.modalStatus.innerText = "Transmitting image to Cloud API..."; 
         
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
@@ -1112,14 +1091,11 @@
         elements.canvas.width = cw; 
         elements.canvas.height = ch;
         
-        // Draw the full-color RGB image without local thresholding/binarization
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
         
-        // Extract Base64 string payload (removing the data URI prefix)
         const base64Image = elements.canvas.toDataURL("image/jpeg", 0.9).split(',')[1];
 
         try {
-            // Forward the payload to the Google Apps Script backend
             const payload = {
                 action: "ocr",
                 image_data: base64Image
@@ -1139,7 +1115,6 @@
 
             let rawText = data.text.toUpperCase();
             
-            // --- HEURISTICS AND CROSS-VALIDATION BLOCK ---
             const dashCount = (rawText.match(/-/g) || []).length;
             const spaceCount = (rawText.match(/ /g) || []).length;
 
@@ -1151,7 +1126,6 @@
                     return; 
                 }
                 
-                // Strict Base24 Microsoft Product Key Normalization
                 const base24Corrections = {
                     'S': '6', '5': '6',
                     'O': 'Q', '0': 'Q', 'D': 'Q',
@@ -1165,8 +1139,6 @@
 
                 const originalText = rawText; 
                 rawText = rawText.split('').map(char => base24Corrections[char] || char).join('');
-                
-                // Z is included in the allowed character filter to preserve the physical suffix
                 rawText = rawText.replace(/[^BCDFGHJKMPQRTVWXY2346789Z\- ]/g, '');
                 
                 if (originalText !== rawText) {
@@ -1180,9 +1152,7 @@
                     return; 
                 }
             }
-            // --- END HEURISTICS BLOCK ---
 
-            // Enforce strict Base24 charset (including Z) and extract ALL potential 25-character sequences
             const regex = /([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})/g;
             const matches = [...rawText.matchAll(regex)];
             
@@ -1192,14 +1162,11 @@
                 let finalArray = raw25.split('');
                 
                 if (currentInputId === 'office-key') {
-                    // Check characters 1 to 24: Z becomes 2 if mistakenly read inside the string
                     for (let i = 0; i < 24; i++) {
                         if (finalArray[i] === 'Z') finalArray[i] = '2';
                     }
-                    // BRUTE FORCE: The 25th character is unconditionally forced to 'Z' for Office Keys
                     finalArray[24] = 'Z';
                 } else {
-                    // Norton/McAfee: Z is always an optical error for 2
                     for (let i = 0; i < 25; i++) {
                         if (finalArray[i] === 'Z') finalArray[i] = '2';
                     }
