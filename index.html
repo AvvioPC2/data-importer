@@ -1120,7 +1120,7 @@
 
             if (currentInputId === 'office-key') {
                 if (dashCount === 0 && spaceCount >= 3) {
-                    elements.modalStatus.innerText = "❌ Errore: rilevata card Norton (con trattini nel Product Key). Scansionare una card Office (con spazi nel Product Key)."; 
+                    elements.modalStatus.innerText = "❌ Errore: rilevata card Norton (con spazi).\nScansionare una card Office (con trattini)."; 
                     elements.captureBtn.disabled = false; 
                     elements.video.play(); 
                     return; 
@@ -1146,7 +1146,7 @@
                 }                 
             } else if (currentInputId === 'av-key' && elements.avNorton.checked) {
                 if (dashCount >= 2) {
-                    elements.modalStatus.innerText = "❌ Errore: rilevata card Office o McAfee (con spazi nel Product Key). Scansionare una card Norton (con trattini nel Product Key)."; 
+                    elements.modalStatus.innerText = "❌ Errore: rilevata card Office o McAfee (con trattini).\nScansionare una card Norton (con spazi)."; 
                     elements.captureBtn.disabled = false; 
                     elements.video.play(); 
                     return; 
