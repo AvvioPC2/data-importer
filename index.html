@@ -16,7 +16,7 @@
             --primary-bg: #f4f7f6;
             --header-bg: #003366;
             --header-text: #ffffff;
-            --accent-color: #007bff;
+            --accent-color: #ff8000;
             --success-color: #28a745;
             --import-color: #17a2b8;
             --reprint-color: #6c757d; 
@@ -75,8 +75,8 @@
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
         /* Unified Action Buttons */
-        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
-        #btn-create-ms:hover:not(:disabled) { background: #0056b3; }
+        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(255, 128, 0, 0.2); }
+        #btn-create-ms:hover:not(:disabled) { opacity: 0.9; }
 
         #btnAuth { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: not-allowed; transition: all 0.3s; margin-bottom: 18px; }
 
@@ -84,7 +84,7 @@
         .standard-input:focus { border-color: var(--accent-color); }
         
         .checkbox-group { display: flex; align-items: center; justify-content: flex-start; gap: 10px; cursor: pointer; padding: 5px 0; }
-        .checkbox-group input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; cursor: pointer; }
+        .checkbox-group input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent-color); }
         .checkbox-group span, .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; text-align: left; line-height: 1.3; }
 
         .form-note { font-size: 13px; color: var(--text-muted); margin-top: -12px; margin-bottom: 5px; padding-left: 5px; font-weight: 500; }
@@ -116,18 +116,26 @@
         #scanner-video { width: 100%; height: 100%; object-fit: cover; }
 
         #scanner-overlay { position: absolute; width: 95%; height: 100px; border: 3px solid #00ff00; border-radius: 8px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s; }
-        #scanner-overlay.barcode-mode { height: 120px; border-color: #007bff; }
+        #scanner-overlay.barcode-mode { height: 120px; border-color: var(--accent-color); }
 
-        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 120px; display: flex; flex-direction: column; justify-content: center; padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
+        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 150px; display: flex; flex-direction: column; justify-content: center; padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
 
         #capture-btn { background: var(--accent-color); color: white; border: none; padding: 16px 30px; font-size: 18px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s; display: none; }
-        #capture-btn:active { transform: scale(0.95); background: #0056b3; }
+        #capture-btn:active { transform: scale(0.95); opacity: 0.9; }
         #capture-btn:disabled { background: #555; cursor: wait; }
+
+        /* Stile per lo Slider OCR */
+        #ocr-controls { display: none; width: 100%; margin-bottom: 15px; }
+        .slider-label { color: white; font-size: 15px; font-weight: 500; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #555; border-radius: 5px; }
+        input[type=range]::-webkit-slider-thumb { height: 22px; width: 22px; border-radius: 50%; background: var(--accent-color); cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 0 10px rgba(255, 128, 0, 0.5); }
 
         #modal-status { color: white; font-size: 15px; min-height: 20px; font-weight: 500; }
 
         .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-bottom: 10px; }
-        .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
+        .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: var(--accent-color); animation: scan-slide 1s infinite ease-in-out; }
         @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
 
         #custom-alert-modal, #pwd-alert-modal, #import-alert-modal { justify-content: center; align-items: center; z-index: 9999; }
@@ -330,6 +338,15 @@
         </div>
         <div class="modal-footer">
             <div id="scan-animation" class="scan-animation"></div>
+            
+            <div id="ocr-controls">
+                <div class="slider-label">
+                    <span>Sensibilità Luce (Binarizzazione)</span>
+                    <span id="threshold-val">130</span>
+                </div>
+                <input type="range" id="threshold-slider" min="50" max="220" value="130">
+            </div>
+
             <button id="capture-btn">CATTURA CODICE</button>
             <div id="modal-status">Apertura fotocamera...</div>
         </div>
@@ -390,10 +407,10 @@
         statusOcrLoading: "Download del motore IA in corso (attendere)...",
         statusOcrReady: "Motore OCR caricato e pronto.",
         statusBarcodeSearch: "Ricerca del codice a barre in corso...",
-        statusOcrAlign: "Allineare il codice nel riquadro verde e premere CATTURA",
+        statusOcrAlign: "Allinea il codice e premi CATTURA",
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
-        statusOcrFailed: "❌ Nessun codice rilevato. Riprovare.",
+        statusOcrFailed: "❌ Nessun codice rilevato. Regola la sensibilità e riprova.",
         
         // Critical System Errors 
         alertOcrCritical: "CRITICAL: Unable to download OCR engine. Check internet connection.",
@@ -432,6 +449,12 @@
     let acquiredPassword = "";        // Stores the exact password tied to acquisition
     let currentAuthSession = "";      // Native OAuth2 Session Tracking Variable
     
+    // Scanner variables
+    let currentMode = null;
+    let currentInputId = null;
+    let streamTrack = null;
+    let barcodeInterval = null;
+
     const zxingReader = new ZXing.BrowserMultiFormatReader();
 
     if ('BarcodeDetector' in window) {
@@ -468,6 +491,9 @@
         modalStatus: document.getElementById('modal-status'),
         scanAnimation: document.getElementById('scan-animation'),
         captureBtn: document.getElementById('capture-btn'),
+        ocrControls: document.getElementById('ocr-controls'),
+        thresholdSlider: document.getElementById('threshold-slider'),
+        thresholdVal: document.getElementById('threshold-val'),
         overlay: document.getElementById('scanner-overlay'),
         canvas: document.getElementById('hidden-canvas'),
         loadingOverlay: document.getElementById('loading-overlay'),
@@ -481,6 +507,13 @@
         chkImportDontShowAgain: document.getElementById('chk-import-dont-show-again'),
         chkEnableAlerts: document.getElementById('chk-enable-alerts')
     };
+
+    // =========================================================================
+    // SLIDER EVENT LISTENER
+    // =========================================================================
+    elements.thresholdSlider.addEventListener('input', (e) => {
+        elements.thresholdVal.innerText = e.target.value;
+    });
 
     // =========================================================================
     // CUSTOM ALERT SYSTEM
@@ -536,7 +569,6 @@
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
         document.getElementById('lbl-loading-overlay').innerText = DICTIONARY.overlayLoadingText;
         
-        // Synchronize initial component constraints
         updateAuthButtonVisuals();
         validateForm();
     }
@@ -558,7 +590,6 @@
         pwd = pwd.split('').sort(() => 0.5 - Math.random()).join('');
         elements.msPassword.value = pwd;
         
-        // Re-evaluate matching matrices if values shift back manually
         handleManualAccountEdits();
         validateForm();
     }
@@ -580,14 +611,15 @@
         }
     }
 
-	async function initializeOCRWorker() {
+    async function initializeOCRWorker() {
         try {
             tesseractWorker = await Tesseract.createWorker();
             await tesseractWorker.loadLanguage('eng');
             await tesseractWorker.initialize('eng');
             await tesseractWorker.setParameters({
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-',
-                tessedit_pageseg_mode: '7', // <- CRITICO: Modificato da 6 a 7 (Single Line)
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
+                // PSM 6 è tornato! Garantisce molta più resilienza ad allineamenti imprecisi
+                tessedit_pageseg_mode: '6', 
             });
             isOcrReady = true;
         } catch (e) {
@@ -607,24 +639,19 @@
     // FORM FORMATTING & VALIDATION ENGINE
     // =========================================================================
     function formatProductKey(input, sep) {
-        // Save current cursor baseline position
         let start = input.selectionStart;
         let originalValue = input.value;
-
-        // Clean array and rebuild formatted string
         let rawValue = originalValue.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
         let formattedValue = "";
+        
         for (let i = 0; i < rawValue.length; i++) {
             if (i > 0 && i % 5 === 0) formattedValue += sep;
             formattedValue += rawValue[i];
         }
 
-        // Bypass DOM update if structure is already consistent
         if (originalValue === formattedValue) return;
-
         input.value = formattedValue;
 
-        // Calculate cursor relative offset based on alphanumeric payload
         let alnumCountBeforeCursor = 0;
         for (let i = 0; i < start && i < originalValue.length; i++) {
             if (/[A-Za-z0-9]/.test(originalValue[i])) alnumCountBeforeCursor++;
@@ -638,16 +665,12 @@
                 break;
             }
             if (/[A-Za-z0-9]/.test(formattedValue[i])) currentAlnumCount++;
-            
-            // Failsafe for trailing string appends
             if (i === formattedValue.length - 1 && currentAlnumCount === alnumCountBeforeCursor) {
                 newCursorPos = formattedValue.length;
             }
         }
 
         if (currentAlnumCount < alnumCountBeforeCursor) newCursorPos = formattedValue.length;
-
-        // Restore active UI pointer array
         input.setSelectionRange(newCursorPos, newCursorPos);
         validateForm();
     }
@@ -700,22 +723,18 @@
     // =========================================================================
     function updateAuthButtonVisuals() {
         if (!isMsCreated) {
-            // Initial locked state
             elements.btnAuth.disabled = true;
             elements.btnAuth.style.background = "var(--reprint-color)";
             elements.btnAuth.style.cursor = "not-allowed";
             elements.btnAuth.style.boxShadow = "none";
         } else if (!acquiredEmail) {
-            // Unlocked but awaiting pull trigger
             elements.btnAuth.disabled = false;
             elements.btnAuth.style.background = "var(--import-color)";
             elements.btnAuth.style.cursor = "pointer";
             elements.btnAuth.style.boxShadow = "0 4px 10px rgba(23, 162, 184, 0.2)";
         } else {
-            // Evaluates matches against the original acquired baseline arrays
             const currentEmail = elements.msUsername.value.trim().toLowerCase();
             const currentPwd = elements.msPassword.value.trim();
-            
             if (currentEmail === acquiredEmail.toLowerCase() && currentPwd === acquiredPassword) {
                 elements.btnAuth.style.background = "var(--success-color)";
                 elements.btnAuth.style.boxShadow = "0 4px 10px rgba(40, 167, 69, 0.2)";
@@ -727,10 +746,7 @@
     }
 
     function handleManualAccountEdits() {
-        // Only run real-time comparisons if an active payload has been generated/acquired
-        if (acquiredEmail) {
-            updateAuthButtonVisuals();
-        }
+        if (acquiredEmail) { updateAuthButtonVisuals(); }
     }
 
     elements.msUsername.addEventListener('input', () => { handleManualAccountEdits(); validateForm(); });
@@ -741,14 +757,10 @@
     // =========================================================================
     elements.btnCreateMs.onclick = () => {
         if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-        
-        // Active unlocked states initialization
         if (!isMsCreated) {
             isMsCreated = true;
             updateAuthButtonVisuals();
         }
-
-        // Evaluate persistent suppression flag state
         if (localStorage.getItem('hide_pwd_alert') === 'true') {
             executeMsCreationFlow();
         } else {
@@ -767,7 +779,6 @@
 
 	function executeMsCreationFlow() {
         const pwdToCopy = elements.msPassword.value.trim();
-        
         const fallbackCopy = () => {
             const el = document.createElement('textarea');
             el.value = pwdToCopy;
@@ -780,22 +791,14 @@
             document.body.removeChild(el);
         };
 
-        // Copia istantanea e sicura negli appunti
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(pwdToCopy).catch(() => fallbackCopy());
         } else {
             fallbackCopy();
         }
 
-        // =====================================================================
-        // DIRECT CONSUMER SIGNUP (FALLBACK ROBUSTO)
-        // =====================================================================
-        // Apertura pulita e diretta del form di registrazione Microsoft.
-        // Se è presente una sessione pregressa persistente, l'operatore dovrà
-        // cliccare manualmente su "Esci" dall'interfaccia Microsoft.
         window.open('https://signup.live.com/signup', '_blank');
 
-        // Feedback visivo sul pulsante per confermare la copia
         const originalText = elements.btnCreateMs.innerText;
         elements.btnCreateMs.innerText = DICTIONARY.btnFeedbackCustom;
         elements.btnCreateMs.style.background = "var(--success-color)";
@@ -806,11 +809,8 @@
         }, 3000);
     }
 
-    // Interceptor for the Import button to handle the new modal
     function handleImportClick() {
         if (elements.btnAuth.disabled) return;
-
-        // Evaluate persistent suppression flag state for import alert
         if (localStorage.getItem('hide_import_alert') === 'true') {
             startMicrosoftAuth();
         } else {
@@ -834,30 +834,23 @@
         elements.btnAuth.innerText = "Inizializzazione...";
         elements.btnAuth.disabled = true;
 
-        // Isolated session ID for concurrent store deployments
         currentAuthSession = "session_" + Math.random().toString(36).substring(2, 10);
-        
-        // Mobile Anti-Blocker Hack: Instantly open a blank tab synchronously
         const popup = window.open('', '_blank');
 
         try {
-            // Request OAuth Auth URL from Google Backend with session binding
             const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getAuthUrl&session_id=" + currentAuthSession);
             const data = await response.json();
 
             if (!data.url) {
                 popup.close();
-                showAlert("CRITICAL: Backend returned empty URL. Ensure Google Apps Script deployment is updated.");
+                showAlert("CRITICAL: Backend returned empty URL.");
                 elements.btnAuth.innerText = "Importa account creato";
                 elements.btnAuth.disabled = false;
                 return;
             }
 
-            // Redirect the pre-opened blank tab to the valid Microsoft OAuth endpoint
             popup.location.href = data.url;
             elements.btnAuth.innerText = "In attesa...";
-            
-            // Initiate background polling
             pollForEmail();
         } catch (error) {
             popup.close();
@@ -872,30 +865,23 @@
         pollingInterval = setInterval(async () => {
             attempts++;
             try {
-                // Fetch email utilizing the explicit session binding
                 const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getEmail&session_id=" + currentAuthSession);
                 const data = await response.json();
 
-                // Intercept valid email payload
                 if (data.email) {
                     clearInterval(pollingInterval);
-                    
-                    // Populate global match tracking matrices
                     acquiredEmail = data.email;
                     acquiredPassword = elements.msPassword.value.trim();
-                    
                     elements.msUsername.value = data.email;
                     elements.btnAuth.innerText = "Account importato";
                     updateAuthButtonVisuals();
-                    
                     showAlert(DICTIONARY.alertOauthSuccess + data.email);
                     validateForm();
                 }
             } catch (e) {
-                console.log("Polling backend for MSA payload...");
+                console.log("Polling backend...");
             }
 
-            // Failsafe timeout after ~2 minutes (40 attempts * 3000ms)
             if (attempts > 40) {
                 clearInterval(pollingInterval);
                 elements.btnAuth.innerText = "Timeout. Riprova.";
@@ -963,14 +949,9 @@
 
     function openOperatorModal() { 
         elements.operatorPin.value = ''; 
-        
-        // Synchronize interface notification state switch with local storage settings
         const pwdHidden = localStorage.getItem('hide_pwd_alert') === 'true';
         const importHidden = localStorage.getItem('hide_import_alert') === 'true';
-        
-        // Ensure switch is checked if at least one of the alerts is currently enabled (not hidden)
         elements.chkEnableAlerts.checked = !(pwdHidden && importHidden);
-        
         elements.operatorModal.classList.add('active'); 
     }
     
@@ -987,7 +968,6 @@
         const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         if (hash !== op.pinHash.trim().toLowerCase()) { showAlert(DICTIONARY.alertPinInvalid); elements.operatorPin.value = ''; return; }
         
-        // Core suppression sync logic for BOTH alerts
         if (elements.chkEnableAlerts.checked) {
             localStorage.removeItem('hide_pwd_alert');
             localStorage.removeItem('hide_import_alert');
@@ -1006,8 +986,8 @@
 
     function updateOperatorUI() { elements.operatorBadge.innerText = currentOperatorId; validateForm(); }
 
-// =========================================================================
-    // CAMERA & SCANNER ENGINE (Barcode + OCR)
+    // =========================================================================
+    // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
     // =========================================================================
     async function openScanner(targetId, mode) {
         currentInputId = targetId; currentMode = mode;
@@ -1015,17 +995,23 @@
         elements.scannerModal.classList.add('active');
         
         if (mode === 'barcode') {
-            elements.overlay.classList.add('barcode-mode'); elements.captureBtn.style.display = 'none'; elements.scanAnimation.style.display = 'block'; elements.modalStatus.innerText = DICTIONARY.statusBarcodeSearch;
+            elements.overlay.classList.add('barcode-mode'); 
+            elements.captureBtn.style.display = 'none'; 
+            elements.scanAnimation.style.display = 'block'; 
+            elements.ocrControls.style.display = 'none';
+            elements.modalStatus.innerText = DICTIONARY.statusBarcodeSearch;
         } else {
-            elements.overlay.classList.remove('barcode-mode'); elements.captureBtn.style.display = 'block'; elements.captureBtn.disabled = false; elements.scanAnimation.style.display = 'none'; elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
+            elements.overlay.classList.remove('barcode-mode'); 
+            elements.captureBtn.style.display = 'block'; 
+            elements.captureBtn.disabled = false; 
+            elements.scanAnimation.style.display = 'none'; 
+            elements.ocrControls.style.display = 'block'; // Mostra controlli OCR
+            elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
             
-            // Dynamic Tesseract Engine Parameters Overrides
             if (isOcrReady) {
                 if (targetId === 'office-key') {
-                    // Microsoft Base24 Standard Constraint (Excludes: A,E,I,O,U,L,N,S,Z,0,1,5)
                     await tesseractWorker.setParameters({ tessedit_char_whitelist: 'BCDFGHJKMPQRTVWXY2346789- ' });
                 } else {
-                    // Fallback to Full Alphanumeric Array for standard 3rd Party AVs
                     await tesseractWorker.setParameters({ tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ' });
                 }
             }
@@ -1054,7 +1040,6 @@
         barcodeInterval = setInterval(async () => {
             if (currentMode !== 'barcode' || !elements.video.videoWidth) return;
             
-            // Image Cropping Logic for Barcode Targeting
             const v = elements.video;
             const overlay = elements.overlay.getBoundingClientRect();
             const wrapper = v.parentElement.getBoundingClientRect();
@@ -1102,6 +1087,7 @@
         if (!streamTrack || currentMode !== 'ocr') return;
         if (!isOcrReady) { showAlert(DICTIONARY.alertOcrNotReady); return; }
         
+        // 1. Pausa video e aggiornamento UI
         elements.video.pause(); 
         elements.captureBtn.disabled = true; 
         elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
@@ -1122,37 +1108,34 @@
         elements.canvas.width = cw; 
         elements.canvas.height = ch;
         
-        // Disegna l'immagine base (Rimosso il finto filtro CSS)
+        // 2. Disegno immagine pura
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
         
-        // --- INIZIO MOTORE DI BINARIZZAZIONE HARDWARE ---
+        // 3. Recupero valore Slider
+        const thresholdValue = parseInt(elements.thresholdSlider.value, 10);
+
+        // 4. Binarizzazione Hardware a Timbro
         const imgData = ctx.getImageData(0, 0, cw, ch);
         const data = imgData.data;
         for (let i = 0; i < data.length; i += 4) {
-            // Calcolo della luminanza (percezione ottica standard)
             const brightness = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+            const color = brightness > thresholdValue ? 255 : 0; 
             
-            // Soglia brutale: brucia l'anti-aliasing e i riflessi argentati
-            // Se l'ambiente è buio potresti dover abbassare il 130 a 100.
-            const color = brightness > 130 ? 255 : 0; 
-            
-            data[i] = color;     // Rosso
-            data[i + 1] = color; // Verde
-            data[i + 2] = color; // Blu
+            data[i] = color;     // R
+            data[i + 1] = color; // G
+            data[i + 2] = color; // B
         }
         ctx.putImageData(imgData, 0, 0);
-        // --- FINE MOTORE DI BINARIZZAZIONE ---
 
+        // 5. Iniezione al Tesseract e Auto-Correttore
         try {
             const res = await tesseractWorker.recognize(elements.canvas);
             let rawText = res.data.text.toUpperCase();
             
-            // Auto-Correttore per errori OCR comuni basati su forme simili
-            // (Es. il 5 o la S letti su un cartoncino Office sono fisicamente impossibili)
             if (currentInputId === 'office-key') {
-                rawText = rawText.replace(/[S5]/g, '6')  // Il 6 sgranato spesso viene letto come S o 5
-                                 .replace(/[O0D]/g, 'Q') // Lo zero e la O non esistono, spesso è una Q
-                                 .replace(/[Z]/g, '2');  // La Z non esiste in MS Base-24
+                rawText = rawText.replace(/[S5]/g, '6')
+                                 .replace(/[O0D]/g, 'Q')
+                                 .replace(/[Z]/g, '2');
             }
 
             const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
@@ -1166,6 +1149,7 @@
                 elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
                 setTimeout(closeScanner, 800);
             } else { 
+                // Permette riprova senza chiudere
                 elements.modalStatus.innerText = DICTIONARY.statusOcrFailed; 
                 elements.captureBtn.disabled = false; 
                 elements.video.play(); 
