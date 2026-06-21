@@ -1086,6 +1086,10 @@
     // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
     // Sezione: elements.captureBtn.onclick
     // =========================================================================
+    // =========================================================================
+    // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
+    // Section: elements.captureBtn.onclick
+    // =========================================================================
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
         if (!isOcrReady) { showAlert(DICTIONARY.alertOcrNotReady); return; }
@@ -1146,10 +1150,10 @@
                 }
                 
                 // Strict Base24 Microsoft Product Key Normalization
+                // Note: 'Z' is explicitly removed from global correction to allow static suffix evaluation
                 const base24Corrections = {
                     'S': '6', '5': '6',
                     'O': 'Q', '0': 'Q', 'D': 'Q',
-                    'Z': '2',
                     'I': 'T', '1': 'T', 'L': 'T',
                     'A': '4',
                     'R': 'K', 
@@ -1158,9 +1162,15 @@
                     'E': 'F'
                 };
 
+                const originalText = rawText; 
                 rawText = rawText.split('').map(char => base24Corrections[char] || char).join('');
-                rawText = rawText.replace(/[^BCDFGHJKMPQRTVWXY2346789\- ]/g, '');
-                                 
+                
+                // Z is included in the allowed character filter to preserve the physical suffix
+                rawText = rawText.replace(/[^BCDFGHJKMPQRTVWXY2346789Z\- ]/g, '');
+                
+                if (originalText !== rawText) {
+                    console.log("INFO: Applied strict Base24 Microsoft correction.");
+                }                 
             } else if (currentInputId === 'av-key' && elements.avNorton.checked) {
                 if (dashCount >= 2) {
                     elements.modalStatus.innerText = "❌ Format mismatch: Office/McAfee layout detected. Please scan a Norton card."; 
@@ -1171,14 +1181,24 @@
             }
             // --- END HEURISTICS BLOCK ---
 
-            // Enforce strict Base24 charset and extract ALL potential 25-character sequences
-            const regex = /([BCDFGHJKMPQRTVWXY2346789]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789]{5})/g;
+            // Enforce strict Base24 charset (including Z) and extract ALL potential 25-character sequences
+            const regex = /([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})/g;
             const matches = [...rawText.matchAll(regex)];
             
             if (matches && matches.length > 0) {
-                // Always select the LAST match to ensure we bypass zip codes and grab the bottom key
                 const bestMatch = matches[matches.length - 1];
-                const finalKey = `${bestMatch[1]}-${bestMatch[2]}-${bestMatch[3]}-${bestMatch[4]}-${bestMatch[5]}`;
+                let raw25 = `${bestMatch[1]}${bestMatch[2]}${bestMatch[3]}${bestMatch[4]}${bestMatch[5]}`;
+                
+                // Dynamic Z correction logic: Convert to '2' if inside the string, keep as 'Z' if at the very end
+                let finalArray = raw25.split('');
+                for (let i = 0; i < 24; i++) {
+                    if (finalArray[i] === 'Z') {
+                        finalArray[i] = '2';
+                    }
+                }
+                raw25 = finalArray.join('');
+                
+                const finalKey = `${raw25.substring(0,5)}-${raw25.substring(5,10)}-${raw25.substring(10,15)}-${raw25.substring(15,20)}-${raw25.substring(20,25)}`;
                 
                 const target = document.getElementById(currentInputId);
                 target.value = finalKey; 
