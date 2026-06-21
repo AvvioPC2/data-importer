@@ -7,7 +7,6 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
 
     <style>
@@ -1084,16 +1083,17 @@
 
 
     // =========================================================================
-    // CAMERA & SCANNER ENGINE (Barcode + OCR Hardware Binarization)
+    // CAMERA & SCANNER ENGINE (Cloud Vision API Integration)
     // Section: elements.captureBtn.onclick
     // =========================================================================
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
-        if (!isOcrReady) { showAlert(DICTIONARY.alertOcrNotReady); return; }
         
         elements.video.pause(); 
         elements.captureBtn.disabled = true; 
-        elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
+        
+        // UI Notification for Cloud API transmission
+        elements.modalStatus.innerText = "Transmitting image to Cloud API..."; 
         
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         const v = elements.video;
@@ -1103,7 +1103,6 @@
         const scaleX = v.videoWidth / wrapper.width; 
         const scaleY = v.videoHeight / wrapper.height;
         
-        // Slightly tighten the vertical crop to avoid capturing the zip code fine print
         const cropReduction = 12; 
         const cw = overlay.width * scaleX; 
         const ch = (overlay.height - (cropReduction * 2)) * scaleY;
@@ -1113,26 +1112,32 @@
         elements.canvas.width = cw; 
         elements.canvas.height = ch;
         
+        // Draw the full-color RGB image without local thresholding/binarization
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
         
-        const thresholdValue = parseInt(elements.thresholdSlider.value, 10);
-        const imgData = ctx.getImageData(0, 0, cw, ch);
-        const data = imgData.data;
-
-        // Apply hardware binarization threshold
-        for (let i = 0; i < data.length; i += 4) {
-            const brightness = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-            const color = brightness > thresholdValue ? 255 : 0; 
-            
-            data[i] = color;     // R
-            data[i + 1] = color; // G
-            data[i + 2] = color; // B
-        }
-        ctx.putImageData(imgData, 0, 0);
+        // Extract Base64 string payload (removing the data URI prefix)
+        const base64Image = elements.canvas.toDataURL("image/jpeg", 0.9).split(',')[1];
 
         try {
-            const res = await tesseractWorker.recognize(elements.canvas);
-            let rawText = res.data.text.toUpperCase();
+            // Forward the payload to the Google Apps Script backend
+            const payload = {
+                action: "ocr",
+                image_data: base64Image
+            };
+
+            const res = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+
+            const data = await res.json();
+
+            if (data.status === "error") {
+                throw new Error(data.message);
+            }
+
+            let rawText = data.text.toUpperCase();
             
             // --- HEURISTICS AND CROSS-VALIDATION BLOCK ---
             const dashCount = (rawText.match(/-/g) || []).length;
@@ -1214,7 +1219,7 @@
                 elements.video.play(); 
             }
         } catch(e) { 
-            elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError; 
+            elements.modalStatus.innerText = "CRITICAL: Cloud OCR transmission failed. " + e.message; 
             elements.captureBtn.disabled = false; 
             elements.video.play(); 
         }
