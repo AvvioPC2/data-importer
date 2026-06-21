@@ -16,7 +16,7 @@
             --primary-bg: #f4f7f6;
             --header-bg: #003366;
             --header-text: #ffffff;
-            --accent-color: #ff8000;
+            --accent-color: #007bff; /* Ripristinato il blu professionale originale */
             --success-color: #28a745;
             --import-color: #17a2b8;
             --reprint-color: #6c757d; 
@@ -75,7 +75,7 @@
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
 
         /* Unified Action Buttons */
-        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(255, 128, 0, 0.2); }
+        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
         #btn-create-ms:hover:not(:disabled) { opacity: 0.9; }
 
         #btnAuth { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: not-allowed; transition: all 0.3s; margin-bottom: 18px; }
@@ -130,7 +130,7 @@
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #555; border-radius: 5px; }
-        input[type=range]::-webkit-slider-thumb { height: 22px; width: 22px; border-radius: 50%; background: var(--accent-color); cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 0 10px rgba(255, 128, 0, 0.5); }
+        input[type=range]::-webkit-slider-thumb { height: 22px; width: 22px; border-radius: 50%; background: var(--accent-color); cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); }
 
         #modal-status { color: white; font-size: 15px; min-height: 20px; font-weight: 500; }
 
@@ -444,10 +444,10 @@
     let pollingInterval = null;
     
     // UI Functional Flow State Flags
-    let isMsCreated = false;          // Tracks if creation button has been clicked
-    let acquiredEmail = "";           // Stores the exact raw background email
-    let acquiredPassword = "";        // Stores the exact password tied to acquisition
-    let currentAuthSession = "";      // Native OAuth2 Session Tracking Variable
+    let isMsCreated = false;          
+    let acquiredEmail = "";           
+    let acquiredPassword = "";        
+    let currentAuthSession = "";      
     
     // Scanner variables
     let currentMode = null;
@@ -618,7 +618,6 @@
             await tesseractWorker.initialize('eng');
             await tesseractWorker.setParameters({
                 tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
-                // PSM 6 è tornato! Garantisce molta più resilienza ad allineamenti imprecisi
                 tessedit_pageseg_mode: '6', 
             });
             isOcrReady = true;
@@ -1005,7 +1004,7 @@
             elements.captureBtn.style.display = 'block'; 
             elements.captureBtn.disabled = false; 
             elements.scanAnimation.style.display = 'none'; 
-            elements.ocrControls.style.display = 'block'; // Mostra controlli OCR
+            elements.ocrControls.style.display = 'block';
             elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
             
             if (isOcrReady) {
@@ -1087,7 +1086,6 @@
         if (!streamTrack || currentMode !== 'ocr') return;
         if (!isOcrReady) { showAlert(DICTIONARY.alertOcrNotReady); return; }
         
-        // 1. Pausa video e aggiornamento UI
         elements.video.pause(); 
         elements.captureBtn.disabled = true; 
         elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
@@ -1108,13 +1106,10 @@
         elements.canvas.width = cw; 
         elements.canvas.height = ch;
         
-        // 2. Disegno immagine pura
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
         
-        // 3. Recupero valore Slider
         const thresholdValue = parseInt(elements.thresholdSlider.value, 10);
 
-        // 4. Binarizzazione Hardware a Timbro
         const imgData = ctx.getImageData(0, 0, cw, ch);
         const data = imgData.data;
         for (let i = 0; i < data.length; i += 4) {
@@ -1127,16 +1122,36 @@
         }
         ctx.putImageData(imgData, 0, 0);
 
-        // 5. Iniezione al Tesseract e Auto-Correttore
         try {
             const res = await tesseractWorker.recognize(elements.canvas);
             let rawText = res.data.text.toUpperCase();
             
+            // --- BLOCCO CROSS-VALIDAZIONE CARTONCINI ---
+            const dashCount = (rawText.match(/-/g) || []).length;
+            const spaceCount = (rawText.match(/ /g) || []).length;
+
             if (currentInputId === 'office-key') {
+                if (dashCount === 0 && spaceCount >= 3) {
+                    elements.modalStatus.innerText = "❌ Attenzione: Rilevato formato Norton (spazi). Inquadrare cartoncino Office."; 
+                    elements.captureBtn.disabled = false; 
+                    elements.video.play(); 
+                    return; 
+                }
+                
+                // Auto-Correttore base 24 per Office
                 rawText = rawText.replace(/[S5]/g, '6')
                                  .replace(/[O0D]/g, 'Q')
                                  .replace(/[Z]/g, '2');
+                                 
+            } else if (currentInputId === 'av-key' && elements.avNorton.checked) {
+                if (dashCount >= 2) {
+                    elements.modalStatus.innerText = "❌ Attenzione: Rilevato formato Office/McAfee (trattini). Inquadrare cartoncino Norton."; 
+                    elements.captureBtn.disabled = false; 
+                    elements.video.play(); 
+                    return; 
+                }
             }
+            // --- FINE BLOCCO CROSS-VALIDAZIONE ---
 
             const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
             const match = rawText.match(regex);
@@ -1149,7 +1164,6 @@
                 elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
                 setTimeout(closeScanner, 800);
             } else { 
-                // Permette riprova senza chiudere
                 elements.modalStatus.innerText = DICTIONARY.statusOcrFailed; 
                 elements.captureBtn.disabled = false; 
                 elements.video.play(); 
