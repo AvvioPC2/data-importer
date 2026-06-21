@@ -580,14 +580,14 @@
         }
     }
 
-    async function initializeOCRWorker() {
+	async function initializeOCRWorker() {
         try {
             tesseractWorker = await Tesseract.createWorker();
             await tesseractWorker.loadLanguage('eng');
             await tesseractWorker.initialize('eng');
             await tesseractWorker.setParameters({
-                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
-                tessedit_pageseg_mode: '6', 
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-',
+                tessedit_pageseg_mode: '7', // <- CRITICO: Modificato da 6 a 7 (Single Line)
             });
             isOcrReady = true;
         } catch (e) {
@@ -1101,29 +1101,80 @@
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
         if (!isOcrReady) { showAlert(DICTIONARY.alertOcrNotReady); return; }
-        elements.video.pause(); elements.captureBtn.disabled = true; elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
+        
+        elements.video.pause(); 
+        elements.captureBtn.disabled = true; 
+        elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
+        
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         const v = elements.video;
         const overlay = elements.overlay.getBoundingClientRect();
         const wrapper = v.parentElement.getBoundingClientRect();
-        const scaleX = v.videoWidth / wrapper.width; const scaleY = v.videoHeight / wrapper.height;
-        const cw = overlay.width * scaleX; const ch = overlay.height * scaleY;
-        const cx = (overlay.left - wrapper.left) * scaleX; const cy = (overlay.top - wrapper.top) * scaleY;
-        elements.canvas.width = cw; elements.canvas.height = ch;
-        ctx.filter = "contrast(1.5) grayscale(1)"; ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch); ctx.filter = "none";
+        
+        const scaleX = v.videoWidth / wrapper.width; 
+        const scaleY = v.videoHeight / wrapper.height;
+        
+        const cw = overlay.width * scaleX; 
+        const ch = overlay.height * scaleY;
+        const cx = (overlay.left - wrapper.left) * scaleX; 
+        const cy = (overlay.top - wrapper.top) * scaleY;
+        
+        elements.canvas.width = cw; 
+        elements.canvas.height = ch;
+        
+        // Disegna l'immagine base (Rimosso il finto filtro CSS)
+        ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
+        
+        // --- INIZIO MOTORE DI BINARIZZAZIONE HARDWARE ---
+        const imgData = ctx.getImageData(0, 0, cw, ch);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            // Calcolo della luminanza (percezione ottica standard)
+            const brightness = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+            
+            // Soglia brutale: brucia l'anti-aliasing e i riflessi argentati
+            // Se l'ambiente è buio potresti dover abbassare il 130 a 100.
+            const color = brightness > 130 ? 255 : 0; 
+            
+            data[i] = color;     // Rosso
+            data[i + 1] = color; // Verde
+            data[i + 2] = color; // Blu
+        }
+        ctx.putImageData(imgData, 0, 0);
+        // --- FINE MOTORE DI BINARIZZAZIONE ---
+
         try {
             const res = await tesseractWorker.recognize(elements.canvas);
-            const rawText = res.data.text.toUpperCase();
+            let rawText = res.data.text.toUpperCase();
+            
+            // Auto-Correttore per errori OCR comuni basati su forme simili
+            // (Es. il 5 o la S letti su un cartoncino Office sono fisicamente impossibili)
+            if (currentInputId === 'office-key') {
+                rawText = rawText.replace(/[S5]/g, '6')  // Il 6 sgranato spesso viene letto come S o 5
+                                 .replace(/[O0D]/g, 'Q') // Lo zero e la O non esistono, spesso è una Q
+                                 .replace(/[Z]/g, '2');  // La Z non esiste in MS Base-24
+            }
+
             const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
             const match = rawText.match(regex);
+            
             if (match) {
-                const finalKey = `${match[1]}${match[2]}${match[3]}${match[4]}${match[5]}`;
+                const finalKey = `${match[1]}-${match[2]}-${match[3]}-${match[4]}-${match[5]}`;
                 const target = document.getElementById(currentInputId);
-                target.value = finalKey; target.dispatchEvent(new Event('input')); 
+                target.value = finalKey; 
+                target.dispatchEvent(new Event('input')); 
                 elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
                 setTimeout(closeScanner, 800);
-            } else { elements.modalStatus.innerText = DICTIONARY.statusOcrFailed; elements.captureBtn.disabled = false; elements.video.play(); }
-        } catch(e) { elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError; elements.captureBtn.disabled = false; elements.video.play(); }
+            } else { 
+                elements.modalStatus.innerText = DICTIONARY.statusOcrFailed; 
+                elements.captureBtn.disabled = false; 
+                elements.video.play(); 
+            }
+        } catch(e) { 
+            elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError; 
+            elements.captureBtn.disabled = false; 
+            elements.video.play(); 
+        }
     };
 
     // =========================================================================
