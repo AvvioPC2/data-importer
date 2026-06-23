@@ -6,7 +6,6 @@
     <title>AvvioPC 2 - Dashboard</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
-
     <script src="https://unpkg.com/@zxing/library@latest"></script>
 
     <style>
@@ -15,7 +14,7 @@
             --primary-bg: #f4f7f6;
             --header-bg: #003366;
             --header-text: #ffffff;
-            --accent-color: #007bff; /* Ripristinato il blu professionale originale */
+            --accent-color: #007bff; 
             --success-color: #28a745;
             --import-color: #17a2b8;
             --reprint-color: #6c757d; 
@@ -123,13 +122,8 @@
         #capture-btn:active { transform: scale(0.95); opacity: 0.9; }
         #capture-btn:disabled { background: #555; cursor: wait; }
 
-        /* Stile per lo Slider OCR */
+        /* Hidden Cloud Vision OCR slider styling */
         #ocr-controls { display: none; width: 100%; margin-bottom: 15px; }
-        .slider-label { color: white; font-size: 15px; font-weight: 500; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]:focus { outline: none; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #555; border-radius: 5px; }
-        input[type=range]::-webkit-slider-thumb { height: 22px; width: 22px; border-radius: 50%; background: var(--accent-color); cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); }
 
         #modal-status { color: white; font-size: 15px; min-height: 20px; font-weight: 500; }
 
@@ -176,7 +170,6 @@
 
     <main class="form-container">
         <div class="form-group">
-            <div class="form-group">
             <div class="section-title" id="lbl-serial">Numero seriale del prodotto *</div>
             <div class="input-with-icon">
                 <input type="text" id="pc-serial" style="text-transform: none;" oninput="handleSerialInput()">
@@ -184,7 +177,6 @@
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
             </div>
-        </div>
         </div>
 
         <div class="form-group">
@@ -280,9 +272,9 @@
         <div class="operator-dialog" style="text-align: center;">
             <div class="alert-title">Informazione</div>
             <div class="alert-message" style="font-size:16px; line-height:1.4; color:var(--text-main); margin-bottom:15px;">
-				Una password casuale è stata creata automaticamente.<br>Usa la funzione "Incolla" per inserirla durante la creazione dell'account.<br><br>
-				Una volta creato l'account, tornare a questa applicazione e fare click sul pulsante "Importa account creato".
-			</div>
+                Una password casuale è stata creata automaticamente.<br>Usa la funzione "Incolla" per inserirla durante la creazione dell'account.<br><br>
+                Una volta creato l'account, tornare a questa applicazione e fare click sul pulsante "Importa account creato".
+            </div>
             <label class="checkbox-group" style="justify-content: center; margin-bottom: 20px; padding: 5px;">
                 <input type="checkbox" id="chk-dont-show-again">
                 <span style="font-size: 15px; color:var(--text-muted);">Non mostrare più questo messaggio</span>
@@ -341,12 +333,7 @@
             <div id="scan-animation" class="scan-animation"></div>
             
             <div id="ocr-controls">
-                <div class="slider-label">
-                    <span>Sensibilità Luce (Binarizzazione)</span>
-                    <span id="threshold-val">130</span>
                 </div>
-                <input type="range" id="threshold-slider" min="50" max="220" value="130">
-            </div>
 
             <button id="capture-btn">CATTURA CODICE</button>
             <div id="modal-status">Apertura fotocamera...</div>
@@ -405,18 +392,18 @@
         scanTitleOcr: "Scansione Product Key",
         btnCaptureOcr: "CATTURA CODICE",
         statusInit: "Apertura fotocamera...",
-        statusOcrLoading: "Download del motore IA in corso (attendere)...",
+        statusOcrLoading: "Initializing Cloud API...",
         statusOcrReady: "Motore OCR caricato e pronto.",
         statusBarcodeSearch: "Ricerca del codice a barre in corso...",
         statusOcrAlign: "Allinea il codice e premi CATTURA",
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
-        statusOcrFailed: "❌ Nessun codice rilevato. Verifica l'inquadratura e riprova.",
+        statusOcrFailed: "❌ Nessun codice rilevato. Riprova.",
         
         // Critical System Errors 
-        alertOcrCritical: "CRITICAL: Unable to download OCR engine. Check internet connection.",
-        alertOcrNotReady: "Please wait, the AI engine is still booting.",
-        alertOcrSystemError: "Memory error during image decoding.",
+        alertOcrCritical: "CRITICAL: Unable to access Cloud OCR engine. Check internet connection.",
+        alertOcrNotReady: "Please wait, the API interface is initializing.",
+        alertOcrSystemError: "Network error during Cloud OCR transmission.",
         alertOauthConnectionError: "CRITICAL: Failed to establish OAuth backend connection.",
         alertOauthSuccess: "✅ Account Microsoft acquisito: ",
         
@@ -427,7 +414,11 @@
         alertUploadError: "Impossibile trasmettere i dati: ",
         alertCameraError: "Errore hardware fotocamera: ",
         alertFetchError: "Impossibile scaricare la lista operatori. Riprova più tardi.",
-        overlayLoadingText: "Salvataggio in corso..." 
+        overlayLoadingText: "Salvataggio in corso...",
+
+        // OCR Dynamic Alerts translated
+        ocrFormatOfficeExpected: "❌ Formato non valido: rilevato cartoncino Norton. Inquadrare cartoncino Office.",
+        ocrFormatNortonExpected: "❌ Formato non valido: rilevato cartoncino Office. Inquadrare cartoncino Norton."
     };
 
     // --- PRODUCTION ENDPOINT ---
@@ -443,11 +434,11 @@
     let nativeBarcodeDetector = null;
     let customAlertCallback = null; 
     let pollingInterval = null;
-    let serialCheckTimeout = null; // Debounce timer for API calls
+    let serialCheckTimeout = null; // Debounce timer for API checks
     
     // UI Functional Flow State Flags
     let isMsCreated = false;          
-    let acquiredEmail = "";           
+    let acquiredEmail = "";            
     let acquiredPassword = "";        
     let currentAuthSession = "";      
     
@@ -494,8 +485,6 @@
         scanAnimation: document.getElementById('scan-animation'),
         captureBtn: document.getElementById('capture-btn'),
         ocrControls: document.getElementById('ocr-controls'),
-        thresholdSlider: document.getElementById('threshold-slider'),
-        thresholdVal: document.getElementById('threshold-val'),
         overlay: document.getElementById('scanner-overlay'),
         canvas: document.getElementById('hidden-canvas'),
         loadingOverlay: document.getElementById('loading-overlay'),
@@ -509,13 +498,6 @@
         chkImportDontShowAgain: document.getElementById('chk-import-dont-show-again'),
         chkEnableAlerts: document.getElementById('chk-enable-alerts')
     };
-
-    // =========================================================================
-    // SLIDER EVENT LISTENER
-    // =========================================================================
-    elements.thresholdSlider.addEventListener('input', (e) => {
-        elements.thresholdVal.innerText = e.target.value;
-    });
 
     // =========================================================================
     // CUSTOM ALERT SYSTEM
@@ -627,8 +609,8 @@
         initializeOCRWorker();
     });
 
-	// =========================================================================
-    // FORM FORMATTING & VALIDATION ENGINE
+    // =========================================================================
+    // FORM FORMATTING & VALIDATION ENGINE (WITH DEBOUNCING)
     // =========================================================================
     function handleSerialInput() {
         validateForm(); 
@@ -652,7 +634,6 @@
 
                 if (result.status === "success" && result.exists) {
                     elements.reprintBtn.style.background = "var(--success-color)";
-                    // Optional: Provide tiny vibration feedback if running on mobile
                     if ("vibrate" in navigator) navigator.vibrate([50]);
                 }
             } catch (err) {
@@ -800,7 +781,7 @@
         executeMsCreationFlow();
     };
 
-	function executeMsCreationFlow() {
+    function executeMsCreationFlow() {
         const pwdToCopy = elements.msPassword.value.trim();
         const fallbackCopy = () => {
             const el = document.createElement('textarea');
@@ -1106,7 +1087,7 @@
         elements.video.pause(); 
         elements.captureBtn.disabled = true; 
         
-        elements.modalStatus.innerText = "Analisi OCR dell'immagine..."; 
+        elements.modalStatus.innerText = "Transmitting image to Cloud API..."; 
         
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         const v = elements.video;
@@ -1154,7 +1135,7 @@
 
             if (currentInputId === 'office-key') {
                 if (dashCount === 0 && spaceCount >= 3) {
-                    elements.modalStatus.innerText = "❌ Errore: rilevata card Norton (con spazi).\nScansionare una card Office (con trattini)."; 
+                    elements.modalStatus.innerText = DICTIONARY.ocrFormatOfficeExpected; 
                     elements.captureBtn.disabled = false; 
                     elements.video.play(); 
                     return; 
@@ -1180,7 +1161,7 @@
                 }                 
             } else if (currentInputId === 'av-key' && elements.avNorton.checked) {
                 if (dashCount >= 2) {
-                    elements.modalStatus.innerText = "❌ Errore: rilevata card Office o McAfee (con trattini).\nScansionare una card Norton (con spazi)."; 
+                    elements.modalStatus.innerText = DICTIONARY.ocrFormatNortonExpected; 
                     elements.captureBtn.disabled = false; 
                     elements.video.play(); 
                     return; 
