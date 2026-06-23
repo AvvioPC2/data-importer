@@ -176,13 +176,15 @@
 
     <main class="form-container">
         <div class="form-group">
+            <div class="form-group">
             <div class="section-title" id="lbl-serial">Numero seriale del prodotto *</div>
             <div class="input-with-icon">
-                <input type="text" id="pc-serial" style="text-transform: none;" oninput="validateForm()">
+                <input type="text" id="pc-serial" style="text-transform: none;" oninput="handleSerialInput()">
                 <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
             </div>
+        </div>
         </div>
 
         <div class="form-group">
@@ -441,6 +443,7 @@
     let nativeBarcodeDetector = null;
     let customAlertCallback = null; 
     let pollingInterval = null;
+    let serialCheckTimeout = null; // Debounce timer for API calls
     
     // UI Functional Flow State Flags
     let isMsCreated = false;          
@@ -627,6 +630,37 @@
 	// =========================================================================
     // FORM FORMATTING & VALIDATION ENGINE
     // =========================================================================
+    function handleSerialInput() {
+        validateForm(); 
+        const currentSerial = elements.pcSerial.value.trim();
+
+        // Reset button visual state immediately on new keystroke
+        elements.reprintBtn.style.background = "var(--reprint-color)";
+
+        // Avoid backend spam for incomplete serials
+        if (currentSerial.length < 5) return; 
+
+        // Debounce logic: clear previous timer and start a new one
+        clearTimeout(serialCheckTimeout);
+        
+        serialCheckTimeout = setTimeout(async () => {
+            try {
+                // Async fetch to Google Apps Script endpoint
+                const safeUrl = `${GOOGLE_SCRIPT_URL}?action=check_serial&serial=${encodeURIComponent(currentSerial)}&t=${new Date().getTime()}`;
+                const response = await fetch(safeUrl);
+                const result = await response.json();
+
+                if (result.status === "success" && result.exists) {
+                    elements.reprintBtn.style.background = "var(--success-color)";
+                    // Optional: Provide tiny vibration feedback if running on mobile
+                    if ("vibrate" in navigator) navigator.vibrate([50]);
+                }
+            } catch (err) {
+                console.log("WARNING: Failed to verify serial status: " + err.message);
+            }
+        }, 800); // 800ms silence threshold before triggering the API
+    }
+
     function formatProductKey(input, sep) {
         let start = input.selectionStart;
         let originalValue = input.value;
