@@ -297,18 +297,24 @@
         </div>
     </div>
 
-    <div id="operator-modal" class="fullscreen-modal">
+	<div id="operator-modal" class="fullscreen-modal">
         <div class="operator-dialog">
-            <h3 id="lbl-modal-op-title">Autenticazione</h3>
+            <h3 id="lbl-modal-op-title" style="margin-bottom: 5px;">Impostazioni</h3>
+            
+            <label class="form-label" style="margin-bottom: 2px;">Negozio</label>
             <select id="store-dropdown" class="operator-select" onchange="onStoreSelectionChange()">
                 <option value="000" id="lbl-modal-store-default">-- Seleziona Negozio --</option>
             </select>
+            
+            <label class="form-label" style="margin-top: 10px; margin-bottom: 2px;">Operatore</label>
             <select id="operator-dropdown" class="operator-select" disabled>
                 <option value="00000" id="lbl-modal-op-default">-- Seleziona Operatore --</option>
             </select>
+            
+            <label class="form-label" style="margin-top: 10px; margin-bottom: 2px;">PIN personale</label>
             <input type="password" id="operator-pin" class="standard-input" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
             
-            <label class="checkbox-group" style="margin-top: 5px; margin-bottom: 5px; padding: 5px 0;">
+            <label class="checkbox-group" style="margin-top: 10px; margin-bottom: 5px; padding: 5px 0;">
                 <input type="checkbox" id="chk-enable-alerts">
                 <span style="font-size: 15px; color:var(--text-main);">Abilita messaggi informativi</span>
             </label>
@@ -380,8 +386,8 @@
         winUpdTitle: "Aggiornamenti di sistema",
         winUpdCheck: "Eseguire Windows Update<br>a fine installazione",
         btnSubmit: "Caricamento dati",
-        btnReprint: "Ristampa report",
-        opModalTitle: "Autenticazione",
+		btnReprint: "Ristampa report",
+        opModalTitle: "Impostazioni",
         storeModalDefault: "-- Seleziona Negozio --",
         opModalDefault: "-- Seleziona Operatore --",
         opModalLoading: "Caricamento dati in corso...",
@@ -414,7 +420,7 @@
         alertUploadError: "Impossibile trasmettere i dati: ",
         alertCameraError: "Errore hardware fotocamera: ",
         alertFetchError: "Impossibile scaricare la lista operatori. Riprova più tardi.",
-        overlayLoadingText: "Salvataggio in corso...",
+        overlayLoadingText: "Trasmissione dati<br>in corso...",
 
         // OCR Dynamic Alerts translated
         ocrFormatOfficeExpected: "❌ Formato non valido: rilevato cartoncino Norton. Inquadrare cartoncino Office.",
@@ -551,7 +557,7 @@
         document.getElementById('btn-cancel').innerText = DICTIONARY.btnCancel;
         document.getElementById('btn-save').innerText = DICTIONARY.btnSave;
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
-        document.getElementById('lbl-loading-overlay').innerText = DICTIONARY.overlayLoadingText;
+        document.getElementById('lbl-loading-overlay').innerHTML = DICTIONARY.overlayLoadingText;
         
         updateAuthButtonVisuals();
         validateForm();
