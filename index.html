@@ -1,22 +1,32 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Viewport aggiornato: partenza a 1.0, ma permette all'utente di zoomare intenzionalmente fino a 5x -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>AvvioPC 2 - Dashboard</title>
 
+    <!-- Google Fonts Framework -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
+
+    <!-- Third-party core engines for WebRTC Camera/OCR/Barcode operations -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
 
     <style>
+        /* Blocco forzato dello scaling automatico dei font imposto dalle impostazioni di accessibilità di iOS/Android */
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
         /* CSS Variables for consistent application theming */
         :root {
             --primary-bg: #f4f7f6;
             --header-bg: #003366;
             --header-text: #ffffff;
-            --accent-color: #007bff; 
+            --accent-color: #007bff;
             --success-color: #28a745;
-            --import-color: #17a2b8;
             --reprint-color: #6c757d; 
             --error-color: #dc3545;
             --border-color: #ced4da;
@@ -26,11 +36,18 @@
             --border-radius: 8px;
         }
 
-        /* Base Reset & Typography */
+        /* Base Reset & Typography - Evita scorrimenti orizzontali accidentali */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--primary-bg); color: var(--text-main); padding-bottom: 40px; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: var(--primary-bg); 
+            color: var(--text-main); 
+            padding-bottom: 40px; 
+            max-width: 100vw; 
+            overflow-x: hidden; 
+        }
 
-        /* Placeholder Styles */
+        /* Placeholder Styles (Light Gray) */
         ::placeholder { color: #a0a0a0; opacity: 1; }
         ::-ms-input-placeholder { color: #a0a0a0; }
 
@@ -51,44 +68,67 @@
         .form-label { display: block; font-weight: 600; font-size: 16px; margin-bottom: 8px; color: var(--text-main); }
         .section-title { font-size: 18px; font-weight: bold; border-bottom: 2px solid var(--primary-bg); padding-bottom: 8px; margin-bottom: 15px; margin-top: 10px; color: var(--header-bg); }
 
-        /* Input Fields with Embedded Buttons */
+        /* Input Fields with Embedded Buttons (Incluso supporto ai Textarea) */
         .input-with-icon { display: flex; align-items: stretch; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden; background: #fff; transition: border-color 0.2s; }
         .input-with-icon:focus-within { border-color: var(--accent-color); }
-        .input-with-icon input { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
+        .input-with-icon input, .input-with-icon textarea { flex-grow: 1; border: none; padding: 12px 15px; font-size: 17px; outline: none; font-family: monospace; min-width: 0; text-transform: uppercase; }
+        
+        /* Regole specifiche per i Textarea dei Product Key (a capo automatico) */
+        .input-with-icon textarea { 
+            resize: none; 
+            overflow: hidden; 
+            line-height: 1.4; 
+            word-break: break-all; /* Forza l'andata a capo pulita se lo schermo è piccolo */
+        }
 
-        #office-key, #av-key { font-size: 13px; letter-spacing: -0.5px; }
+        /* 16px è FONDAMENTALE su iOS per impedire il tremendo auto-zoom automatico quando si tocca l'input */
+        #office-key, #av-key { font-size: 16px !important; letter-spacing: 0px; }
 
-        .camera-btn { background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; color: var(--header-bg); }
+        /* Camera Trigger Buttons */
+        .camera-btn { background: var(--primary-bg); border: none; border-left: 1px solid var(--border-color); padding: 0 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .camera-btn:hover { background: #e2e6ea; }
         .camera-btn svg { width: 26px; height: 26px; fill: var(--header-bg); }
 
+        /* Segmented Controls (Radio Button Alternatives) */
         .segmented-control { display: flex; gap: 5px; background: var(--disabled-bg); padding: 4px; border-radius: var(--border-radius); margin-bottom: 10px; }
         .segmented-control label { flex: 1; text-align: center; padding: 12px 5px; font-size: 16px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: all 0.2s; }
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
 
+        /* Specific overrides for multi-line Antivirus labels to maintain standard button dimensions */
         #lbl-opt-norton, #lbl-opt-mcafee, #lbl-opt-none { font-size: 13px; line-height: 1.1; padding: 6px 2px; display: flex; align-items: center; justify-content: center; }
 
+        /* Conditional Rendering Fields */
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
-        .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
+        .conditional-field.visible { max-height: 120px; opacity: 1; margin-top: 10px; }
 
-        /* Unified Action Buttons */
-        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
-        #btn-create-ms:hover:not(:disabled) { opacity: 0.9; }
+        /* Microsoft Account External Link Button */
+        #btn-create-ms { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--accent-color); cursor: pointer; transition: all 0.3s; margin-bottom: 18px; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2); }
+        #btn-create-ms:hover { background: #0056b3; }
 
-        #btnAuth { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--reprint-color); cursor: not-allowed; transition: all 0.3s; margin-bottom: 18px; }
+        /* Microsoft Account Email Input Group */
+        .email-group { display: flex; align-items: center; gap: 0; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: #fff; margin-bottom: 15px; padding-right: 8px; transition: border-color 0.2s; }
+        .email-group:focus-within { border-color: var(--accent-color); }
+        .email-group input { flex: 1; min-width: 0; border: none; padding: 12px 10px; font-size: 17px; outline: none; text-transform: none; }
+        .email-group span { flex: 0 0 auto; font-weight: bold; color: var(--text-muted); font-size: 17px; padding: 0 2px; }
+        .email-group select { flex: 0 0 auto; border: none; outline: none; font-size: 16px; background: transparent; padding: 10px 0; color: var(--text-main); cursor: pointer; }
 
+        /* Standard Inputs & Checkboxes */
         .standard-input { width: 100%; border: 1px solid var(--border-color); padding: 12px 15px; font-size: 17px; border-radius: var(--border-radius); outline: none; box-sizing: border-box; }
         .standard-input:focus { border-color: var(--accent-color); }
         
-        .checkbox-group { display: flex; align-items: center; justify-content: flex-start; gap: 10px; cursor: pointer; padding: 5px 0; }
-        .checkbox-group input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent-color); }
+        /* Centered Checkbox Group Layout Override - Fixed alignment */
+        .checkbox-group { display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; padding: 5px 0; }
+        .checkbox-group input[type="checkbox"] { flex-shrink: 0; width: 20px; height: 20px; cursor: pointer; }
         .checkbox-group span, .checkbox-group label { font-size: 17px; cursor: pointer; user-select: none; text-align: left; line-height: 1.3; }
 
+        /* Bottom helper annotation style */
         .form-note { font-size: 13px; color: var(--text-muted); margin-top: -12px; margin-bottom: 5px; padding-left: 5px; font-weight: 500; }
 
+        /* Form Action Buttons Container */
         .submit-container { padding: 30px 0; background: transparent; text-align: center; display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
 
+        /* Custom validation-based interactive disabled state */
         #submit-btn { width: 100%; max-width: 400px; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 50px; color: white; background: var(--success-color); cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); transition: all 0.3s; }
         #submit-btn.is-disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; transform: none !important; }
 
@@ -96,15 +136,11 @@
         #reprint-btn:hover { opacity: 0.9; }
 
         /* Fullscreen Modal Viewports */
-        .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(3px); }
+        .fullscreen-modal { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .fullscreen-modal.active { opacity: 1; pointer-events: auto; }
 
-        /* Dialog Box Base Class */
-        .operator-dialog { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; margin: auto; }
-        .fullscreen-modal.active .operator-dialog { transform: translateY(0); }
-        
         /* Camera Scanner Modal Layout */
-        #scanner-modal { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; backdrop-filter: none; }
+        #scanner-modal { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
         #scanner-modal.active { transform: translateY(0); }
         .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white; background: #000; z-index: 10; }
         .modal-title { font-size: 18px; font-weight: bold; }
@@ -114,29 +150,28 @@
         #scanner-video { width: 100%; height: 100%; object-fit: cover; }
 
         #scanner-overlay { position: absolute; width: 95%; height: 100px; border: 3px solid #00ff00; border-radius: 8px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); pointer-events: none; transition: all 0.3s; }
-        #scanner-overlay.barcode-mode { height: 120px; border-color: var(--accent-color); }
+        #scanner-overlay.barcode-mode { height: 120px; border-color: #007bff; }
 
-        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 150px; display: flex; flex-direction: column; justify-content: center; padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
+        .modal-footer { padding: 20px; text-align: center; background: #000; z-index: 10; min-height: 120px; display: flex; flex-direction: column; justify-content: center; padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
 
         #capture-btn { background: var(--accent-color); color: white; border: none; padding: 16px 30px; font-size: 18px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s; display: none; }
-        #capture-btn:active { transform: scale(0.95); opacity: 0.9; }
+        #capture-btn:active { transform: scale(0.95); background: #0056b3; }
         #capture-btn:disabled { background: #555; cursor: wait; }
-
-        /* Hidden Cloud Vision OCR slider styling */
-        #ocr-controls { display: none; width: 100%; margin-bottom: 15px; }
 
         #modal-status { color: white; font-size: 15px; min-height: 20px; font-weight: 500; }
 
+        /* Barcode Scanning Animation CSS */
         .scan-animation { display: none; width: 100%; height: 4px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; border-radius: 2px; margin-bottom: 10px; }
-        .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: var(--accent-color); animation: scan-slide 1s infinite ease-in-out; }
+        .scan-animation::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 30%; background: #007bff; animation: scan-slide 1s infinite ease-in-out; }
         @keyframes scan-slide { 0% { left: -30%; } 100% { left: 100%; } }
 
-        #custom-alert-modal, #pwd-alert-modal, #import-alert-modal { justify-content: center; align-items: center; z-index: 9999; }
+        /* Modal Dialog Base Styles */
+        .dialog-container { justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .dialog-box { background: #fff; width: 90%; max-width: 350px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.3s; display: flex; flex-direction: column; gap: 15px; }
+        .fullscreen-modal.active .dialog-box { transform: translateY(0); }
+        .dialog-box h3 { color: var(--header-bg); margin: 0; font-size: 20px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 10px; }
         
-        .alert-title { color: var(--header-bg); font-weight: bold; font-size: 18px; border-bottom: 2px solid var(--primary-bg); padding-bottom: 8px; margin-bottom: 15px; }
-        .alert-message { font-size: 17px; line-height: 1.3; color: var(--text-main); margin-bottom: 25px; }
-        .alert-btn { background: var(--header-bg); color: white; width: 100%; font-size: 18px; padding: 14px; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; }
-
+        /* Monospace Font strict override for Dropdowns */
         .operator-select { font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace !important; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 16px; outline: none; width: 100%; background: #fff; cursor: pointer; }
         .operator-select option { font-family: 'Consolas', 'Menlo', 'Monaco', 'Courier New', monospace !important; }
         .operator-select:disabled { background: var(--disabled-bg); cursor: not-allowed; }
@@ -148,10 +183,12 @@
 
         #hidden-canvas { display: none; }
 
+        /* Loading splash overlay */
         #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.85); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
         #loading-overlay.active { opacity: 1; pointer-events: auto; }
         
         .spinner { width: 70px; height: 70px; border: 6px solid var(--disabled-bg); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; margin-bottom: 20px; }
+        
         .loading-text { font-size: 22px; font-weight: 600; color: var(--header-bg); font-family: 'Barlow', sans-serif; text-align: center; padding: 0 20px; }
         
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -169,10 +206,11 @@
     </header>
 
     <main class="form-container">
+
         <div class="form-group">
-            <div class="section-title" id="lbl-serial">Numero seriale del prodotto *</div>
+            <div class="section-title" id="lbl-serial">Serial number del prodotto *</div>
             <div class="input-with-icon">
-                <input type="text" id="pc-serial" style="text-transform: none;" oninput="handleSerialInput()">
+                <input type="text" id="pc-serial" style="text-transform: none;" oninput="validateForm()">
                 <button type="button" class="camera-btn" onclick="openScanner('pc-serial', 'barcode')">
                     <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
@@ -181,7 +219,7 @@
 
         <div class="form-group">
             <div class="section-title" id="lbl-local-account">Account locale *</div>
-            <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="formatLocalAccount(this)">
+            <input type="text" id="local-account" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
         <div class="form-group">
@@ -195,7 +233,8 @@
             <div id="ms-office-field" class="conditional-field">
                 <label class="form-label" id="lbl-office-key" style="font-size: 14px;">Product Key Office</label>
                 <div class="input-with-icon">
-                    <input type="text" id="office-key" oninput="formatProductKey(this, '-')">
+                    <!-- SOSTITUITO INPUT CON TEXTAREA MULTILINEA -->
+                    <textarea id="office-key" rows="2" oninput="formatProductKey(this, '-')" spellcheck="false" autocorrect="off"></textarea>
                     <button type="button" class="camera-btn" onclick="openScanner('office-key', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                 </button>
@@ -216,7 +255,8 @@
             <div id="av-field" class="conditional-field">
                 <label class="form-label" id="av-key-label" style="font-size: 14px;">Product Key Antivirus</label>
                 <div class="input-with-icon">
-                    <input type="text" id="av-key" oninput="formatAvKey(this)">
+                    <!-- SOSTITUITO INPUT CON TEXTAREA MULTILINEA -->
+                    <textarea id="av-key" rows="2" oninput="formatAvKey(this)" spellcheck="false" autocorrect="off"></textarea>
                     <button type="button" class="camera-btn" onclick="openScanner('av-key', 'ocr')">
                         <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                     </button>
@@ -225,30 +265,30 @@
         </div>
 
         <div class="form-group">
-            <div class="section-title" id="lbl-cyber-title">Unieuro Cyber Protection</div>
-            <label class="checkbox-group">
-                <input type="checkbox" id="run-cyber">
-                <span id="lbl-cyber-check">Installa icona di attivazione<br>del servizio</span>
-            </label>
-        </div>
-
-        <div class="form-group">
             <div class="section-title" id="lbl-ms-title">Account Microsoft *</div>
             
-            <button type="button" id="btn-create-ms">Crea nuovo account Microsoft</button>
-            <button type="button" id="btnAuth" onclick="handleImportClick()">Importa account creato</button>
+            <button type="button" id="btn-create-ms" onclick="openMsAlertModal()">
+                Crea nuovo account Microsoft
+            </button>
             
-            <label class="form-label" id="lbl-ms-username">Email</label>
-            <input type="text" id="ms-username" class="standard-input" placeholder="nome.cognome@dominio" style="margin-bottom: 15px; text-transform: lowercase;">
-
+            <label class="form-label" id="lbl-ms-username">Nome utente</label>
+            <div class="email-group">
+                <input type="text" id="ms-username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="validateForm()">
+                <span>@</span>
+                <select id="ms-domain" onchange="validateForm()">
+                    <option value="outlook.it">outlook.it</option>
+                    <option value="outlook.com">outlook.com</option>
+                    <option value="hotmail.com">hotmail.com</option>
+                </select>
+            </div>
             <label class="form-label" id="lbl-ms-password">Password</label>
-            <input type="text" id="ms-password" class="standard-input" style="text-transform: none;">
+            <input type="text" id="ms-password" class="standard-input" style="text-transform: none;" oninput="validateForm()">
         </div>
 
         <div class="form-group">
             <div class="section-title" id="lbl-winupd-title">Aggiornamenti di sistema</div>
             <label class="checkbox-group">
-                <input type="checkbox" id="run-updates">
+                <input type="checkbox" id="run-updates" onchange="validateForm()">
                 <span id="lbl-winupd-check">Eseguire Windows Update<br>a fine installazione</span>
             </label>
         </div>
@@ -256,72 +296,43 @@
 
         <div class="submit-container">
             <button id="submit-btn" class="is-disabled">Caricamento dati</button>
-            <button id="reprint-btn" onclick="handleReprint()">Ristampa report</button>
+            <button id="reprint-btn" onclick="handleReprint()">Ristampa dati</button>
         </div>
     </main>
 
-    <div id="custom-alert-modal" class="fullscreen-modal">
-        <div class="operator-dialog" style="text-align: center;">
-            <div class="alert-title">Avviso</div>
-            <div id="alert-message" class="alert-message"></div>
-            <button class="alert-btn" onclick="closeCustomAlert()">OK</button>
-        </div>
-    </div>
+    <!-- Modal for Operator Selection -->
+    <div id="operator-modal" class="fullscreen-modal dialog-container">
+        <div class="dialog-box">
+            <h3 id="lbl-modal-op-title">Autenticazione</h3>
 
-    <div id="pwd-alert-modal" class="fullscreen-modal">
-        <div class="operator-dialog" style="text-align: center;">
-            <div class="alert-title">Guida alla creazione account</div>
-            <div class="alert-message" style="font-size:16px; line-height:1.4; color:var(--text-main); margin-bottom:15px;">
-                Una password casuale è stata creata automaticamente.<br><br>Usare la funzione "Incolla" per inserirla durante la creazione dell'account.<br><br>
-                Una volta creato l'account, tornare a questa applicazione e fare click sul pulsante "Importa account creato".
-            </div>
-            <label class="checkbox-group" style="justify-content: center; margin-bottom: 20px; padding: 5px;">
-                <input type="checkbox" id="chk-dont-show-again">
-                <span style="font-size: 15px; color:var(--text-muted);">Non mostrare più questo messaggio</span>
-            </label>
-            <button class="alert-btn" id="btn-pwd-alert-ok">OK</button>
-        </div>
-    </div>
-
-    <div id="import-alert-modal" class="fullscreen-modal">
-        <div class="operator-dialog" style="text-align: center;">
-            <div class="alert-title">Guida all'importazione account</div>
-            <div class="alert-message" style="font-size:16px; line-height:1.4; color:var(--text-main); margin-bottom:15px;">
-				Nella prossima schermata fare click sul riquadro "account trovato" in basso sullo schermo<br><br>Successivamente incollare nuovamente la password<br><br>Successivamente consentire all'app di accedere alle informazioni facendo click su "Accetta"<br><br>Quando comparirà la scritta verde "Authentication successful..." tornare a questa applicazione
-            </div>
-            <label class="checkbox-group" style="justify-content: center; margin-bottom: 20px; padding: 5px;">
-                <input type="checkbox" id="chk-import-dont-show-again">
-                <span style="font-size: 15px; color:var(--text-muted);">Non mostrare più questo messaggio</span>
-            </label>
-            <button class="alert-btn" id="btn-import-alert-ok">OK</button>
-        </div>
-    </div>
-
-	<div id="operator-modal" class="fullscreen-modal">
-        <div class="operator-dialog">
-            <h3 id="lbl-modal-op-title" style="margin-bottom: 5px;">Impostazioni</h3>
-            
-            <label class="form-label" style="margin-bottom: 2px;">Negozio</label>
             <select id="store-dropdown" class="operator-select" onchange="onStoreSelectionChange()">
                 <option value="000" id="lbl-modal-store-default">-- Seleziona Negozio --</option>
             </select>
-            
-            <label class="form-label" style="margin-top: 10px; margin-bottom: 2px;">Operatore</label>
+
             <select id="operator-dropdown" class="operator-select" disabled>
                 <option value="00000" id="lbl-modal-op-default">-- Seleziona Operatore --</option>
             </select>
-            
-            <label class="form-label" style="margin-top: 10px; margin-bottom: 2px;">PIN personale</label>
-            <input type="password" id="operator-pin" class="standard-input" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
-            
-            <label class="checkbox-group" style="margin-top: 10px; margin-bottom: 5px; padding: 5px 0;">
-                <input type="checkbox" id="chk-enable-alerts">
-                <span style="font-size: 15px; color:var(--text-main);">Abilita messaggi informativi</span>
-            </label>
 
+            <input type="password" id="operator-pin" class="standard-input" maxlength="4" style="text-align: center; font-size: 22px; letter-spacing: 8px;">
             <div class="dialog-actions">
                 <button class="dialog-btn btn-cancel" id="btn-cancel" onclick="closeOperatorModal()">Annulla</button>
                 <button class="dialog-btn btn-save" id="btn-save" onclick="saveOperatorSelection()">Conferma</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UX Modal for External Microsoft Navigation Warning -->
+    <div id="ms-alert-modal" class="fullscreen-modal dialog-container">
+        <div class="dialog-box">
+            <h3 id="lbl-ms-alert-title">Navigazione esterna</h3>
+            <p id="lbl-ms-alert-text" style="font-size: 16px; line-height: 1.4; text-align: left; margin: 5px 0;">
+                Stai per aprire il sito Microsoft in una nuova scheda. <br><br>
+                <b>Per tornare qui:</b> usa il <i>selettore delle schede</i> del tuo browser (su smartphone è l'icona in basso con il numero di schede aperte o due quadrati sovrapposti). <br><br>
+                <i style="color: var(--success-color); font-size: 14px;">Tranquillo: i dati che hai inserito finora sono stati salvati automaticamente in bozza.</i>
+            </p>
+            <div class="dialog-actions">
+                <button class="dialog-btn btn-cancel" id="btn-ms-cancel" onclick="closeMsAlertModal()">Annulla</button>
+                <button class="dialog-btn btn-save" id="btn-ms-proceed" onclick="proceedToMicrosoft()">Apri Sito</button>
             </div>
         </div>
     </div>
@@ -337,10 +348,6 @@
         </div>
         <div class="modal-footer">
             <div id="scan-animation" class="scan-animation"></div>
-            
-            <div id="ocr-controls">
-                </div>
-
             <button id="capture-btn">CATTURA CODICE</button>
             <div id="modal-status">Apertura fotocamera...</div>
         </div>
@@ -375,19 +382,17 @@
         avMcafeeKeyLabel: "Product Key McAfee",
         avKeyPlaceholderNorton: "XXXXX XXXXX XXXXX XXXXX XXXXX",
         avKeyPlaceholderMcafee: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
-        cyberTitle: "Unieuro Cyber Protection",
-        cyberCheck: "Installa icona di attivazione<br>del servizio",
         msTitle: "Account Microsoft *",
         btnCreateMs: "Crea nuovo account Microsoft",
-        msUserLabel: "Email",
-        msUserPlaceholder: "nome.cognome@dominio",
+        msUserLabel: "Nome utente",
+        msUserPlaceholder: "nome.cognome",
         msPassLabel: "Password",
-        btnFeedbackCustom: "✅ Copiata negli appunti!",
+        msPassPlaceholder: "password",
         winUpdTitle: "Aggiornamenti di sistema",
         winUpdCheck: "Eseguire Windows Update<br>a fine installazione",
         btnSubmit: "Caricamento dati",
-		btnReprint: "Ristampa report",
-        opModalTitle: "Impostazioni",
+        btnReprint: "Ristampa report",
+        opModalTitle: "Autenticazione",
         storeModalDefault: "-- Seleziona Negozio --",
         opModalDefault: "-- Seleziona Operatore --",
         opModalLoading: "Caricamento dati in corso...",
@@ -398,37 +403,27 @@
         scanTitleOcr: "Scansione Product Key",
         btnCaptureOcr: "CATTURA CODICE",
         statusInit: "Apertura fotocamera...",
-        statusOcrLoading: "Initializing Cloud API...",
+        statusOcrLoading: "Download del motore IA in corso (attendere)...",
         statusOcrReady: "Motore OCR caricato e pronto.",
         statusBarcodeSearch: "Ricerca del codice a barre in corso...",
-        statusOcrAlign: "Allinea il codice e premi CATTURA",
+        statusOcrAlign: "Allineare il codice nel riquadro verde e premere CATTURA",
         statusOcrProcessing: "Elaborazione dell'immagine in corso...",
         statusOcrSuccess: "✅ Product Key estratto con successo!",
-        statusOcrFailed: "❌ Nessun codice rilevato. Riprova.",
-        
-        // Critical System Errors 
-        alertOcrCritical: "CRITICAL: Unable to access Cloud OCR engine. Check internet connection.",
-        alertOcrNotReady: "Please wait, the API interface is initializing.",
-        alertOcrSystemError: "Network error during Cloud OCR transmission.",
-        alertOauthConnectionError: "CRITICAL: Failed to establish OAuth backend connection.",
-        alertOauthSuccess: "✅ Account Microsoft acquisito: ",
-        
-        // User facing alerts 
-        alertPinLength: "Il PIN deve essere esattamente di 4 cifre.",
-        alertPinInvalid: "PIN non valido. Riprova.",
-        alertUploadSuccess: "Dati inviati al server con successo!", 
-        alertUploadError: "Impossibile trasmettere i dati: ",
-        alertCameraError: "Errore hardware fotocamera: ",
-        alertFetchError: "Impossibile scaricare la lista operatori. Riprova più tardi.",
-        overlayLoadingText: "Trasmissione dati<br>in corso...",
-
-        // OCR Dynamic Alerts translated
-        ocrFormatOfficeExpected: "❌ Formato non valido: rilevato cartoncino Norton. Inquadrare cartoncino Office.",
-        ocrFormatNortonExpected: "❌ Formato non valido: rilevato cartoncino Office. Inquadrare cartoncino Norton."
+        statusOcrFailed: "❌ Nessun codice rilevato. Riprovare.",
+        alertOcrCritical: "CRITICO: Impossibile scaricare il motore OCR. Controllare la connessione a Internet.",
+        alertPinLength: "Il PIN deve essere di 4 cifre esatte.",
+        alertPinInvalid: "PIN errato. Riprovare.",
+        alertOcrNotReady: "Attendere, il motore di intelligenza artificiale si sta ancora avviando.",
+        alertOcrSystemError: "Errore di memoria durante la decodifica dell'immagine.",
+        alertUploadSuccess: "Dati inviati al server con successo!",
+        alertUploadError: "Impossibile inviare i dati: ",
+        alertCameraError: "Errore fotocamera: ",
+        alertFetchError: "Impossibile scaricare la lista degli operatori. Riprova più tardi.",
+        overlayLoadingText: "Salvataggio dati in corso..." 
     };
 
     // --- PRODUCTION ENDPOINT ---
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHRtrEUUpyIS3vjU3pB1wA57X25FNsrr2xaX2K1Jp2z5PvhGf1D_euM2kPSAIFCCs/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlngPahzq4ojDP9E8VqgpGt1P5dL_bn5ljSuSnFv8iTDr2XURosEUCMPDTx85lFRA/exec';
 
     // =========================================================================
     // STATE MANAGEMENT & DOM CACHING
@@ -438,22 +433,6 @@
     let isOcrReady = false;
     let tesseractWorker = null;
     let nativeBarcodeDetector = null;
-    let customAlertCallback = null; 
-    let pollingInterval = null;
-    let serialCheckTimeout = null; // Debounce timer for API checks
-    
-    // UI Functional Flow State Flags
-    let isMsCreated = false;          
-    let acquiredEmail = "";            
-    let acquiredPassword = "";        
-    let currentAuthSession = "";      
-    
-    // Scanner variables
-    let currentMode = null;
-    let currentInputId = null;
-    let streamTrack = null;
-    let barcodeInterval = null;
-
     const zxingReader = new ZXing.BrowserMultiFormatReader();
 
     if ('BarcodeDetector' in window) {
@@ -472,10 +451,9 @@
         avKey: document.getElementById('av-key'),
         avField: document.getElementById('av-field'),
         avKeyLabel: document.getElementById('av-key-label'),
-        runCyber: document.getElementById('run-cyber'),
         btnCreateMs: document.getElementById('btn-create-ms'),
-        btnAuth: document.getElementById('btnAuth'),
         msUsername: document.getElementById('ms-username'),
+        msDomain: document.getElementById('ms-domain'),
         msPassword: document.getElementById('ms-password'),
         runUpdates: document.getElementById('run-updates'),
         submitBtn: document.getElementById('submit-btn'),
@@ -490,41 +468,16 @@
         modalStatus: document.getElementById('modal-status'),
         scanAnimation: document.getElementById('scan-animation'),
         captureBtn: document.getElementById('capture-btn'),
-        ocrControls: document.getElementById('ocr-controls'),
         overlay: document.getElementById('scanner-overlay'),
         canvas: document.getElementById('hidden-canvas'),
         loadingOverlay: document.getElementById('loading-overlay'),
-        customAlertModal: document.getElementById('custom-alert-modal'),
-        alertMessage: document.getElementById('alert-message'),
-        pwdAlertModal: document.getElementById('pwd-alert-modal'),
-        btnPwdAlertOk: document.getElementById('btn-pwd-alert-ok'),
-        chkDontShowAgain: document.getElementById('chk-dont-show-again'),
-        importAlertModal: document.getElementById('import-alert-modal'),
-        btnImportAlertOk: document.getElementById('btn-import-alert-ok'),
-        chkImportDontShowAgain: document.getElementById('chk-import-dont-show-again'),
-        chkEnableAlerts: document.getElementById('chk-enable-alerts')
+        msAlertModal: document.getElementById('ms-alert-modal')
     };
 
     // =========================================================================
-    // CUSTOM ALERT SYSTEM
+    // INITIALIZATION ROUTINES
     // =========================================================================
-    function showAlert(msg, callback = null) {
-        elements.alertMessage.innerHTML = msg;
-        elements.customAlertModal.classList.add('active');
-        customAlertCallback = callback;
-    }
 
-    function closeCustomAlert() {
-        elements.customAlertModal.classList.remove('active');
-        if (customAlertCallback) {
-            customAlertCallback();
-            customAlertCallback = null;
-        }
-    }
-
-    // =========================================================================
-    // INITIALIZATION ROUTINES & PASSWORD GENERATOR
-    // =========================================================================
     function initializeUIStrings() {
         document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
         document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
@@ -536,16 +489,17 @@
         document.getElementById('lbl-office-key').innerText = DICTIONARY.officeKeyLabel;
         elements.officeKey.placeholder = DICTIONARY.officeKeyPlaceholder;
         document.getElementById('lbl-av-protection').innerText = DICTIONARY.avTitle;
+        
         document.getElementById('lbl-opt-norton').innerHTML = DICTIONARY.avOptNorton;
         document.getElementById('lbl-opt-mcafee').innerHTML = DICTIONARY.avOptMcafee;
         document.getElementById('lbl-opt-none').innerHTML = DICTIONARY.avOptNone;
-        document.getElementById('lbl-cyber-title').innerText = DICTIONARY.cyberTitle;
-        document.getElementById('lbl-cyber-check').innerHTML = DICTIONARY.cyberCheck;
+        
         document.getElementById('lbl-ms-title').innerText = DICTIONARY.msTitle;
         elements.btnCreateMs.innerText = DICTIONARY.btnCreateMs;
         document.getElementById('lbl-ms-username').innerText = DICTIONARY.msUserLabel;
         elements.msUsername.placeholder = DICTIONARY.msUserPlaceholder;
         document.getElementById('lbl-ms-password').innerText = DICTIONARY.msPassLabel;
+        elements.msPassword.placeholder = DICTIONARY.msPassPlaceholder;
         document.getElementById('lbl-winupd-title').innerText = DICTIONARY.winUpdTitle;
         document.getElementById('lbl-winupd-check').innerHTML = DICTIONARY.winUpdCheck;
         elements.submitBtn.innerText = DICTIONARY.btnSubmit;
@@ -557,31 +511,7 @@
         document.getElementById('btn-cancel').innerText = DICTIONARY.btnCancel;
         document.getElementById('btn-save').innerText = DICTIONARY.btnSave;
         elements.captureBtn.innerText = DICTIONARY.btnCaptureOcr;
-        document.getElementById('lbl-loading-overlay').innerHTML = DICTIONARY.overlayLoadingText;
-        
-        updateAuthButtonVisuals();
-        validateForm();
-    }
-
-    function generateRandomPassword() {
-        const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const lowers = "abcdefghijklmnopqrstuvwxyz";
-        const numbers = "0123456789";
-        const symbols = "!@#$%^&*";
-        const allChars = uppers + lowers + numbers + symbols;
-        let pwd = "";
-        pwd += uppers[Math.floor(Math.random() * uppers.length)];
-        pwd += lowers[Math.floor(Math.random() * lowers.length)];
-        pwd += numbers[Math.floor(Math.random() * numbers.length)];
-        pwd += symbols[Math.floor(Math.random() * symbols.length)];
-        for(let i = 0; i < 8; i++) {
-            pwd += allChars[Math.floor(Math.random() * allChars.length)];
-        }
-        pwd = pwd.split('').sort(() => 0.5 - Math.random()).join('');
-        elements.msPassword.value = pwd;
-        
-        handleManualAccountEdits();
-        validateForm();
+        document.getElementById('lbl-loading-overlay').innerText = DICTIONARY.overlayLoadingText;
     }
 
     async function fetchOperatorsFromServer() {
@@ -597,91 +527,114 @@
                 throw new Error("Server error: " + result.message);
             }
         } catch (err) {
-            elements.storeDropdown.innerHTML = `<option value="000">Network Error</option>`;
+            elements.storeDropdown.innerHTML = `<option value="000">Errore Rete</option>`;
         }
     }
 
-    // Cloud Vision API is stateless. Bypassing local model initialization.
     async function initializeOCRWorker() {
-        isOcrReady = true;
-        console.log("INFO: Cloud Vision API route configured. Local engine bypassed.");
+        try {
+            tesseractWorker = await Tesseract.createWorker();
+            await tesseractWorker.loadLanguage('eng');
+            await tesseractWorker.initialize('eng');
+            await tesseractWorker.setParameters({
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ- ',
+                tessedit_pageseg_mode: '6', 
+            });
+            isOcrReady = true;
+        } catch (e) {
+            console.warn(DICTIONARY.alertOcrCritical);
+        }
     }
 
     window.addEventListener('load', () => {
         initializeUIStrings();
         updateOperatorUI();
-        generateRandomPassword(); 
         fetchOperatorsFromServer();
         initializeOCRWorker();
+        
+        // Restore Draft state if app was closed or refreshed by mobile OS
+        restoreDraft();
+        validateForm();
     });
 
     // =========================================================================
-    // FORM FORMATTING & VALIDATION ENGINE (WITH DEBOUNCING)
+    // DRAFT AUTOSAVE LOGIC (Protects against iOS background tab refreshing)
     // =========================================================================
-    function handleSerialInput() {
-        validateForm(); 
-        const currentSerial = elements.pcSerial.value.trim();
 
-        // Reset button visual state immediately on new keystroke
-        elements.reprintBtn.style.background = "var(--reprint-color)";
-
-        // Avoid backend spam for incomplete serials
-        if (currentSerial.length < 5) return; 
-
-        // Debounce logic: clear previous timer and start a new one
-        clearTimeout(serialCheckTimeout);
-        
-        serialCheckTimeout = setTimeout(async () => {
-            try {
-                // Async fetch to Google Apps Script endpoint
-                const safeUrl = `${GOOGLE_SCRIPT_URL}?action=check_serial&serial=${encodeURIComponent(currentSerial)}&t=${new Date().getTime()}`;
-                const response = await fetch(safeUrl);
-                const result = await response.json();
-
-                if (result.status === "success" && result.exists) {
-                    elements.reprintBtn.style.background = "var(--success-color)";
-                    if ("vibrate" in navigator) navigator.vibrate([50]);
-                }
-            } catch (err) {
-                console.log("WARNING: Failed to verify serial status: " + err.message);
-            }
-        }, 800); // 800ms silence threshold before triggering the API
+    function saveDraft() {
+        const draft = {
+            pcSerial: elements.pcSerial.value,
+            localAccount: elements.localAccount.value,
+            officeType: document.querySelector('input[name="office_type"]:checked').value,
+            officeKey: elements.officeKey.value,
+            avType: document.querySelector('input[name="av_type"]:checked').value,
+            avKey: elements.avKey.value,
+            msUsername: elements.msUsername.value,
+            msDomain: elements.msDomain.value,
+            msPassword: elements.msPassword.value,
+            runUpdates: elements.runUpdates.checked
+        };
+        localStorage.setItem('avviopc_draft', JSON.stringify(draft));
     }
 
+    function restoreDraft() {
+        const saved = localStorage.getItem('avviopc_draft');
+        if (saved) {
+            try {
+                const draft = JSON.parse(saved);
+                elements.pcSerial.value = draft.pcSerial || '';
+                elements.localAccount.value = draft.localAccount || '';
+                if (draft.officeType) {
+                    const ot = document.querySelector(`input[name="office_type"][value="${draft.officeType}"]`);
+                    if (ot) ot.checked = true;
+                }
+                elements.officeKey.value = draft.officeKey || '';
+                if (draft.avType) {
+                    const av = document.querySelector(`input[name="av_type"][value="${draft.avType}"]`);
+                    if (av) av.checked = true;
+                }
+                elements.avKey.value = draft.avKey || '';
+                elements.msUsername.value = draft.msUsername || '';
+                if (draft.msDomain) elements.msDomain.value = draft.msDomain;
+                elements.msPassword.value = draft.msPassword || '';
+                if (draft.runUpdates !== undefined) elements.runUpdates.checked = draft.runUpdates;
+                
+                toggleFields();
+            } catch(e) {
+                console.warn("Could not restore draft", e);
+            }
+        }
+    }
+
+    // =========================================================================
+    // EXTERNAL NAVIGATION WARNING MODAL
+    // =========================================================================
+
+    function openMsAlertModal() {
+        elements.msAlertModal.classList.add('active');
+    }
+
+    function closeMsAlertModal() {
+        elements.msAlertModal.classList.remove('active');
+    }
+
+    function proceedToMicrosoft() {
+        closeMsAlertModal();
+        window.open('https://signup.live.com/', '_blank');
+    }
+
+    // =========================================================================
+    // FORM FORMATTING & VALIDATION ENGINE
+    // =========================================================================
+
     function formatProductKey(input, sep) {
-        let start = input.selectionStart;
-        let originalValue = input.value;
-        let rawValue = originalValue.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
-        let formattedValue = "";
-        
-        for (let i = 0; i < rawValue.length; i++) {
-            if (i > 0 && i % 5 === 0) formattedValue += sep;
-            formattedValue += rawValue[i];
+        let val = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 25);
+        let res = "";
+        for (let i = 0; i < val.length; i++) {
+            if (i > 0 && i % 5 === 0) res += sep;
+            res += val[i];
         }
-
-        if (originalValue === formattedValue) return;
-        input.value = formattedValue;
-
-        let alnumCountBeforeCursor = 0;
-        for (let i = 0; i < start && i < originalValue.length; i++) {
-            if (/[A-Za-z0-9]/.test(originalValue[i])) alnumCountBeforeCursor++;
-        }
-
-        let newCursorPos = 0;
-        let currentAlnumCount = 0;
-        for (let i = 0; i < formattedValue.length; i++) {
-            if (currentAlnumCount === alnumCountBeforeCursor) {
-                newCursorPos = i;
-                break;
-            }
-            if (/[A-Za-z0-9]/.test(formattedValue[i])) currentAlnumCount++;
-            if (i === formattedValue.length - 1 && currentAlnumCount === alnumCountBeforeCursor) {
-                newCursorPos = formattedValue.length;
-            }
-        }
-
-        if (currentAlnumCount < alnumCountBeforeCursor) newCursorPos = formattedValue.length;
-        input.setSelectionRange(newCursorPos, newCursorPos);
+        input.value = res;
         validateForm();
     }
 
@@ -689,21 +642,15 @@
         formatProductKey(input, elements.avNorton.checked ? ' ' : '-');
     }
 
-    function formatLocalAccount(input) {
-        let val = input.value;
-        let words = val.split(' ');
-        for (let i = 0; i < words.length; i++) {
-            if (words[i].length > 0) {
-                words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1).toLowerCase();
-            }
-        }
-        input.value = words.join(' ');
+    function formatUsername(input) {
+        input.value = input.value.toLowerCase().replace(/[^a-z0-9.\-_]/g, '');
         validateForm();
     }
 
     function toggleFields() {
         elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
         elements.avField.classList.toggle('visible', !elements.avNone.checked);
+        
         if (!elements.avNone.checked) {
             elements.avKeyLabel.innerText = elements.avNorton.checked ? DICTIONARY.avNortonKeyLabel : DICTIONARY.avMcafeeKeyLabel;
             elements.avKey.placeholder = elements.avNorton.checked ? DICTIONARY.avKeyPlaceholderNorton : DICTIONARY.avKeyPlaceholderMcafee;
@@ -713,8 +660,12 @@
     }
 
     function isFormValidCheck() {
-        let pwdValid = elements.msPassword.value.trim() !== "";
-        let ok = currentOperatorId !== "00000" && elements.pcSerial.value.trim() !== "" && elements.localAccount.value.trim() !== "" && elements.msUsername.value.trim() !== "" && pwdValid;
+        let ok = currentOperatorId !== "00000" && 
+                 elements.pcSerial.value.trim() !== "" && 
+                 elements.localAccount.value.trim() !== "" && 
+                 elements.msUsername.value.trim() !== "" &&
+                 elements.msPassword.value.trim() !== "";
+                 
         if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
         if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
         return ok;
@@ -726,187 +677,19 @@
         } else {
             elements.submitBtn.classList.add('is-disabled');
         }
-    }
-
-    // =========================================================================
-    // DYNAMIC AUTH BUTTON COLORATION & FALLBACK INTERCEPTORS
-    // =========================================================================
-    function updateAuthButtonVisuals() {
-        if (!isMsCreated) {
-            elements.btnAuth.disabled = true;
-            elements.btnAuth.style.background = "var(--reprint-color)";
-            elements.btnAuth.style.cursor = "not-allowed";
-            elements.btnAuth.style.boxShadow = "none";
-        } else if (!acquiredEmail) {
-            elements.btnAuth.disabled = false;
-            elements.btnAuth.style.background = "var(--import-color)";
-            elements.btnAuth.style.cursor = "pointer";
-            elements.btnAuth.style.boxShadow = "0 4px 10px rgba(23, 162, 184, 0.2)";
-        } else {
-            const currentEmail = elements.msUsername.value.trim().toLowerCase();
-            const currentPwd = elements.msPassword.value.trim();
-            if (currentEmail === acquiredEmail.toLowerCase() && currentPwd === acquiredPassword) {
-                elements.btnAuth.style.background = "var(--success-color)";
-                elements.btnAuth.style.boxShadow = "0 4px 10px rgba(40, 167, 69, 0.2)";
-            } else {
-                elements.btnAuth.style.background = "var(--reprint-color)";
-                elements.btnAuth.style.boxShadow = "none";
-            }
-        }
-    }
-
-    function handleManualAccountEdits() {
-        if (acquiredEmail) { updateAuthButtonVisuals(); }
-    }
-
-    elements.msUsername.addEventListener('input', () => { handleManualAccountEdits(); validateForm(); });
-    elements.msPassword.addEventListener('input', () => { handleManualAccountEdits(); validateForm(); });
-
-    // =========================================================================
-    // UI EVENT BINDINGS & MODAL ROUTING FOR MICROSOFT FLOW
-    // =========================================================================
-    elements.btnCreateMs.onclick = () => {
-        if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-        if (!isMsCreated) {
-            isMsCreated = true;
-            updateAuthButtonVisuals();
-        }
-        if (localStorage.getItem('hide_pwd_alert') === 'true') {
-            executeMsCreationFlow();
-        } else {
-            elements.chkDontShowAgain.checked = false;
-            elements.pwdAlertModal.classList.add('active');
-        }
-    };
-
-    elements.btnPwdAlertOk.onclick = () => {
-        if (elements.chkDontShowAgain.checked) {
-            localStorage.setItem('hide_pwd_alert', 'true');
-        }
-        elements.pwdAlertModal.classList.remove('active');
-        executeMsCreationFlow();
-    };
-
-    function executeMsCreationFlow() {
-        const pwdToCopy = elements.msPassword.value.trim();
-        const fallbackCopy = () => {
-            const el = document.createElement('textarea');
-            el.value = pwdToCopy;
-            el.setAttribute('readonly', '');
-            el.style.position = 'absolute';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            try { document.execCommand('copy'); } catch (err) {}
-            document.body.removeChild(el);
-        };
-
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(pwdToCopy).catch(() => fallbackCopy());
-        } else {
-            fallbackCopy();
-        }
-
-        window.open('https://signup.live.com/signup', '_blank');
-
-        const originalText = elements.btnCreateMs.innerText;
-        elements.btnCreateMs.innerText = DICTIONARY.btnFeedbackCustom;
-        elements.btnCreateMs.style.background = "var(--success-color)";
-        
-        setTimeout(() => {
-            elements.btnCreateMs.innerText = originalText;
-            elements.btnCreateMs.style.background = ""; 
-        }, 3000);
-    }
-
-    function handleImportClick() {
-        if (elements.btnAuth.disabled) return;
-        if (localStorage.getItem('hide_import_alert') === 'true') {
-            startMicrosoftAuth();
-        } else {
-            elements.chkImportDontShowAgain.checked = false;
-            elements.importAlertModal.classList.add('active');
-        }
-    }
-
-    elements.btnImportAlertOk.onclick = () => {
-        if (elements.chkImportDontShowAgain.checked) {
-            localStorage.setItem('hide_import_alert', 'true');
-        }
-        elements.importAlertModal.classList.remove('active');
-        startMicrosoftAuth();
-    };
-
-    // =========================================================================
-    // NATIVE MICROSOFT OAUTH2 POLLING HANDLER
-    // =========================================================================
-    async function startMicrosoftAuth() {
-        elements.btnAuth.innerText = "Inizializzazione...";
-        elements.btnAuth.disabled = true;
-
-        currentAuthSession = "session_" + Math.random().toString(36).substring(2, 10);
-        const popup = window.open('', '_blank');
-
-        try {
-            const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getAuthUrl&session_id=" + currentAuthSession);
-            const data = await response.json();
-
-            if (!data.url) {
-                popup.close();
-                showAlert("CRITICAL: Backend returned empty URL.");
-                elements.btnAuth.innerText = "Importa account creato";
-                elements.btnAuth.disabled = false;
-                return;
-            }
-
-            popup.location.href = data.url;
-            elements.btnAuth.innerText = "In attesa...";
-            pollForEmail();
-        } catch (error) {
-            popup.close();
-            showAlert(DICTIONARY.alertOauthConnectionError);
-            elements.btnAuth.innerText = "Importa account creato";
-            elements.btnAuth.disabled = false;
-        }
-    }
-
-    async function pollForEmail() {
-        let attempts = 0;
-        pollingInterval = setInterval(async () => {
-            attempts++;
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL + "?action=getEmail&session_id=" + currentAuthSession);
-                const data = await response.json();
-
-                if (data.email) {
-                    clearInterval(pollingInterval);
-                    acquiredEmail = data.email;
-                    acquiredPassword = elements.msPassword.value.trim();
-                    elements.msUsername.value = data.email;
-                    elements.btnAuth.innerText = "Account importato";
-                    updateAuthButtonVisuals();
-                    showAlert(DICTIONARY.alertOauthSuccess + data.email);
-                    validateForm();
-                }
-            } catch (e) {
-                console.log("Polling backend...");
-            }
-
-            if (attempts > 40) {
-                clearInterval(pollingInterval);
-                elements.btnAuth.innerText = "Timeout. Riprova.";
-                elements.btnAuth.disabled = false;
-                updateAuthButtonVisuals();
-            }
-        }, 3000);
+        // Save current form state to local storage on every change
+        saveDraft();
     }
 
     // =========================================================================
     // CASCADING DROPDOWNS & ALIGNMENT LOGIC
     // =========================================================================
+
     function initializeStoreDropdown() {
         const uniqueStores = [...new Set(OPERATOR_DB.map(op => String(op.storeId).trim()))];
+        
         uniqueStores.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
         elements.storeDropdown.innerHTML = `<option value="000">${DICTIONARY.storeModalDefault}</option>`;
         uniqueStores.forEach(store => {
             if(store) {
@@ -916,10 +699,12 @@
                 elements.storeDropdown.appendChild(opt);
             }
         });
+
         const savedStoreId = localStorage.getItem('store_id');
         if (savedStoreId && uniqueStores.includes(savedStoreId)) {
             elements.storeDropdown.value = savedStoreId;
             onStoreSelectionChange(); 
+
             const savedOpId = localStorage.getItem('operator_id');
             if (savedOpId && OPERATOR_DB.find(o => String(o.id) === String(savedOpId))) {
                 elements.operatorDropdown.value = savedOpId;
@@ -930,22 +715,28 @@
 
     function onStoreSelectionChange() {
         const selectedStore = elements.storeDropdown.value;
+
         elements.operatorDropdown.innerHTML = `<option value="00000">${DICTIONARY.opModalDefault}</option>`;
+
         if (selectedStore === "000") {
             elements.operatorDropdown.disabled = true;
             return;
         }
+
         let storeOperators = OPERATOR_DB.filter(op => String(op.storeId).trim() === selectedStore);
+
         storeOperators.sort((a, b) => {
             const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
             const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
             return nameA.localeCompare(nameB);
         });
+
         let maxLength = 0;
         storeOperators.forEach(op => {
             const len = `${op.lastName} ${op.firstName}`.length;
             if (len > maxLength) maxLength = len;
         });
+
         storeOperators.forEach(op => {
             const nameStr = `${op.lastName} ${op.firstName}`;
             const padding = '\xa0'.repeat(maxLength - nameStr.length + 1);
@@ -954,36 +745,40 @@
             opt.textContent = `${nameStr}${padding}[${op.id}]`;
             elements.operatorDropdown.appendChild(opt);
         });
+
         elements.operatorDropdown.disabled = false;
     }
 
     function openOperatorModal() { 
         elements.operatorPin.value = ''; 
-        const pwdHidden = localStorage.getItem('hide_pwd_alert') === 'true';
-        const importHidden = localStorage.getItem('hide_import_alert') === 'true';
-        elements.chkEnableAlerts.checked = !(pwdHidden && importHidden);
         elements.operatorModal.classList.add('active'); 
     }
-    
-    function closeOperatorModal() { elements.operatorModal.classList.remove('active'); }
+
+    function closeOperatorModal() { 
+        elements.operatorModal.classList.remove('active'); 
+    }
 
     async function saveOperatorSelection() {
         const storeId = elements.storeDropdown.value;
         const opId = elements.operatorDropdown.value;
         const pin = elements.operatorPin.value;
+
         if (storeId === "000" || opId === "00000") return;
-        if (!/^\d{4}$/.test(pin)) { showAlert(DICTIONARY.alertPinLength); return; }
+
+        if (!/^\d{4}$/.test(pin)) { 
+            alert(DICTIONARY.alertPinLength); 
+            return; 
+        }
+
         const op = OPERATOR_DB.find(o => o.id === opId);
+
         const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
         const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-        if (hash !== op.pinHash.trim().toLowerCase()) { showAlert(DICTIONARY.alertPinInvalid); elements.operatorPin.value = ''; return; }
-        
-        if (elements.chkEnableAlerts.checked) {
-            localStorage.removeItem('hide_pwd_alert');
-            localStorage.removeItem('hide_import_alert');
-        } else {
-            localStorage.setItem('hide_pwd_alert', 'true');
-            localStorage.setItem('hide_import_alert', 'true');
+
+        if (hash !== op.pinHash.trim().toLowerCase()) { 
+            alert(DICTIONARY.alertPinInvalid); 
+            elements.operatorPin.value = ''; 
+            return; 
         }
 
         currentOperatorId = opId;
@@ -994,46 +789,58 @@
         closeOperatorModal();
     }
 
-    function updateOperatorUI() { elements.operatorBadge.innerText = currentOperatorId; validateForm(); }
+    function updateOperatorUI() {
+        elements.operatorBadge.innerText = currentOperatorId;
+        validateForm();
+    }
 
     // =========================================================================
-    // CAMERA & SCANNER ENGINE (Barcode + Cloud Vision API)
+    // CAMERA & SCANNER ENGINE (Barcode + OCR)
     // =========================================================================
+
+    let currentInputId = null;
+    let currentMode = null;
+    let streamTrack = null;
+    let barcodeInterval = null;
+
     async function openScanner(targetId, mode) {
-        currentInputId = targetId; currentMode = mode;
+        currentInputId = targetId;
+        currentMode = mode;
         document.getElementById('scanner-title').innerText = mode === 'barcode' ? DICTIONARY.scanTitleBarcode : DICTIONARY.scanTitleOcr;
         elements.scannerModal.classList.add('active');
-        
+
         if (mode === 'barcode') {
-            elements.overlay.classList.add('barcode-mode'); 
-            elements.captureBtn.style.display = 'none'; 
-            elements.scanAnimation.style.display = 'block'; 
-            elements.ocrControls.style.display = 'none';
+            elements.overlay.classList.add('barcode-mode');
+            elements.captureBtn.style.display = 'none';
+            elements.scanAnimation.style.display = 'block';
             elements.modalStatus.innerText = DICTIONARY.statusBarcodeSearch;
         } else {
-            elements.overlay.classList.remove('barcode-mode'); 
-            elements.captureBtn.style.display = 'block'; 
-            elements.captureBtn.disabled = false; 
-            elements.scanAnimation.style.display = 'none'; 
-            
-            // Hide the threshold slider as Cloud Vision processes full RGB images
-            elements.ocrControls.style.display = 'none'; 
+            elements.overlay.classList.remove('barcode-mode');
+            elements.captureBtn.style.display = 'block';
+            elements.captureBtn.disabled = false;
+            elements.scanAnimation.style.display = 'none';
             elements.modalStatus.innerText = DICTIONARY.statusOcrAlign;
         }
-        
+
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } } });
-            elements.video.srcObject = stream; streamTrack = stream.getVideoTracks()[0];
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } }
+            });
+            elements.video.srcObject = stream;
+            streamTrack = stream.getVideoTracks()[0];
             elements.video.onloadedmetadata = () => {
                 const capabilities = streamTrack.getCapabilities();
                 if (capabilities.zoom) streamTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
                 if (mode === 'barcode') startBarcodeAutoScan();
             };
-        } catch (e) { elements.modalStatus.innerText = DICTIONARY.alertCameraError + e.message; }
+        } catch (e) { 
+            elements.modalStatus.innerText = DICTIONARY.alertCameraError + e.message; 
+        }
     }
 
     function closeScanner() {
-        currentMode = null; elements.scannerModal.classList.remove('active');
+        currentMode = null;
+        elements.scannerModal.classList.remove('active');
         if (streamTrack) streamTrack.stop();
         elements.video.srcObject = null;
         if (barcodeInterval) { clearInterval(barcodeInterval); barcodeInterval = null; }
@@ -1043,45 +850,40 @@
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         barcodeInterval = setInterval(async () => {
             if (currentMode !== 'barcode' || !elements.video.videoWidth) return;
-            
-            const v = elements.video;
-            const overlay = elements.overlay.getBoundingClientRect();
-            const wrapper = v.parentElement.getBoundingClientRect();
-            
-            const scaleX = v.videoWidth / wrapper.width; 
-            const scaleY = v.videoHeight / wrapper.height;
-            
-            const cw = overlay.width * scaleX; 
-            const ch = overlay.height * scaleY;
-            const cx = (overlay.left - wrapper.left) * scaleX; 
-            const cy = (overlay.top - wrapper.top) * scaleY;
-            
-            elements.canvas.width = cw; 
-            elements.canvas.height = ch;
-            
-            ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
+            elements.canvas.width = elements.video.videoWidth / 2;
+            elements.canvas.height = elements.video.videoHeight / 2;
+            ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
 
             try {
                 let detectedValue = null;
+
                 if (nativeBarcodeDetector) {
                     const barcodes = await nativeBarcodeDetector.detect(elements.canvas);
                     if (barcodes.length > 0) detectedValue = barcodes[0].rawValue;
                 }
+
                 if (!detectedValue) {
                     const imgUrl = elements.canvas.toDataURL("image/jpeg", 0.6);
-                    const img = new Image(); img.src = imgUrl;
+                    const img = new Image();
+                    img.src = imgUrl;
                     await new Promise((resolve) => {
                         img.onload = async () => {
-                            try { const result = await zxingReader.decodeFromImageElement(img); detectedValue = result.text; } catch(e) {}
+                            try {
+                                const result = await zxingReader.decodeFromImageElement(img);
+                                detectedValue = result.text;
+                            } catch(e) {}
                             resolve();
                         };
                     });
                 }
+
                 if (detectedValue) {
-                    clearInterval(barcodeInterval); barcodeInterval = null;
+                    clearInterval(barcodeInterval);
+                    barcodeInterval = null;
                     document.getElementById(currentInputId).value = detectedValue;
                     if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-                    closeScanner(); validateForm();
+                    closeScanner();
+                    validateForm();
                 }
             } catch (err) {}
         }, 300); 
@@ -1089,179 +891,140 @@
 
     elements.captureBtn.onclick = async () => {
         if (!streamTrack || currentMode !== 'ocr') return;
-        
+        if (!isOcrReady) { alert(DICTIONARY.alertOcrNotReady); return; }
+
         elements.video.pause(); 
-        elements.captureBtn.disabled = true; 
-        
-        elements.modalStatus.innerText = "Transmitting image to Cloud API..."; 
-        
+        elements.captureBtn.disabled = true;
+        elements.modalStatus.innerText = DICTIONARY.statusOcrProcessing;
+
         const ctx = elements.canvas.getContext('2d', { willReadFrequently: true });
         const v = elements.video;
         const overlay = elements.overlay.getBoundingClientRect();
         const wrapper = v.parentElement.getBoundingClientRect();
-        
-        const scaleX = v.videoWidth / wrapper.width; 
+
+        const scaleX = v.videoWidth / wrapper.width;
         const scaleY = v.videoHeight / wrapper.height;
-        
-        const cropReduction = 12; 
-        const cw = overlay.width * scaleX; 
-        const ch = (overlay.height - (cropReduction * 2)) * scaleY;
-        const cx = (overlay.left - wrapper.left) * scaleX; 
-        const cy = ((overlay.top + cropReduction) - wrapper.top) * scaleY;
-        
-        elements.canvas.width = cw; 
+        const cw = overlay.width * scaleX;
+        const ch = overlay.height * scaleY;
+        const cx = (overlay.left - wrapper.left) * scaleX;
+        const cy = (overlay.top - wrapper.top) * scaleY;
+
+        elements.canvas.width = cw;
         elements.canvas.height = ch;
-        
+        ctx.filter = "contrast(1.5) grayscale(1)";
         ctx.drawImage(v, cx, cy, cw, ch, 0, 0, cw, ch);
-        
-        const base64Image = elements.canvas.toDataURL("image/jpeg", 0.9).split(',')[1];
+        ctx.filter = "none";
 
         try {
-            const payload = {
-                action: "ocr",
-                image_data: base64Image
-            };
+            const res = await tesseractWorker.recognize(elements.canvas);
+            const rawText = res.data.text.toUpperCase();
+            const regex = /([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})[\s-]*([A-Z0-9]{5})/;
+            const match = rawText.match(regex);
 
+            if (match) {
+                const finalKey = `${match[1]}${match[2]}${match[3]}${match[4]}${match[5]}`;
+                const target = document.getElementById(currentInputId);
+                target.value = finalKey;
+                target.dispatchEvent(new Event('input')); 
+                elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
+                setTimeout(closeScanner, 800);
+            } else {
+                elements.modalStatus.innerText = DICTIONARY.statusOcrFailed;
+                elements.captureBtn.disabled = false;
+                elements.video.play(); 
+            }
+        } catch(e) {
+            elements.modalStatus.innerText = DICTIONARY.alertOcrSystemError;
+            elements.captureBtn.disabled = false;
+            elements.video.play();
+        }
+    };
+
+    // =========================================================================
+    // CLOUD COMMUNICATION (Submit & Reprint) WITH SPLASH SCREEN OVERLAY
+    // =========================================================================
+
+    elements.submitBtn.onclick = async () => {
+        if (!isFormValidCheck()) {
+            alert("Compilare tutti i campi obbligatori prima di caricare i dati");
+            return;
+        }
+
+        elements.submitBtn.disabled = true;
+        elements.loadingOverlay.classList.add('active');
+
+        const payload = {
+            action: "new",
+            operator_id: currentOperatorId,
+            store_id: localStorage.getItem('store_id') || "UNKNOWN",
+            pc_serial: elements.pcSerial.value.trim(),
+            local_account: elements.localAccount.value.trim(),
+            office_suite: document.querySelector('input[name="office_type"]:checked').value,
+            office_key: elements.officeKey.value,
+            antivirus: document.querySelector('input[name="av_type"]:checked').value,
+            antivirus_key: elements.avKey.value,
+            microsoft_account: `${elements.msUsername.value}@${elements.msDomain.value}`,
+            microsoft_password: elements.msPassword.value,
+            windows_update: elements.runUpdates.checked ? "Yes" : "No",
+            timestamp: new Date().toISOString()
+        };
+
+        try {
             const res = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
-
-            const data = await res.json();
-
-            if (data.status === "error") {
-                throw new Error(data.message);
-            }
-
-            let rawText = data.text.toUpperCase();
-            
-            const dashCount = (rawText.match(/-/g) || []).length;
-            const spaceCount = (rawText.match(/ /g) || []).length;
-
-            if (currentInputId === 'office-key') {
-                if (dashCount === 0 && spaceCount >= 3) {
-                    elements.modalStatus.innerText = DICTIONARY.ocrFormatOfficeExpected; 
-                    elements.captureBtn.disabled = false; 
-                    elements.video.play(); 
-                    return; 
-                }
-                
-                const base24Corrections = {
-                    'S': '6', '5': '6',
-                    'O': 'Q', '0': 'Q', 'D': 'Q',
-                    'I': 'T', '1': 'T', 'L': 'T',
-                    'A': '4',
-                    'R': 'K', 
-                    'U': 'V',
-                    'B': '8', 
-                    'E': 'F'
-                };
-
-                const originalText = rawText; 
-                rawText = rawText.split('').map(char => base24Corrections[char] || char).join('');
-                rawText = rawText.replace(/[^BCDFGHJKMPQRTVWXY2346789Z\- ]/g, '');
-                
-                if (originalText !== rawText) {
-                    console.log("INFO: Applied strict Base24 Microsoft correction.");
-                }                 
-            } else if (currentInputId === 'av-key' && elements.avNorton.checked) {
-                if (dashCount >= 2) {
-                    elements.modalStatus.innerText = DICTIONARY.ocrFormatNortonExpected; 
-                    elements.captureBtn.disabled = false; 
-                    elements.video.play(); 
-                    return; 
-                }
-            }
-
-            const regex = /([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})[\s-]*([BCDFGHJKMPQRTVWXY2346789Z]{5})/g;
-            const matches = [...rawText.matchAll(regex)];
-            
-            if (matches && matches.length > 0) {
-                const bestMatch = matches[matches.length - 1];
-                let raw25 = `${bestMatch[1]}${bestMatch[2]}${bestMatch[3]}${bestMatch[4]}${bestMatch[5]}`;
-                let finalArray = raw25.split('');
-                
-                if (currentInputId === 'office-key') {
-                    for (let i = 0; i < 24; i++) {
-                        if (finalArray[i] === 'Z') finalArray[i] = '2';
-                    }
-                    finalArray[24] = 'Z';
-                } else {
-                    for (let i = 0; i < 25; i++) {
-                        if (finalArray[i] === 'Z') finalArray[i] = '2';
-                    }
-                }
-                
-                raw25 = finalArray.join('');
-                const finalKey = `${raw25.substring(0,5)}-${raw25.substring(5,10)}-${raw25.substring(10,15)}-${raw25.substring(15,20)}-${raw25.substring(20,25)}`;
-                
-                const target = document.getElementById(currentInputId);
-                target.value = finalKey; 
-                target.dispatchEvent(new Event('input')); 
-                elements.modalStatus.innerText = DICTIONARY.statusOcrSuccess;
-                setTimeout(closeScanner, 800);
-            } else { 
-                elements.modalStatus.innerText = DICTIONARY.statusOcrFailed; 
-                elements.captureBtn.disabled = false; 
-                elements.video.play(); 
-            }
-        } catch(e) { 
-            elements.modalStatus.innerText = "CRITICAL: Cloud OCR transmission failed. " + e.message; 
-            elements.captureBtn.disabled = false; 
-            elements.video.play(); 
-        }
-    };
-
-    // =========================================================================
-    // CLOUD COMMUNICATION (Submit & Reprint)
-    // =========================================================================
-    elements.submitBtn.onclick = async () => {
-        if (!isFormValidCheck()) { showAlert("Campi obbligatori mancanti. Completare il modulo prima di procedere."); return; }
-        elements.submitBtn.disabled = true; elements.loadingOverlay.classList.add('active');
-        const finalPassword = elements.msPassword.value.trim();
-        
-        const payload = {
-            action: "new", operator_id: currentOperatorId, store_id: localStorage.getItem('store_id') || "UNKNOWN",
-            pc_serial: elements.pcSerial.value.trim(), local_account: elements.localAccount.value.trim(),
-            office_suite: document.querySelector('input[name="office_type"]:checked').value, office_key: elements.officeKey.value,
-            antivirus: document.querySelector('input[name="av_type"]:checked').value, antivirus_key: elements.avKey.value,
-            cyber: elements.runCyber.checked ? "Yes" : "No", microsoft_account: elements.msUsername.value.trim(),
-            microsoft_password: finalPassword, windows_update: elements.runUpdates.checked ? "Yes" : "No", timestamp: new Date().toISOString()
-        };
-        
-        try {
-            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
             const data = await res.json();
             if (data.status === "error") throw new Error(data.message);
+
+            // SUCCESS: Clear the draft memory so the next entry starts fresh
+            localStorage.removeItem('avviopc_draft');
             
-            elements.loadingOverlay.classList.remove('active'); 
-            showAlert(DICTIONARY.alertUploadSuccess, () => {
-                location.reload();
-            });
+            elements.loadingOverlay.classList.remove('active');
+            alert(DICTIONARY.alertUploadSuccess);
+            location.reload();
         } catch (e) {
-            elements.loadingOverlay.classList.remove('active'); 
-            showAlert(DICTIONARY.alertUploadError + e.message);
-            elements.submitBtn.disabled = false; 
+            elements.loadingOverlay.classList.remove('active');
+            alert(DICTIONARY.alertUploadError + e.message);
+            elements.submitBtn.disabled = false;
             validateForm();
         }
     };
 
     async function handleReprint() {
         const sn = elements.pcSerial.value.trim();
-        if (!sn) { showAlert("Numero seriale del prodotto mancante per la ristampa."); return; }
-        if (currentOperatorId === "00000") { showAlert("Autenticazione operatore richiesta."); return; }
-        
-        elements.reprintBtn.disabled = true; elements.loadingOverlay.classList.add('active');
-        const payload = { action: "reprint", store_id: localStorage.getItem('store_id'), pc_serial: sn };
+        if (!sn) { 
+            alert("Inserisci il serial number del prodotto per poter ristampare il suo report"); 
+            return; 
+        }
+        if (currentOperatorId === "00000") { 
+            alert("Effettua il login operatore"); 
+            return; 
+        }
+
+        elements.reprintBtn.disabled = true;
+        elements.loadingOverlay.classList.add('active');
+
+        const payload = { 
+            action: "reprint", 
+            store_id: localStorage.getItem('store_id'), 
+            pc_serial: sn 
+        };
+
         try {
-            const res = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+            const res = await fetch(GOOGLE_SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
             const result = await res.json();
-            elements.loadingOverlay.classList.remove('active'); 
-            showAlert(result.message);
+
+            elements.loadingOverlay.classList.remove('active');
+            alert(result.message);
         } catch(e) { 
-            elements.loadingOverlay.classList.remove('active'); 
-            showAlert("Errore di rete. Richiesta fallita."); 
+            elements.loadingOverlay.classList.remove('active');
+            alert("Errore rete"); 
         }
         elements.reprintBtn.disabled = false;
     }
