@@ -320,8 +320,8 @@
                 Usare la funzione "Incolla" per inserirla durante la creazione dell'account.<br><br>
                 Una volta creato l'account, tornare a questa applicazione e fare click sul pulsante "Importa account creato".<br><br>
                 <b>Per tornare qui:</b><br>
-                • <b>Da Chrome/Safari:</b><br>usare il selettore delle schede.<br>
-                • <b>Dall'app su iPhone:</b><br>cliccare sulla <b>"X" in alto a sinistra</b>.
+                • <b>con Android:</b><br>usare il selettore delle schede.<br>
+                • <b>con iPhone:</b><br>cliccare sulla <b>"X" in alto a sinistra</b>.
             </div>
             <label class="checkbox-group" style="justify-content: center; margin-bottom: 20px; padding: 5px;">
                 <input type="checkbox" id="chk-dont-show-again">
@@ -340,8 +340,8 @@
                 Successivamente consentire all'app di accedere alle informazioni facendo click su "Accetta"<br><br>
                 Quando comparirà la scritta verde "Authentication successful..." tornare a questa applicazione.<br><br>
                 <b>Per tornare qui:</b><br>
-                • <b>Da Chrome/Safari:</b><br>usare il selettore delle schede.<br>
-                • <b>Dall'app su iPhone:</b><br>cliccare sulla <b>"X" in alto a sinistra</b>.
+                • <b>con Android:</b><br>usare il selettore delle schede.<br>
+                • <b>con iPhone:</b><br>cliccare sulla <b>"X" in alto a sinistra</b>.
             </div>
             <label class="checkbox-group" style="justify-content: center; margin-bottom: 20px; padding: 5px;">
                 <input type="checkbox" id="chk-import-dont-show-again">
@@ -411,8 +411,8 @@
     // =========================================================================
     // I18N DICTIONARY & CONFIGURATION
     // =========================================================================
-    const DICTIONARY = {
-        appTitle: "AvvioPC Pro",
+const DICTIONARY = {
+        appTitle: "AvvioPC <span class='pro-badge'>PRO</span>",
         operatorBadge: "Operatore",
         serialPlaceholder: "...",
         localAccountPlaceholder: "Nome di chi userà il PC",
@@ -628,7 +628,7 @@
     // INITIALIZATION ROUTINES & PASSWORD GENERATOR
     // =========================================================================
     function initializeUIStrings() {
-        document.getElementById('lbl-app-title').innerText = DICTIONARY.appTitle;
+		document.getElementById('lbl-app-title').innerHTML = DICTIONARY.appTitle;
         document.getElementById('lbl-operator').innerText = DICTIONARY.operatorBadge;
         elements.pcSerial.placeholder = DICTIONARY.serialPlaceholder;
         elements.localAccount.placeholder = DICTIONARY.localAccountPlaceholder;
