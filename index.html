@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>AvvioPC 2 - Dashboard</title>
+    <title>AvvioPC Pro - Dashboard</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@zxing/library@latest"></script>
@@ -50,8 +50,25 @@
         /* Application Header Bar */
         .app-header { background-color: var(--header-bg); color: var(--header-text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
         .header-logo { height: 40px; width: auto; object-fit: contain; border-radius: 4px; }
-        .app-title { flex: 1; text-align: center; padding: 0 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; }
+		.app-title { flex: 1; text-align: center; padding: 0 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 38px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; }
 
+		/* Nuovo stile per il badge PRO */
+		.pro-badge {
+			display: inline-block;
+			vertical-align: super; /* Lo posiziona in alto come un apice */
+			font-size: 12px;
+			font-weight: 800;
+			font-family: system-ui, -apple-system, sans-serif;
+			background-color: var(--accent-color); /* Usa il blu acceso già definito nelle tue variabili */
+			color: #ffffff;
+			padding: 2px 6px;
+			border-radius: 4px;
+			margin-left: 5px;
+			letter-spacing: 1px;
+			line-height: 1;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+		}
+		
         /* Operator Authentication Badge */
         .operator-badge { display: flex; flex-direction: column; align-items: flex-end; cursor: pointer; transition: opacity 0.2s; }
         .operator-badge:hover { opacity: 0.8; }
@@ -190,7 +207,7 @@
 
     <header class="app-header">
         <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
-        <div class="app-title" id="lbl-app-title">AvvioPC 2</div>
+        <div class="app-title" id="lbl-app-title">AvvioPC<span class="pro-badge">PRO</span></div>
         <div class="operator-badge" onclick="openOperatorModal()">
             <div class="operator-label" id="lbl-operator">Operatore</div>
             <div class="operator-id-display" id="header-operator-id">00000</div>
@@ -397,7 +414,7 @@
     // I18N DICTIONARY & CONFIGURATION
     // =========================================================================
     const DICTIONARY = {
-        appTitle: "AvvioPC 2",
+        appTitle: "AvvioPC Pro",
         operatorBadge: "Operatore",
         serialPlaceholder: "...",
         localAccountPlaceholder: "Nome di chi userà il PC",
