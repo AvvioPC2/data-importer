@@ -137,7 +137,9 @@
         .segmented-control input[type="radio"] { display: none; }
         .segmented-control input[type="radio"]:checked + label { background: #fff; color: var(--accent-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
 
-        #lbl-opt-norton, #lbl-opt-mcafee, #lbl-opt-none { font-size: 13px; line-height: 1.1; padding: 6px 2px; display: flex; align-items: center; justify-content: center; }
+		.av-control { flex-wrap: wrap; }
+        .av-control label { flex: 1 1 45%; }
+        #lbl-opt-unedse, #lbl-opt-norton, #lbl-opt-mcafee, #lbl-opt-none { font-size: 13px; line-height: 1.1; padding: 6px 2px; display: flex; align-items: center; justify-content: center; min-height: 44px; }
 
         .conditional-field { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease-out; }
         .conditional-field.visible { max-height: 110px; opacity: 1; margin-top: 10px; }
@@ -275,7 +277,9 @@
 
         <div class="form-group">
             <div class="section-title" id="lbl-av-protection">Protezione antivirus</div>
-            <div class="segmented-control">
+            <div class="segmented-control av-control">
+                <input type="radio" id="av-unedse" name="av_type" value="unedse" onchange="toggleFields(); validateForm();">
+                <label for="av-unedse" id="lbl-opt-unedse">Unieuro<br>EveryDay Security</label>
                 <input type="radio" id="av-norton" name="av_type" value="norton" onchange="toggleFields(); validateForm();">
                 <label for="av-norton" id="lbl-opt-norton">Norton<br>360 Deluxe</label>
                 <input type="radio" id="av-mcafee" name="av_type" value="mcafee" onchange="toggleFields(); validateForm();">
@@ -450,6 +454,7 @@ const DICTIONARY = {
         officeKeyLabel: "Product Key Office",
         officeKeyPlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
         avTitle: "Protezione antivirus",
+		avOptUnedse: "Unieuro<br>EveryDay Security",
         avOptNorton: "Norton<br>360 Deluxe",
         avOptMcafee: "McAfee<br>Total Protection",
         avOptNone: "Windows<br>Defender",
@@ -548,6 +553,7 @@ const DICTIONARY = {
         officeMs: document.getElementById('office-ms'),
         officeKey: document.getElementById('office-key'),
         msOfficeField: document.getElementById('ms-office-field'),
+		avUnedse: document.getElementById('av-unedse'),
         avNorton: document.getElementById('av-norton'),
         avMcafee: document.getElementById('av-mcafee'),
         avNone: document.getElementById('av-none'),
@@ -666,6 +672,7 @@ const DICTIONARY = {
         document.getElementById('lbl-office-key').innerText = DICTIONARY.officeKeyLabel;
         elements.officeKey.placeholder = DICTIONARY.officeKeyPlaceholder;
         document.getElementById('lbl-av-protection').innerText = DICTIONARY.avTitle;
+		document.getElementById('lbl-opt-unedse').innerHTML = DICTIONARY.avOptUnedse;
         document.getElementById('lbl-opt-norton').innerHTML = DICTIONARY.avOptNorton;
         document.getElementById('lbl-opt-mcafee').innerHTML = DICTIONARY.avOptMcafee;
         document.getElementById('lbl-opt-none').innerHTML = DICTIONARY.avOptNone;
@@ -837,8 +844,12 @@ const DICTIONARY = {
 
     function toggleFields() {
         elements.msOfficeField.classList.toggle('visible', elements.officeMs.checked);
-        elements.avField.classList.toggle('visible', !elements.avNone.checked);
-        if (!elements.avNone.checked) {
+        
+        // Nuova logica: mostra il campo Key SOLO per Norton o McAfee
+        const showAvKey = elements.avNorton.checked || elements.avMcafee.checked;
+        elements.avField.classList.toggle('visible', showAvKey);
+        
+        if (showAvKey) {
             elements.avKeyLabel.innerText = elements.avNorton.checked ? DICTIONARY.avNortonKeyLabel : DICTIONARY.avMcafeeKeyLabel;
             elements.avKey.placeholder = elements.avNorton.checked ? DICTIONARY.avKeyPlaceholderNorton : DICTIONARY.avKeyPlaceholderMcafee;
             if (elements.avKey.value !== '') formatAvKey(elements.avKey);
@@ -850,7 +861,11 @@ const DICTIONARY = {
         let pwdValid = elements.msPassword.value.trim() !== "";
         let ok = currentOperatorId !== "00000" && elements.pcSerial.value.trim() !== "" && elements.localAccount.value.trim() !== "" && elements.msUsername.value.trim() !== "" && pwdValid;
         if (elements.officeMs.checked && elements.officeKey.value.length < 29) ok = false;
-        if (!elements.avNone.checked && elements.avKey.value.length < 29) ok = false;
+        
+        // Nuova logica: blocca l'invio per Key corto SOLO per Norton o McAfee
+        const requireAvKey = elements.avNorton.checked || elements.avMcafee.checked;
+        if (requireAvKey && elements.avKey.value.length < 29) ok = false;
+        
         return ok;
     }
 
